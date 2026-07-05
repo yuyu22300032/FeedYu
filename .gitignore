@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+
+# Xcode
+xcuserdata/
+build/
+DerivedData/
+*.xcuserstate
+*.xcresult
+
+# Personal data — never commit these:
+# Google Takeout exports (starred places, account data)
+takeout-*.zip
+Takeout/
+# Any real captured pages/responses (contain account ids, list tokens,
+# personal place lists). Committed fixtures must be synthetic.
+*-real.*
+device_store*.json
+
+# Local tool config (machine-specific permissions)
+.claude/settings.local.json
