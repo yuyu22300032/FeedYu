@@ -545,18 +545,18 @@
         }
       }
     },
-    "DinePick filters suggestions by drive time from where you are. Allow location access in the Settings app.": {
+    "FeedYu filters suggestions by drive time from where you are. Allow location access in the Settings app.": {
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "DinePick は現在地からの運転時間でおすすめを絞り込みます。「設定」アプリで位置情報へのアクセスを許可してください。"
+            "value": "FeedYu は現在地からの運転時間でおすすめを絞り込みます。「設定」アプリで位置情報へのアクセスを許可してください。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "DinePick 會依你目前位置的車程時間篩選建議。請在「設定」App 中允許取用定位。"
+            "value": "FeedYu 會依你目前位置的車程時間篩選建議。請在「設定」App 中允許取用定位。"
           }
         }
       }
@@ -1809,18 +1809,18 @@
         }
       }
     },
-    "takeout.google.com → deselect all → select “Maps (your places)” and “Saved”. Unzip the archive first, then pick Saved Places.json or a list CSV here. CSV rows have no coordinates — DinePick resolves them from the place link or by geocoding, which can take a minute.": {
+    "takeout.google.com → deselect all → select “Maps (your places)” and “Saved”. Unzip the archive first, then pick Saved Places.json or a list CSV here. CSV rows have no coordinates — FeedYu resolves them from the place link or by geocoding, which can take a minute.": {
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "takeout.google.com → すべて選択解除 → 「マップ（あなたの場所）」と「保存済み」を選択。アーカイブを解凍してから、ここで Saved Places.json またはリスト CSV を選んでください。CSV に座標はありません — DinePick が場所リンクやジオコーディングで解決します（少し時間がかかります）。"
+            "value": "takeout.google.com → すべて選択解除 → 「マップ（あなたの場所）」と「保存済み」を選択。アーカイブを解凍してから、ここで Saved Places.json またはリスト CSV を選んでください。CSV に座標はありません — FeedYu が場所リンクやジオコーディングで解決します（少し時間がかかります）。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "takeout.google.com → 全部取消選取 → 勾選「地圖（你的地點）」與「已儲存」。請先解壓縮封存檔，再在此選擇 Saved Places.json 或清單 CSV。CSV 內沒有座標——DinePick 會從地點連結或地理編碼解析，可能需要一點時間。"
+            "value": "takeout.google.com → 全部取消選取 → 勾選「地圖（你的地點）」與「已儲存」。請先解壓縮封存檔，再在此選擇 Saved Places.json 或清單 CSV。CSV 內沒有座標——FeedYu 會從地點連結或地理編碼解析，可能需要一點時間。"
           }
         }
       }

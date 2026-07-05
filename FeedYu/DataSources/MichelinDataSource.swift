@@ -21,7 +21,7 @@ final class MichelinDataSource: RestaurantDataSource {
 
     nonisolated static var cachedFileURL: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        let dir = base.appendingPathComponent("DinePick", isDirectory: true)
+        let dir = base.appendingPathComponent("FeedYu", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir.appendingPathComponent("michelin-cache.csv")
     }

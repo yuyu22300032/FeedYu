@@ -1,0 +1,608 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0DE46D7C8811C7D63EEE8882 /* CSVParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93696CE048929DAD36825626 /* CSVParserTests.swift */; };
+		104ED0718D77629B6B681D93 /* GoogleSharedListParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7AFC05E50102E224796464C /* GoogleSharedListParserTests.swift */; };
+		127E3A519FF1BAF00A3BBC40 /* MichelinNameLocalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBDDB96AA140C4789C158FE2 /* MichelinNameLocalizer.swift */; };
+		1B8B61BD78E2F3C17D2562D4 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 2E07D91437F28E5C19586AF6 /* InfoPlist.xcstrings */; };
+		31A8907714B479C41FF55EA5 /* RestaurantCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0632AABABEE4EE0DF805725B /* RestaurantCard.swift */; };
+		332B404B71BACFBB58D1C8A4 /* GoogleSharedListSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E863C1A658E83709ACF30F3 /* GoogleSharedListSource.swift */; };
+		35AFBAB012AD52326BB3F532 /* GetlistParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373DC8B167718D9BA1CB186E /* GetlistParserTests.swift */; };
+		38EB37038022F717BD6683E7 /* MichelinView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC350E4BCEDE22E40384D423 /* MichelinView.swift */; };
+		3BBAED62166C4A9D7EB4640A /* SuggestionEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06BC1CCFBB9E4A24509799E0 /* SuggestionEngineTests.swift */; };
+		3CE6C8459566B975930D823D /* RestaurantDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A132986CFC1E674A5FBC277 /* RestaurantDataSource.swift */; };
+		4C9A9FA8E170CE084BFFD612 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E576C52182D9D2C25BE69CD4 /* Localizable.xcstrings */; };
+		4EBE3B2C54958A5E41B26431 /* ManageRestaurantsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C659FC58BBF88A8F91F526 /* ManageRestaurantsView.swift */; };
+		5B0A4639F8773C3601A80D9E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1914B0A776984DBECA0096B5 /* SettingsView.swift */; };
+		6E7DFE363409F8A538532F7E /* michelin.csv in Resources */ = {isa = PBXBuildFile; fileRef = D488BB5547F8CF49571AEF1E /* michelin.csv */; };
+		797218FF1579686DF1DD8261 /* sharedlist.html in Resources */ = {isa = PBXBuildFile; fileRef = 09A301BC00F62F51D7D38F27 /* sharedlist.html */; };
+		8101CD8AC130040B8E116BAD /* listpage-snippet.html in Resources */ = {isa = PBXBuildFile; fileRef = 9E460EA21E57BF64877848CF /* listpage-snippet.html */; };
+		882129A2BBD747841C3DFA76 /* GoogleMapsOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86B4F9280933BB1481377E91 /* GoogleMapsOpener.swift */; };
+		9381B7AA377E5C4F3FBC58B5 /* MichelinDataSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACDF96AEA6F672396F0978F /* MichelinDataSourceTests.swift */; };
+		94D9C2B4C350E211C149CF82 /* CSVParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3CDBB494C753B3891660634 /* CSVParser.swift */; };
+		9944786DF4D874DA364F17CD /* LocationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE3C9B1C838CE37F91201446 /* LocationProvider.swift */; };
+		A8DD4D227ADEE765889EF15E /* getlist-response.txt in Resources */ = {isa = PBXBuildFile; fileRef = 5E40014594BE6D3A13690A00 /* getlist-response.txt */; };
+		B013A9E8339B4C26BC80DB27 /* StoreMergeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B6065279F321F9CFCCEE66 /* StoreMergeTests.swift */; };
+		B1C2CA4E26C3BF0D0EC7CCE5 /* TakeoutImportSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = F95E08C5A89D792EBEA32DE1 /* TakeoutImportSource.swift */; };
+		C6616D5A5B127BB24DDD484D /* MichelinDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 674E0CB6863B06B44D081B1F /* MichelinDataSource.swift */; };
+		C7BA6CB48E76B0B7E0FDA32B /* FeedYuApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2E45202029D98BC6820F34B /* FeedYuApp.swift */; };
+		D3096BE6D68773D1810AB1A4 /* michelin_history.csv in Resources */ = {isa = PBXBuildFile; fileRef = 868FDC93F30440F46EF17705 /* michelin_history.csv */; };
+		DC8670623867400F431097D2 /* TakeoutImportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14DB6D8877F7B81FD101D0AE /* TakeoutImportTests.swift */; };
+		DE0A42CE61510DD174923C93 /* SuggestionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B4D29F84EB9156C3A560E92 /* SuggestionEngine.swift */; };
+		E61FAE124C65EA0CC8D6FDD7 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC54A845814EB8E3943093C9 /* AppSettings.swift */; };
+		E960F792195FAA2F331C91BB /* RestaurantStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91CD30035E365D5CF1E2AAB8 /* RestaurantStore.swift */; };
+		ED084799CF765FBB4694721A /* Restaurant.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB513F70D6923F97E196A17D /* Restaurant.swift */; };
+		FBB0AC0BF7F7A359251A06DB /* TonightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3BCD75B1D89C6B67869D417 /* TonightView.swift */; };
+		FC5CD2E5B6FDF50421E2CDE0 /* MichelinNameLocalizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E34DEB9870F10C198917A9EF /* MichelinNameLocalizerTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		882E91E959DE4555E3E81330 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4ECC933B718667BC5BA7E5AC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5C2986D7E5576DA5E5422A5C;
+			remoteInfo = FeedYu;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0632AABABEE4EE0DF805725B /* RestaurantCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantCard.swift; sourceTree = "<group>"; };
+		06BC1CCFBB9E4A24509799E0 /* SuggestionEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionEngineTests.swift; sourceTree = "<group>"; };
+		09A301BC00F62F51D7D38F27 /* sharedlist.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = sharedlist.html; sourceTree = "<group>"; };
+		0B4D29F84EB9156C3A560E92 /* SuggestionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionEngine.swift; sourceTree = "<group>"; };
+		14DB6D8877F7B81FD101D0AE /* TakeoutImportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TakeoutImportTests.swift; sourceTree = "<group>"; };
+		1914B0A776984DBECA0096B5 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		1E8C4DE08B5CD7113AB19850 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		2A132986CFC1E674A5FBC277 /* RestaurantDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantDataSource.swift; sourceTree = "<group>"; };
+		2E07D91437F28E5C19586AF6 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
+		34B6065279F321F9CFCCEE66 /* StoreMergeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreMergeTests.swift; sourceTree = "<group>"; };
+		373DC8B167718D9BA1CB186E /* GetlistParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetlistParserTests.swift; sourceTree = "<group>"; };
+		3AB19E04C4D27D4B71BE11A0 /* FeedYuTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FeedYuTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		47C659FC58BBF88A8F91F526 /* ManageRestaurantsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageRestaurantsView.swift; sourceTree = "<group>"; };
+		5E40014594BE6D3A13690A00 /* getlist-response.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "getlist-response.txt"; sourceTree = "<group>"; };
+		674E0CB6863B06B44D081B1F /* MichelinDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MichelinDataSource.swift; sourceTree = "<group>"; };
+		868FDC93F30440F46EF17705 /* michelin_history.csv */ = {isa = PBXFileReference; path = michelin_history.csv; sourceTree = "<group>"; };
+		86B4F9280933BB1481377E91 /* GoogleMapsOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleMapsOpener.swift; sourceTree = "<group>"; };
+		91CD30035E365D5CF1E2AAB8 /* RestaurantStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantStore.swift; sourceTree = "<group>"; };
+		93696CE048929DAD36825626 /* CSVParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVParserTests.swift; sourceTree = "<group>"; };
+		9E460EA21E57BF64877848CF /* listpage-snippet.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = "listpage-snippet.html"; sourceTree = "<group>"; };
+		9E863C1A658E83709ACF30F3 /* GoogleSharedListSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleSharedListSource.swift; sourceTree = "<group>"; };
+		A3CDBB494C753B3891660634 /* CSVParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVParser.swift; sourceTree = "<group>"; };
+		A7AFC05E50102E224796464C /* GoogleSharedListParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleSharedListParserTests.swift; sourceTree = "<group>"; };
+		AACDF96AEA6F672396F0978F /* MichelinDataSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MichelinDataSourceTests.swift; sourceTree = "<group>"; };
+		BB513F70D6923F97E196A17D /* Restaurant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Restaurant.swift; sourceTree = "<group>"; };
+		C3BCD75B1D89C6B67869D417 /* TonightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TonightView.swift; sourceTree = "<group>"; };
+		CC350E4BCEDE22E40384D423 /* MichelinView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MichelinView.swift; sourceTree = "<group>"; };
+		D2E45202029D98BC6820F34B /* FeedYuApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedYuApp.swift; sourceTree = "<group>"; };
+		D488BB5547F8CF49571AEF1E /* michelin.csv */ = {isa = PBXFileReference; path = michelin.csv; sourceTree = "<group>"; };
+		D678E8A22314D4DE091C4048 /* FeedYu.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = FeedYu.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DBDDB96AA140C4789C158FE2 /* MichelinNameLocalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MichelinNameLocalizer.swift; sourceTree = "<group>"; };
+		DE3C9B1C838CE37F91201446 /* LocationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationProvider.swift; sourceTree = "<group>"; };
+		E34DEB9870F10C198917A9EF /* MichelinNameLocalizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MichelinNameLocalizerTests.swift; sourceTree = "<group>"; };
+		E576C52182D9D2C25BE69CD4 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		F95E08C5A89D792EBEA32DE1 /* TakeoutImportSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TakeoutImportSource.swift; sourceTree = "<group>"; };
+		FC54A845814EB8E3943093C9 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		3AE8F63BF35F8AEC1C2366F1 /* Store */ = {
+			isa = PBXGroup;
+			children = (
+				91CD30035E365D5CF1E2AAB8 /* RestaurantStore.swift */,
+			);
+			path = Store;
+			sourceTree = "<group>";
+		};
+		433CBEC41374CDD333D7ABA0 /* DataSources */ = {
+			isa = PBXGroup;
+			children = (
+				9E863C1A658E83709ACF30F3 /* GoogleSharedListSource.swift */,
+				674E0CB6863B06B44D081B1F /* MichelinDataSource.swift */,
+				2A132986CFC1E674A5FBC277 /* RestaurantDataSource.swift */,
+				F95E08C5A89D792EBEA32DE1 /* TakeoutImportSource.swift */,
+			);
+			path = DataSources;
+			sourceTree = "<group>";
+		};
+		5610213A6962B4244BE8AD8F /* FeedYu */ = {
+			isa = PBXGroup;
+			children = (
+				D2E45202029D98BC6820F34B /* FeedYuApp.swift */,
+				1E8C4DE08B5CD7113AB19850 /* Info.plist */,
+				433CBEC41374CDD333D7ABA0 /* DataSources */,
+				E3B9EDBCECCA39B5012D43ED /* Engine */,
+				CA35ECC7E619C897CFAC8D31 /* Models */,
+				C74744CB42724DE02DD44652 /* Resources */,
+				3AE8F63BF35F8AEC1C2366F1 /* Store */,
+				A816D57C208717A410E8FAC7 /* Support */,
+				6959A77A4C10C9F1D2208052 /* Views */,
+			);
+			path = FeedYu;
+			sourceTree = "<group>";
+		};
+		5754FB443FA4F36CE566E13F /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D678E8A22314D4DE091C4048 /* FeedYu.app */,
+				3AB19E04C4D27D4B71BE11A0 /* FeedYuTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		63EDDD253B9DB7AA7A99838F = {
+			isa = PBXGroup;
+			children = (
+				5610213A6962B4244BE8AD8F /* FeedYu */,
+				86D78D28E1BD8BCAD4FA27F5 /* FeedYuTests */,
+				5754FB443FA4F36CE566E13F /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		6959A77A4C10C9F1D2208052 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				47C659FC58BBF88A8F91F526 /* ManageRestaurantsView.swift */,
+				CC350E4BCEDE22E40384D423 /* MichelinView.swift */,
+				0632AABABEE4EE0DF805725B /* RestaurantCard.swift */,
+				1914B0A776984DBECA0096B5 /* SettingsView.swift */,
+				C3BCD75B1D89C6B67869D417 /* TonightView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		86D78D28E1BD8BCAD4FA27F5 /* FeedYuTests */ = {
+			isa = PBXGroup;
+			children = (
+				93696CE048929DAD36825626 /* CSVParserTests.swift */,
+				373DC8B167718D9BA1CB186E /* GetlistParserTests.swift */,
+				A7AFC05E50102E224796464C /* GoogleSharedListParserTests.swift */,
+				AACDF96AEA6F672396F0978F /* MichelinDataSourceTests.swift */,
+				E34DEB9870F10C198917A9EF /* MichelinNameLocalizerTests.swift */,
+				34B6065279F321F9CFCCEE66 /* StoreMergeTests.swift */,
+				06BC1CCFBB9E4A24509799E0 /* SuggestionEngineTests.swift */,
+				14DB6D8877F7B81FD101D0AE /* TakeoutImportTests.swift */,
+				9303AD94E1C8C1CBEAEBD850 /* Fixtures */,
+			);
+			path = FeedYuTests;
+			sourceTree = "<group>";
+		};
+		9303AD94E1C8C1CBEAEBD850 /* Fixtures */ = {
+			isa = PBXGroup;
+			children = (
+				5E40014594BE6D3A13690A00 /* getlist-response.txt */,
+				9E460EA21E57BF64877848CF /* listpage-snippet.html */,
+				09A301BC00F62F51D7D38F27 /* sharedlist.html */,
+			);
+			path = Fixtures;
+			sourceTree = "<group>";
+		};
+		A816D57C208717A410E8FAC7 /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				FC54A845814EB8E3943093C9 /* AppSettings.swift */,
+				A3CDBB494C753B3891660634 /* CSVParser.swift */,
+				86B4F9280933BB1481377E91 /* GoogleMapsOpener.swift */,
+				DE3C9B1C838CE37F91201446 /* LocationProvider.swift */,
+				DBDDB96AA140C4789C158FE2 /* MichelinNameLocalizer.swift */,
+			);
+			path = Support;
+			sourceTree = "<group>";
+		};
+		C74744CB42724DE02DD44652 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				2E07D91437F28E5C19586AF6 /* InfoPlist.xcstrings */,
+				E576C52182D9D2C25BE69CD4 /* Localizable.xcstrings */,
+				868FDC93F30440F46EF17705 /* michelin_history.csv */,
+				D488BB5547F8CF49571AEF1E /* michelin.csv */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		CA35ECC7E619C897CFAC8D31 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				BB513F70D6923F97E196A17D /* Restaurant.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		E3B9EDBCECCA39B5012D43ED /* Engine */ = {
+			isa = PBXGroup;
+			children = (
+				0B4D29F84EB9156C3A560E92 /* SuggestionEngine.swift */,
+			);
+			path = Engine;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0366DAE361FF6C0D989E52AE /* FeedYuTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 597A8A02A71803A1DAFC0A76 /* Build configuration list for PBXNativeTarget "FeedYuTests" */;
+			buildPhases = (
+				AD66F918170EEE898EEED050 /* Sources */,
+				BB8E05121B849F50C0BE2648 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6947EA1FD62A0ABB834CDB18 /* PBXTargetDependency */,
+			);
+			name = FeedYuTests;
+			packageProductDependencies = (
+			);
+			productName = FeedYuTests;
+			productReference = 3AB19E04C4D27D4B71BE11A0 /* FeedYuTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		5C2986D7E5576DA5E5422A5C /* FeedYu */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BC5CD2EE94535A923A02EA7E /* Build configuration list for PBXNativeTarget "FeedYu" */;
+			buildPhases = (
+				B8BC85A469ED27968A566EE8 /* Sources */,
+				7787BAE42AADF1668FDF9155 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FeedYu;
+			packageProductDependencies = (
+			);
+			productName = FeedYu;
+			productReference = D678E8A22314D4DE091C4048 /* FeedYu.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		4ECC933B718667BC5BA7E5AC /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					5C2986D7E5576DA5E5422A5C = {
+						DevelopmentTeam = 84336L2H62;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = EA0C6E840F32538A585E1C75 /* Build configuration list for PBXProject "FeedYu" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+				ja,
+				"zh-Hant",
+			);
+			mainGroup = 63EDDD253B9DB7AA7A99838F;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 5754FB443FA4F36CE566E13F /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				5C2986D7E5576DA5E5422A5C /* FeedYu */,
+				0366DAE361FF6C0D989E52AE /* FeedYuTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		7787BAE42AADF1668FDF9155 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1B8B61BD78E2F3C17D2562D4 /* InfoPlist.xcstrings in Resources */,
+				4C9A9FA8E170CE084BFFD612 /* Localizable.xcstrings in Resources */,
+				6E7DFE363409F8A538532F7E /* michelin.csv in Resources */,
+				D3096BE6D68773D1810AB1A4 /* michelin_history.csv in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BB8E05121B849F50C0BE2648 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A8DD4D227ADEE765889EF15E /* getlist-response.txt in Resources */,
+				8101CD8AC130040B8E116BAD /* listpage-snippet.html in Resources */,
+				797218FF1579686DF1DD8261 /* sharedlist.html in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AD66F918170EEE898EEED050 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0DE46D7C8811C7D63EEE8882 /* CSVParserTests.swift in Sources */,
+				35AFBAB012AD52326BB3F532 /* GetlistParserTests.swift in Sources */,
+				104ED0718D77629B6B681D93 /* GoogleSharedListParserTests.swift in Sources */,
+				9381B7AA377E5C4F3FBC58B5 /* MichelinDataSourceTests.swift in Sources */,
+				FC5CD2E5B6FDF50421E2CDE0 /* MichelinNameLocalizerTests.swift in Sources */,
+				B013A9E8339B4C26BC80DB27 /* StoreMergeTests.swift in Sources */,
+				3BBAED62166C4A9D7EB4640A /* SuggestionEngineTests.swift in Sources */,
+				DC8670623867400F431097D2 /* TakeoutImportTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B8BC85A469ED27968A566EE8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E61FAE124C65EA0CC8D6FDD7 /* AppSettings.swift in Sources */,
+				94D9C2B4C350E211C149CF82 /* CSVParser.swift in Sources */,
+				C7BA6CB48E76B0B7E0FDA32B /* FeedYuApp.swift in Sources */,
+				882129A2BBD747841C3DFA76 /* GoogleMapsOpener.swift in Sources */,
+				332B404B71BACFBB58D1C8A4 /* GoogleSharedListSource.swift in Sources */,
+				9944786DF4D874DA364F17CD /* LocationProvider.swift in Sources */,
+				4EBE3B2C54958A5E41B26431 /* ManageRestaurantsView.swift in Sources */,
+				C6616D5A5B127BB24DDD484D /* MichelinDataSource.swift in Sources */,
+				127E3A519FF1BAF00A3BBC40 /* MichelinNameLocalizer.swift in Sources */,
+				38EB37038022F717BD6683E7 /* MichelinView.swift in Sources */,
+				ED084799CF765FBB4694721A /* Restaurant.swift in Sources */,
+				31A8907714B479C41FF55EA5 /* RestaurantCard.swift in Sources */,
+				3CE6C8459566B975930D823D /* RestaurantDataSource.swift in Sources */,
+				E960F792195FAA2F331C91BB /* RestaurantStore.swift in Sources */,
+				5B0A4639F8773C3601A80D9E /* SettingsView.swift in Sources */,
+				DE0A42CE61510DD174923C93 /* SuggestionEngine.swift in Sources */,
+				B1C2CA4E26C3BF0D0EC7CCE5 /* TakeoutImportSource.swift in Sources */,
+				FBB0AC0BF7F7A359251A06DB /* TonightView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		6947EA1FD62A0ABB834CDB18 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5C2986D7E5576DA5E5422A5C /* FeedYu */;
+			targetProxy = 882E91E959DE4555E3E81330 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		3B307B5B388A2F8B199F0FC1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		5567DE1336E24EE6E7FE3006 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.yuyu.FeedYuTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FeedYu.app/FeedYu";
+			};
+			name = Debug;
+		};
+		83C50DF567C61A25090721FF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.yuyu.FeedYuTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FeedYu.app/FeedYu";
+			};
+			name = Release;
+		};
+		A438C4556690EE1B0354ED5C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 84336L2H62;
+				INFOPLIST_FILE = FeedYu/Info.plist;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.yuyu.FeedYu;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		B14D5F9F54E3B15EC7EA9702 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		E536CDC9958B1996FFF51CE5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 84336L2H62;
+				INFOPLIST_FILE = FeedYu/Info.plist;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.yuyu.FeedYu;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		597A8A02A71803A1DAFC0A76 /* Build configuration list for PBXNativeTarget "FeedYuTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5567DE1336E24EE6E7FE3006 /* Debug */,
+				83C50DF567C61A25090721FF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		BC5CD2EE94535A923A02EA7E /* Build configuration list for PBXNativeTarget "FeedYu" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E536CDC9958B1996FFF51CE5 /* Debug */,
+				A438C4556690EE1B0354ED5C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		EA0C6E840F32538A585E1C75 /* Build configuration list for PBXProject "FeedYu" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3B307B5B388A2F8B199F0FC1 /* Debug */,
+				B14D5F9F54E3B15EC7EA9702 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 4ECC933B718667BC5BA7E5AC /* Project object */;
+}

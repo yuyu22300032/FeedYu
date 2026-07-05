@@ -1,4 +1,4 @@
-name: DinePick
+name: FeedYu
 options:
   bundleIdPrefix: com.yuyu
   deploymentTarget:
@@ -12,11 +12,11 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
 
 targets:
-  DinePick:
+  FeedYu:
     type: application
     platform: iOS
     sources:
-      - DinePick
+      - FeedYu
     settings:
       base:
         TARGETED_DEVICE_FAMILY: "1"
@@ -25,34 +25,34 @@ targets:
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: 84336L2H62
     info:
-      path: DinePick/Info.plist
+      path: FeedYu/Info.plist
       properties:
-        NSLocationWhenInUseUsageDescription: DinePick uses your location to suggest restaurants within your drive-time budget.
+        NSLocationWhenInUseUsageDescription: FeedYu uses your location to suggest restaurants within your drive-time budget.
         LSApplicationQueriesSchemes: [comgooglemaps]
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         ITSAppUsesNonExemptEncryption: false
 
-  DinePickTests:
+  FeedYuTests:
     type: bundle.unit-test
     platform: iOS
     sources:
-      - DinePickTests
+      - FeedYuTests
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
     dependencies:
-      - target: DinePick
+      - target: FeedYu
 
 schemes:
-  DinePick:
+  FeedYu:
     build:
       targets:
-        DinePick: all
-        DinePickTests: [test]
+        FeedYu: all
+        FeedYuTests: [test]
     run:
       config: Debug
     test:
       config: Debug
       targets:
-        - DinePickTests
+        - FeedYuTests

@@ -1,5 +1,5 @@
 import XCTest
-@testable import DinePick
+@testable import FeedYu
 
 final class CSVParserTests: XCTestCase {
     func testSimpleRows() {

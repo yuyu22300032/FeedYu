@@ -1,6 +1,6 @@
 import XCTest
 import CoreLocation
-@testable import DinePick
+@testable import FeedYu
 
 @MainActor
 final class SuggestionEngineTests: XCTestCase {

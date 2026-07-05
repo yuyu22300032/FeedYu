@@ -1,5 +1,5 @@
 import XCTest
-@testable import DinePick
+@testable import FeedYu
 
 final class MichelinDataSourceTests: XCTestCase {
     private let sampleCSV = """

@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct DinePickApp: App {
+struct FeedYuApp: App {
     @StateObject private var store = RestaurantStore()
     @StateObject private var settings = AppSettings()
     @StateObject private var locationProvider = LocationProvider()

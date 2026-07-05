@@ -15,10 +15,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "7049918F46FF2A03EFC418BF"
-               BuildableName = "DinePick.app"
-               BlueprintName = "DinePick"
-               ReferencedContainer = "container:DinePick.xcodeproj">
+               BlueprintIdentifier = "5C2986D7E5576DA5E5422A5C"
+               BuildableName = "FeedYu.app"
+               BlueprintName = "FeedYu"
+               ReferencedContainer = "container:FeedYu.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -29,10 +29,10 @@
             buildForAnalyzing = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "C07ED3D5CCDD02D684972A86"
-               BuildableName = "DinePickTests.xctest"
-               BlueprintName = "DinePickTests"
-               ReferencedContainer = "container:DinePick.xcodeproj">
+               BlueprintIdentifier = "0366DAE361FF6C0D989E52AE"
+               BuildableName = "FeedYuTests.xctest"
+               BlueprintName = "FeedYuTests"
+               ReferencedContainer = "container:FeedYu.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -46,10 +46,10 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "7049918F46FF2A03EFC418BF"
-            BuildableName = "DinePick.app"
-            BlueprintName = "DinePick"
-            ReferencedContainer = "container:DinePick.xcodeproj">
+            BlueprintIdentifier = "5C2986D7E5576DA5E5422A5C"
+            BuildableName = "FeedYu.app"
+            BlueprintName = "FeedYu"
+            ReferencedContainer = "container:FeedYu.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <Testables>
@@ -58,10 +58,10 @@
             parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "C07ED3D5CCDD02D684972A86"
-               BuildableName = "DinePickTests.xctest"
-               BlueprintName = "DinePickTests"
-               ReferencedContainer = "container:DinePick.xcodeproj">
+               BlueprintIdentifier = "0366DAE361FF6C0D989E52AE"
+               BuildableName = "FeedYuTests.xctest"
+               BlueprintName = "FeedYuTests"
+               ReferencedContainer = "container:FeedYu.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -82,10 +82,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "7049918F46FF2A03EFC418BF"
-            BuildableName = "DinePick.app"
-            BlueprintName = "DinePick"
-            ReferencedContainer = "container:DinePick.xcodeproj">
+            BlueprintIdentifier = "5C2986D7E5576DA5E5422A5C"
+            BuildableName = "FeedYu.app"
+            BlueprintName = "FeedYu"
+            ReferencedContainer = "container:FeedYu.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
@@ -101,10 +101,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "7049918F46FF2A03EFC418BF"
-            BuildableName = "DinePick.app"
-            BlueprintName = "DinePick"
-            ReferencedContainer = "container:DinePick.xcodeproj">
+            BlueprintIdentifier = "5C2986D7E5576DA5E5422A5C"
+            BuildableName = "FeedYu.app"
+            BlueprintName = "FeedYu"
+            ReferencedContainer = "container:FeedYu.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

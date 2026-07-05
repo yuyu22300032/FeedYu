@@ -1,5 +1,5 @@
 import XCTest
-@testable import DinePick
+@testable import FeedYu
 
 /// Regression tests for the current two-step shared-list format: the list
 /// page embeds a tokenized entitylist/getlist XHR URL, whose response carries

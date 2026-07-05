@@ -29,7 +29,7 @@ struct TonightView: View {
             ContentUnavailableView {
                 Label("Location needed", systemImage: "location.slash")
             } description: {
-                Text("DinePick filters suggestions by drive time from where you are. Allow location access in the Settings app.")
+                Text("FeedYu filters suggestions by drive time from where you are. Allow location access in the Settings app.")
             } actions: {
                 openSettingsButton
             }

@@ -6,13 +6,13 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "DinePick は運転時間内のレストランを提案するために位置情報を使用します。"
+            "value": "FeedYu は運転時間内のレストランを提案するために位置情報を使用します。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "DinePick 會使用你的位置，推薦車程範圍內的餐廳。"
+            "value": "FeedYu 會使用你的位置，推薦車程範圍內的餐廳。"
           }
         }
       }

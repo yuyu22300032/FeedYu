@@ -201,7 +201,7 @@ struct SettingsView: View {
         } header: {
             Text("Google Takeout import")
         } footer: {
-            Text("takeout.google.com → deselect all → select “Maps (your places)” and “Saved”. Unzip the archive first, then pick Saved Places.json or a list CSV here. CSV rows have no coordinates — DinePick resolves them from the place link or by geocoding, which can take a minute.")
+            Text("takeout.google.com → deselect all → select “Maps (your places)” and “Saved”. Unzip the archive first, then pick Saved Places.json or a list CSV here. CSV rows have no coordinates — FeedYu resolves them from the place link or by geocoding, which can take a minute.")
         }
     }
 

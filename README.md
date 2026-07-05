@@ -1,6 +1,6 @@
-# DinePick
+# FeedYu
 
-iPhone app that suggests a restaurant for tonight from your saved Google Maps
+Formerly “DinePick”. iPhone app that suggests a restaurant for tonight from your saved Google Maps
 places, reachable within your drive-time budget in current traffic — plus a
 Michelin tab (stars + Bib Gourmand) with a price-band random suggester.
 Suggestions open in Google Maps where you confirm hours and live traffic.
@@ -12,7 +12,7 @@ Full spec and decisions: [PLAN.md](PLAN.md).
    App Store → Xcode, then run once and accept the license.
    If `xcodebuild -version` still complains:
    `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`
-2. Open `DinePick.xcodeproj`, select the **DinePick** target → Signing &
+2. Open `FeedYu.xcodeproj`, select the **FeedYu** target → Signing &
    Capabilities → choose your personal team (free Apple ID works; app re-signs
    every 7 days).
 3. Plug in your iPhone, pick it as the run destination, press Run.
@@ -44,22 +44,22 @@ shared-list scraper against a saved HTML fixture).
 
 ## Project layout
 
-- `DinePick/` — app sources (SwiftUI, iOS 17+). Data sources implement the
+- `FeedYu/` — app sources (SwiftUI, iOS 17+). Data sources implement the
   `RestaurantDataSource` protocol and sync into `RestaurantStore` (JSON in
   Application Support); the fragile Google scraper can only ever break its own
   sync, never the app.
-- `DinePickTests/` — unit tests; `Fixtures/sharedlist.html` is the scraper
+- `FeedYuTests/` — unit tests; `Fixtures/sharedlist.html` is the scraper
   fixture. When Google changes their page format, save the new HTML from a
   shared-list URL as the fixture and fix `GoogleSharedListSource.parsePlaces`
   until tests pass.
 - `project.yml` — [XcodeGen](https://github.com/yonaskolb/XcodeGen) spec;
   after adding/removing files run `xcodegen generate` (already installed).
-- Regenerate `DinePick/Resources/michelin.csv` with the script in PLAN.md.
+- Regenerate `FeedYu/Resources/michelin.csv` with the script in PLAN.md.
 
 ## Languages
 
 The UI is localized in English, 繁體中文（台灣）and 日本語
-(`DinePick/Resources/Localizable.xcstrings` — add languages there). Restaurant
+(`FeedYu/Resources/Localizable.xcstrings` — add languages there). Restaurant
 names from your shared Google lists are scraped in the device language
 (`Accept-Language`), so they arrive in the local script; re-run Sync Now after
 changing the device language to re-fetch names. The Michelin dataset only
@@ -71,11 +71,11 @@ name+coords, so both may appear until one is hidden.
 
 ## License & data attribution
 
-DinePick is open source under the **MIT License** (see [LICENSE](LICENSE)) —
+FeedYu is open source under the **MIT License** (see [LICENSE](LICENSE)) —
 App Store-friendly, so anyone can build on or ship it. It has no third-party
 code dependencies (Apple system frameworks only).
 
-Bundled data (`DinePick/Resources/michelin.csv`, `michelin_history.csv`) is
+Bundled data (`FeedYu/Resources/michelin.csv`, `michelin_history.csv`) is
 derived from [michelin-my-maps](https://github.com/ngshiheng/michelin-my-maps)
 by Jerry Ng, MIT License. The underlying restaurant facts originate from
 guide.michelin.com; treat the data as reference material, not something this
@@ -87,7 +87,7 @@ worth a legal look for mass distribution.
 Privacy notes for contributors:
 - Never commit Takeout exports or real captured Google/Michelin responses —
   they contain account IDs and personal place lists. `.gitignore` covers the
-  usual paths; test fixtures must be synthetic (see `DinePickTests/Fixtures/`).
+  usual paths; test fixtures must be synthetic (see `FeedYuTests/Fixtures/`).
 - `project.yml` contains an Apple Development Team ID. That's not a secret
   (it's embedded in every built app), but fork users should replace it with
   their own.

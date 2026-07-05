@@ -25,7 +25,7 @@
 		<string>comgooglemaps</string>
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>DinePick uses your location to suggest restaurants within your drive-time budget.</string>
+	<string>FeedYu uses your location to suggest restaurants within your drive-time budget.</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UISupportedInterfaceOrientations</key>

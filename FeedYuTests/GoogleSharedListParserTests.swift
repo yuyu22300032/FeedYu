@@ -1,5 +1,5 @@
 import XCTest
-@testable import DinePick
+@testable import FeedYu
 
 /// Parser tests against a saved fixture in the APP_INITIALIZATION_STATE
 /// format. When Google changes the page, capture a new fixture from a real
