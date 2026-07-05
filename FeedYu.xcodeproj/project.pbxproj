@@ -37,6 +37,7 @@
 		DE0A42CE61510DD174923C93 /* SuggestionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B4D29F84EB9156C3A560E92 /* SuggestionEngine.swift */; };
 		E61FAE124C65EA0CC8D6FDD7 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC54A845814EB8E3943093C9 /* AppSettings.swift */; };
 		E960F792195FAA2F331C91BB /* RestaurantStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91CD30035E365D5CF1E2AAB8 /* RestaurantStore.swift */; };
+		E9911EE522DB6B5303692F3C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 41E4DE5A3946C287DFD3B86E /* Assets.xcassets */; };
 		ED084799CF765FBB4694721A /* Restaurant.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB513F70D6923F97E196A17D /* Restaurant.swift */; };
 		FBB0AC0BF7F7A359251A06DB /* TonightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3BCD75B1D89C6B67869D417 /* TonightView.swift */; };
 		FC5CD2E5B6FDF50421E2CDE0 /* MichelinNameLocalizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E34DEB9870F10C198917A9EF /* MichelinNameLocalizerTests.swift */; };
@@ -65,6 +66,7 @@
 		34B6065279F321F9CFCCEE66 /* StoreMergeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreMergeTests.swift; sourceTree = "<group>"; };
 		373DC8B167718D9BA1CB186E /* GetlistParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetlistParserTests.swift; sourceTree = "<group>"; };
 		3AB19E04C4D27D4B71BE11A0 /* FeedYuTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FeedYuTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		41E4DE5A3946C287DFD3B86E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		47C659FC58BBF88A8F91F526 /* ManageRestaurantsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageRestaurantsView.swift; sourceTree = "<group>"; };
 		5E40014594BE6D3A13690A00 /* getlist-response.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "getlist-response.txt"; sourceTree = "<group>"; };
 		674E0CB6863B06B44D081B1F /* MichelinDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MichelinDataSource.swift; sourceTree = "<group>"; };
@@ -114,6 +116,7 @@
 		5610213A6962B4244BE8AD8F /* FeedYu */ = {
 			isa = PBXGroup;
 			children = (
+				41E4DE5A3946C287DFD3B86E /* Assets.xcassets */,
 				D2E45202029D98BC6820F34B /* FeedYuApp.swift */,
 				1E8C4DE08B5CD7113AB19850 /* Info.plist */,
 				433CBEC41374CDD333D7ABA0 /* DataSources */,
@@ -304,6 +307,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E9911EE522DB6B5303692F3C /* Assets.xcassets in Resources */,
 				1B8B61BD78E2F3C17D2562D4 /* InfoPlist.xcstrings in Resources */,
 				4C9A9FA8E170CE084BFFD612 /* Localizable.xcstrings in Resources */,
 				6E7DFE363409F8A538532F7E /* michelin.csv in Resources */,
