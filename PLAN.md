@@ -1,3 +1,8 @@
+> **Historical document.** This is the original pre-build spec, kept for
+> the reasoning behind decisions; the app has since been renamed FeedYu
+> and grew beyond it (all Michelin tiers, listing history, localization).
+> Current truth: docs/ARCHITECTURE.md and docs/DEVELOPMENT.md.
+
 # DinePick — iPhone Restaurant Suggestion App
 
 Implementation plan. This document is self-contained: a fresh Claude Code session on a Mac

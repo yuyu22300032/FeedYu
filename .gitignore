@@ -19,3 +19,6 @@ device_store*.json
 
 # Local tool config (machine-specific permissions)
 .claude/settings.local.json
+
+# Michelin pipeline download cache (scripts/preprocess_michelin.py)
+.michelin-cache/

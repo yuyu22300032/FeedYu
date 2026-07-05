@@ -4,7 +4,13 @@ Formerly “DinePick”. iPhone app that suggests a restaurant for tonight from 
 places, reachable within your drive-time budget in current traffic — plus a
 Michelin tab (stars + Bib Gourmand) with a price-band random suggester.
 Suggestions open in Google Maps where you confirm hours and live traffic.
-Full spec and decisions: [PLAN.md](PLAN.md).
+Full spec and decisions: [PLAN.md](PLAN.md) (original, historical).
+
+**Developer documentation:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+(structure, data flow, design rules, known gotchas) and
+[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) (build/test/deploy workflows, data
+pipeline, fixture policy, enhancement backlog). `CLAUDE.md` orients AI coding
+sessions.
 
 ## Getting it running (one-time setup)
 
@@ -54,7 +60,8 @@ shared-list scraper against a saved HTML fixture).
   until tests pass.
 - `project.yml` — [XcodeGen](https://github.com/yonaskolb/XcodeGen) spec;
   after adding/removing files run `xcodegen generate` (already installed).
-- Regenerate `FeedYu/Resources/michelin.csv` with the script in PLAN.md.
+- `scripts/preprocess_michelin.py` regenerates both bundled Michelin CSVs
+  (see docs/DEVELOPMENT.md).
 
 ## Languages
 
