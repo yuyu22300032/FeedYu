@@ -11,8 +11,8 @@ struct MichelinView: View {
     @Environment(\.openURL) private var openURL
 
     /// Empty = any price. Bands 1–4 ($–$$$$).
-    @State private var selectedBands: Set<Int> = []
-    @State private var selectedAwards: Set<MichelinAward> = Set(MichelinAward.allCases)
+    @State private var selectedBands: Set<Int> = [1, 2]
+    @State private var selectedAwards: Set<MichelinAward> = [.selected, .bibGourmand]
     @State private var includeFormer = false
     @StateObject private var localizer = MichelinNameLocalizer()
 
