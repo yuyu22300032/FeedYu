@@ -30,6 +30,9 @@ struct ImportedListConfig: Codable, Identifiable, Hashable {
 @MainActor
 final class AppSettings: ObservableObject {
     private static let budgetKey = "driveBudgetMinutes"
+    private static let travelModeKey = "travelMode"
+    private static let distanceBudgetKey = "distanceBudgetMeters"
+    private static let walkBudgetKey = "walkBudgetMinutes"
     private static let sharedListsKey = "sharedListConfigs"
     private static let importedListsKey = "importedListConfigs"
     private static let languageChoiceKey = "languageChoice"
@@ -67,6 +70,36 @@ final class AppSettings: ObservableObject {
         didSet { UserDefaults.standard.set(driveBudgetMinutes, forKey: Self.budgetKey) }
     }
 
+    @Published var travelMode: TravelMode {
+        didSet { UserDefaults.standard.set(travelMode.rawValue, forKey: Self.travelModeKey) }
+    }
+
+    @Published var distanceBudgetMeters: Int {
+        didSet { UserDefaults.standard.set(distanceBudgetMeters, forKey: Self.distanceBudgetKey) }
+    }
+
+    @Published var walkBudgetMinutes: Int {
+        didSet { UserDefaults.standard.set(walkBudgetMinutes, forKey: Self.walkBudgetKey) }
+    }
+
+    /// The active constraint: the current mode paired with that mode's own
+    /// remembered value (switching modes doesn't forget the others).
+    var travelBudget: TravelBudget {
+        switch travelMode {
+        case .distance: return TravelBudget(mode: .distance, value: distanceBudgetMeters)
+        case .walking: return TravelBudget(mode: .walking, value: walkBudgetMinutes)
+        case .driving: return TravelBudget(mode: .driving, value: driveBudgetMinutes)
+        }
+    }
+
+    func setTravelBudgetValue(_ value: Int) {
+        switch travelMode {
+        case .distance: distanceBudgetMeters = value
+        case .walking: walkBudgetMinutes = value
+        case .driving: driveBudgetMinutes = value
+        }
+    }
+
     @Published var sharedLists: [SharedListConfig] {
         didSet {
             if let data = try? JSONEncoder().encode(sharedLists) {
@@ -90,6 +123,12 @@ final class AppSettings: ObservableObject {
         michelinNameLanguage = UserDefaults.standard.string(forKey: Self.michelinNameLanguageKey) ?? "local"
         let storedBudget = UserDefaults.standard.integer(forKey: Self.budgetKey)
         driveBudgetMinutes = (15...90).contains(storedBudget) ? storedBudget : 60
+        let storedMode = UserDefaults.standard.string(forKey: Self.travelModeKey) ?? ""
+        travelMode = TravelMode(rawValue: storedMode) ?? .driving
+        let storedDistance = UserDefaults.standard.integer(forKey: Self.distanceBudgetKey)
+        distanceBudgetMeters = TravelBudget.distanceRange.contains(storedDistance) ? storedDistance : 2000
+        let storedWalk = UserDefaults.standard.integer(forKey: Self.walkBudgetKey)
+        walkBudgetMinutes = (5...120).contains(storedWalk) ? storedWalk : 15
         if let data = UserDefaults.standard.data(forKey: Self.sharedListsKey),
            let configs = try? JSONDecoder().decode([SharedListConfig].self, from: data) {
             sharedLists = configs

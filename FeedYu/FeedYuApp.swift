@@ -23,14 +23,41 @@ struct RootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var shareInboxMessage: String?
 
+    private enum Tab: Int, CaseIterable, Identifiable {
+        case tonight, michelin, settings
+
+        var id: Int { rawValue }
+
+        var title: LocalizedStringKey {
+            switch self {
+            case .tonight: return "Tonight"
+            case .michelin: return "Michelin"
+            case .settings: return "Settings"
+            }
+        }
+
+        var icon: String {
+            switch self {
+            case .tonight: return "fork.knife"
+            case .michelin: return "star.circle"
+            case .settings: return "gearshape"
+            }
+        }
+    }
+    @State private var selectedTab: Tab = .tonight
+
     var body: some View {
-        TabView {
-            TonightView()
-                .tabItem { Label("Tonight", systemImage: "fork.knife") }
-            MichelinView()
-                .tabItem { Label("Michelin", systemImage: "star.circle") }
-            SettingsView()
-                .tabItem { Label("Settings", systemImage: "gearshape") }
+        // Page-style TabView + custom bar: the page style is what makes
+        // horizontal swiping between tabs actually work (a plain gesture on
+        // a standard TabView never fires — Lists swallow the drag first).
+        VStack(spacing: 0) {
+            TabView(selection: $selectedTab) {
+                TonightView().tag(Tab.tonight)
+                MichelinView().tag(Tab.michelin)
+                SettingsView().tag(Tab.settings)
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            tabBar
         }
         .task { await bootstrap() }
         .onChange(of: scenePhase) { _, phase in
@@ -44,6 +71,28 @@ struct RootView: View {
         } message: {
             Text(shareInboxMessage ?? "")
         }
+    }
+
+    private var tabBar: some View {
+        HStack {
+            ForEach(Tab.allCases) { tab in
+                Button {
+                    withAnimation { selectedTab = tab }
+                } label: {
+                    VStack(spacing: 3) {
+                        Image(systemName: tab.icon)
+                            .font(.system(size: 20, weight: .regular))
+                        Text(tab.title)
+                            .font(.caption2)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .foregroundStyle(selectedTab == tab ? Color.accentColor : Color.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.top, 8)
+        .background(.bar)
     }
 
     /// Links dropped off by the share extension become shared-list configs.

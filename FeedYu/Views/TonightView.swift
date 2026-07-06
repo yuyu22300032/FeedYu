@@ -22,10 +22,7 @@ struct TonightView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            content
-                .navigationTitle("Tonight")
-        }
+        content
     }
 
     @ViewBuilder
@@ -56,6 +53,10 @@ struct TonightView: View {
         VStack(spacing: 16) {
             ScrollView {
                 VStack(spacing: 12) {
+                    // Scrolls with the content (not pinned); still the first
+                    // thing on the page, like the Michelin tab's filters.
+                    TravelBudgetPanel()
+                        .padding(.top, 4)
                     if let suggestion = engine.current {
                         RestaurantCard(suggestion: suggestion)
                             .contextMenu {
@@ -98,6 +99,13 @@ struct TonightView: View {
                 await refresh()
             }
         }
+        // onChange (not .task(id:)): only actual constraint changes re-suggest.
+        // A task would also re-fire on every tab return and replace the card.
+        .onChange(of: settings.travelBudget) { _, _ in
+            if engine.current != nil, !engine.isSearching, locationProvider.location != nil {
+                Task { await refresh() }
+            }
+        }
     }
 
     /// Re-runs the auto-suggest when data/location first become available.
@@ -109,7 +117,7 @@ struct TonightView: View {
         guard let origin = locationProvider.location else { return }
         await engine.refreshSuggestion(candidates: candidates,
                                        origin: origin,
-                                       budgetMinutes: settings.driveBudgetMinutes)
+                                       budget: settings.travelBudget)
     }
 
     @ViewBuilder

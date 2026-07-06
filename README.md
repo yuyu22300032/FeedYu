@@ -1,9 +1,15 @@
 # FeedYu
 
-Formerly “DinePick”. iPhone app that suggests a restaurant for tonight from your saved Google Maps
-places, reachable within your drive-time budget in current traffic — plus a
-Michelin tab (stars + Bib Gourmand) with a price-band random suggester.
-Suggestions open in Google Maps where you confirm hours and live traffic.
+Formerly “DinePick”. iPhone app that suggests a restaurant for tonight from
+your saved Google Maps places, within a travel budget you pick right on the
+page: straight-line distance (200 m–50 km, no route lookups), walking time,
+or driving time in current traffic. A Michelin tab (all tiers) does the same
+with price/award filters. Suggestion cards show a cover photo and description
+(scraped lazily from the place's Michelin or Google Maps page); tapping the
+photo opens Google Maps to confirm hours and live traffic. Manage up to 20
+saved lists — your own and friends' — each with an on/off toggle in Settings,
+and add new ones by sharing a Google Maps list link straight to FeedYu from
+the share sheet. Swipe left/right to move between tabs.
 Full spec and decisions: [PLAN.md](PLAN.md) (original, historical).
 
 **Developer documentation:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
@@ -30,9 +36,12 @@ shared-list scraper against a saved HTML fixture).
 
 ## Day-to-day data setup (in the app's Settings tab)
 
-- **Want to go list (automatic sync):** Google Maps → Saved → your list →
-  Share → copy link → paste into *Google Maps shared lists*. (Google doesn't
-  allow sharing the Starred list.)
+- **Want to go / custom lists (automatic sync):** Google Maps → Saved → your
+  list → Share → pick **FeedYu** in the share sheet (or copy the link and
+  paste it under *Add a Google Maps shared list*). Works for friends' shared
+  lists too — up to 20 lists, each toggleable in Settings so you can try one
+  out without mixing it into your regulars. (Google doesn't allow sharing
+  the Starred list.)
 - **Starred places:** [takeout.google.com](https://takeout.google.com) →
   deselect all → *Maps (your places)* + *Saved* → export, unzip, then import
   `Saved Places.json` here. List CSVs (e.g. `Want to go.csv`) can be imported
@@ -101,8 +110,11 @@ Privacy notes for contributors:
 
 ## Known limitations (by design — see PLAN.md)
 
-- Open hours aren't checked in-app (no Google API key); the card's button
-  opens Google Maps to confirm hours and traffic.
+- Open hours aren't checked in-app (no Google API key); tapping the card's
+  cover photo opens Google Maps to confirm hours and traffic.
+- Cover photos and descriptions are scraped best-effort from the place's
+  Michelin/Google page metadata — some places show a placeholder image and
+  no text, and Google's description line is thin (rating · price · category).
 - Shared-list scraping is best-effort; failures show per-source status in
   Settings while the app keeps serving its local store.
 - **Verify the scraper against your real shared-list link on first run** — it

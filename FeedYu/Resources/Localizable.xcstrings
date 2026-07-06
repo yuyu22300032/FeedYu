@@ -65,6 +65,22 @@
         }
       }
     },
+    "%lld min drive": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "車で %lld 分"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開車 %lld 分鐘"
+          }
+        }
+      }
+    },
     "%lld min in current traffic": {
       "localizations": {
         "ja": {
@@ -81,18 +97,34 @@
         }
       }
     },
-    "%lld minutes": {
+    "%lld min on foot": {
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 分"
+            "value": "徒歩約 %lld 分"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 分鐘"
+            "value": "步行約 %lld 分鐘"
+          }
+        }
+      }
+    },
+    "%lld min walk": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "徒歩 %lld 分"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "步行 %lld 分鐘"
           }
         }
       }
@@ -157,38 +189,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "米其林三星"
-          }
-        }
-      }
-    },
-    "30 min": {
-      "localizations": {
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "30分"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "30 分鐘"
-          }
-        }
-      }
-    },
-    "60 min": {
-      "localizations": {
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "60分"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "60 分鐘"
           }
         }
       }
@@ -305,22 +305,6 @@
         }
       }
     },
-    "Another one": {
-      "localizations": {
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "もう一軒"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "再換一間"
-          }
-        }
-      }
-    },
     "Apple Maps is rate-limiting drive-time checks. Wait a minute and refresh.": {
       "localizations": {
         "ja": {
@@ -365,22 +349,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "必比登推介"
-          }
-        }
-      }
-    },
-    "Budget": {
-      "localizations": {
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "上限"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "上限"
           }
         }
       }
@@ -529,22 +497,6 @@
         }
       }
     },
-    "Custom": {
-      "localizations": {
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "カスタム"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自訂"
-          }
-        }
-      }
-    },
     "Custom list": {
       "localizations": {
         "ja": {
@@ -593,18 +545,50 @@
         }
       }
     },
-    "Drive-time budget": {
+    "Distance": {
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "運転時間の上限"
+            "value": "距離"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "車程時間上限"
+            "value": "距離"
+          }
+        }
+      }
+    },
+    "Distance filters by straight line — no route lookups at all. Walk and drive verify the real route time with Apple Maps, only for the place being suggested. The quick selector on the Tonight page changes the same setting.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「距離」は直線距離のみで絞り込み、経路検索は一切行いません。「徒歩」「車」は提案する場所についてのみ、Apple マップで実際の所要時間を確認します。「今夜」ページのクイック選択も同じ設定を変更します。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「距離」以直線距離篩選，完全不查詢路線。「步行」和「開車」只會在建議某個地點時，用 Apple 地圖驗證實際路程時間。「今晚」頁面上的快速選擇器改的是同一個設定。"
+          }
+        }
+      }
+    },
+    "Drive": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "車"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開車"
           }
         }
       }
@@ -685,6 +669,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "已離榜（%@）"
+          }
+        }
+      }
+    },
+    "Google Maps": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google マップ"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google 地圖"
           }
         }
       }
@@ -1041,6 +1041,22 @@
         }
       }
     },
+    "Max distance": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最大距離"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最大距離"
+          }
+        }
+      }
+    },
     "Michelin": {
       "localizations": {
         "ja": {
@@ -1105,18 +1121,18 @@
         }
       }
     },
-    "No Michelin places match the filters within %lld min.": {
+    "No Michelin places match the filters within %@.": {
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 分以内に条件に合うミシュランのお店はありません。"
+            "value": "%@ 圏内に条件に合うミシュランの場所がありません。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 分鐘車程內沒有符合篩選的米其林餐廳。"
+            "value": "%@ 內沒有符合篩選條件的米其林地點。"
           }
         }
       }
@@ -1169,18 +1185,18 @@
         }
       }
     },
-    "No restaurants within roughly %lld min of you. Try a bigger budget or add more places.": {
+    "No restaurants within roughly %@ of you. Try a bigger budget or add more places.": {
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "約 %lld 分圏内にレストランがありません。時間を延ばすか、お店を追加してください。"
+            "value": "およそ %@ 圏内にレストランがありません。上限を広げるか、場所を追加してみてください。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "你附近約 %lld 分鐘車程內沒有餐廳。試著放寬時間上限或加入更多地點。"
+            "value": "你附近約 %@ 內沒有餐廳。試著放寬預算或加入更多地點。"
           }
         }
       }
@@ -1265,34 +1281,34 @@
         }
       }
     },
-    "Nothing new within %lld min so far — refresh to keep looking.": {
+    "Nothing new within %@ so far — refresh to keep looking.": {
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "今のところ %lld 分以内に新しいお店はありません — 更新して探し続けてください。"
+            "value": "今のところ %@ 圏内に新しい場所はありません。更新して探し続けてください。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "目前 %lld 分鐘內暫無新的選擇——再按一次繼續找。"
+            "value": "目前 %@ 內沒有新的地點——再按一次繼續找。"
           }
         }
       }
     },
-    "Nothing reachable within %lld min in current traffic.": {
+    "Nothing reachable within %@ right now.": {
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "現在の交通状況では %lld 分以内に行けるお店がありません。"
+            "value": "現在、%@ 圏内に行ける場所がありません。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "目前路況下 %lld 分鐘內沒有可到達的餐廳。"
+            "value": "目前 %@ 內沒有可到達的地點。"
           }
         }
       }
@@ -1345,18 +1361,18 @@
         }
       }
     },
-    "Open in Google Maps — check hours & traffic": {
+    "Open in Google Maps": {
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Google マップで開く — 営業時間と交通状況を確認"
+            "value": "Google マップで開く"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "在 Google 地圖開啟——確認營業時間與路況"
+            "value": "在 Google 地圖中開啟"
           }
         }
       }
@@ -1825,6 +1841,38 @@
         }
       }
     },
+    "Travel budget": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移動の上限"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "交通預算"
+          }
+        }
+      }
+    },
+    "Travel mode": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移動手段"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "交通方式"
+          }
+        }
+      }
+    },
     "Unhide": {
       "localizations": {
         "ja": {
@@ -1857,6 +1905,22 @@
         }
       }
     },
+    "Walk": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "徒歩"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "步行"
+          }
+        }
+      }
+    },
     "Want to go": {
       "localizations": {
         "ja": {
@@ -1873,18 +1937,18 @@
         }
       }
     },
-    "Within ~%lld min (%lld)": {
+    "Within %@ (%lld)": {
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "約 %1$lld 分以内（%2$lld 件）"
+            "value": "%@ 圏内（%lld）"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "約 %1$lld 分鐘內（%2$lld 間）"
+            "value": "%@ 內（%lld）"
           }
         }
       }

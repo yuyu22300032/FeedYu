@@ -18,7 +18,7 @@ struct MichelinView: View {
 
     private var michelinInRange: [(restaurant: Restaurant, km: Double)] {
         guard let origin = locationProvider.location else { return [] }
-        let radiusMeters = Double(settings.driveBudgetMinutes) * 1.3 * 1000
+        let radiusMeters = settings.travelBudget.radiusMeters
         return store.restaurants.compactMap { restaurant in
             guard restaurant.michelinAward != nil, !restaurant.isHidden,
                   includeFormer || restaurant.michelinFormer != true,
@@ -38,10 +38,7 @@ struct MichelinView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            content
-                .navigationTitle("Michelin")
-        }
+        content
     }
 
     @ViewBuilder
@@ -57,9 +54,15 @@ struct MichelinView: View {
         }
     }
 
+    private var autoSuggestKey: String {
+        "\(suggestionCandidates.count)-\(locationProvider.location != nil)"
+    }
+
     private var list: some View {
         List {
             Section {
+                // Scrolls with the list; unboxed — this row IS the box.
+                TravelBudgetPanel(boxed: false)
                 Picker("Guide", selection: $includeFormer) {
                     Text("Current guide").tag(false)
                     Text("Include former").tag(true)
@@ -80,7 +83,7 @@ struct MichelinView: View {
                 .listRowBackground(Color.clear)
             } footer: {
                 if suggestionCandidates.isEmpty {
-                    Text("No Michelin places match the filters within \(settings.driveBudgetMinutes) min.")
+                    Text("No Michelin places match the filters within \(settings.travelBudget.label).")
                 } else {
                     Text("\(suggestionCandidates.count) matching places in range.")
                 }
@@ -89,16 +92,11 @@ struct MichelinView: View {
             if engine.isSearching || engine.current != nil || engine.statusMessage != nil {
                 Section {
                     if let suggestion = engine.current {
+                        // "Suggest a restaurant" above re-rolls; no separate
+                        // change-restaurant button needed.
                         RestaurantCard(suggestion: suggestion)
                             .listRowInsets(EdgeInsets())
                             .listRowBackground(Color.clear)
-                        Button {
-                            Task { await suggest() }
-                        } label: {
-                            Label("Another one", systemImage: "arrow.clockwise")
-                                .frame(maxWidth: .infinity)
-                        }
-                        .disabled(engine.isSearching)
                     } else if engine.isSearching {
                         HStack {
                             Spacer()
@@ -114,7 +112,7 @@ struct MichelinView: View {
                 }
             }
 
-            Section("Within ~\(settings.driveBudgetMinutes) min (\(michelinInRange.count))") {
+            Section("Within \(settings.travelBudget.label) (\(michelinInRange.count))") {
                 ForEach(michelinInRange, id: \.restaurant.id) { entry in
                     row(for: entry.restaurant, km: entry.km)
                 }
@@ -125,6 +123,14 @@ struct MichelinView: View {
             await localizer.fill(restaurants: michelinInRange.map(\.restaurant),
                                  nameLanguage: settings.michelinNameLanguage,
                                  store: store)
+        }
+        // First visit: roll a suggestion as if the button were pressed.
+        // current != nil guards tab returns (the engine outlives switches).
+        .task(id: autoSuggestKey) {
+            if engine.current == nil, !engine.isSearching,
+               locationProvider.location != nil, !suggestionCandidates.isEmpty {
+                await suggest()
+            }
         }
     }
 
@@ -228,6 +234,6 @@ struct MichelinView: View {
         guard let origin = locationProvider.location else { return }
         await engine.refreshSuggestion(candidates: suggestionCandidates,
                                        origin: origin,
-                                       budgetMinutes: settings.driveBudgetMinutes)
+                                       budget: settings.travelBudget)
     }
 }

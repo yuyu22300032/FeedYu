@@ -55,6 +55,8 @@ export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
 xcrun devicectl list devices                    # get the device UUID
 DEV=<device-uuid>
 
+# Also signs/embeds the FeedYuShare extension and registers the
+# group.com.yuyu.FeedYu App Group (works on a free personal team).
 xcodebuild -project FeedYu.xcodeproj -scheme FeedYu \
   -destination "platform=iOS,id=$DEV" -allowProvisioningUpdates build
 APP=$(ls -d ~/Library/Developer/Xcode/DerivedData/FeedYu-*/Build/Products/Debug-iphoneos/FeedYu.app)

@@ -20,7 +20,9 @@ uses the old name DinePick); this document reflects the code as built.
                straight-line prefilter, lazy traffic-aware MapKit ETA)
                                    ▼
         Views: TonightView · MichelinView · SettingsView · RestaurantCard
-        (+ MichelinNameLocalizer fills local-language names lazily)
+        · TravelBudgetPanel (shared constraint box)
+        (+ MichelinNameLocalizer fills local-language names lazily,
+           PlaceInfoFetcher fills cover photo + description lazily)
 ```
 
 **Core design rule (from PLAN.md, non-negotiable):** sources sync *into* the
@@ -33,9 +35,12 @@ one parser. Sources must never crash on garbage input; they throw
 
 ```
 FeedYu/
-├── FeedYuApp.swift        @main; TabView; bootstrap() = load store → request
-│                          location → sync Michelin → sync each shared list
+├── FeedYuApp.swift        @main; page-style TabView + custom bottom bar
+│                          (swipe between tabs — see Gotchas); bootstrap() =
+│                          load store → drain share inbox → request location
+│                          → sync Michelin → sync enabled shared lists
 ├── Models/Restaurant.swift        Restaurant + ListKind + MichelinAward
+├── Models/TravelBudget.swift      TravelMode + TravelBudget (radius/presets)
 ├── DataSources/
 │   ├── RestaurantDataSource.swift protocol + SyncStatus + SourceError
 │   ├── GoogleSharedListSource.swift   ← THE fragile one, see below
@@ -53,11 +58,15 @@ FeedYu/
 │   ├── PlaceInfoFetcher.swift     lazy cover-photo/description scrape (og: meta)
 │   └── ShareInbox.swift           app-group hand-off from the share extension
 ├── Views/ (TonightView, MichelinView, SettingsView, ManageRestaurantsView,
-│           RestaurantCard)
+│           RestaurantCard, TravelBudgetPanel)
+│           No navigation titles — pages start at the content; the tab names
+│           live only in the custom bottom bar. TravelBudgetPanel scrolls
+│           WITH the content on both tabs (not pinned) and is `boxed: false`
+│           inside the Michelin List (see Gotchas #8).
 └── Resources/
     ├── michelin.csv               current guide, all awards (~19.4k rows)
     ├── michelin_history.csv       years-on-list overlay + former places
-    ├── Localizable.xcstrings      en source + zh-Hant + ja (125 keys)
+    ├── Localizable.xcstrings      en source + zh-Hant + ja (~130 keys)
     └── InfoPlist.xcstrings        location-permission string
 
 FeedYuShare/                       share-sheet extension target: accepts a
@@ -99,6 +108,11 @@ manual). Key fields and their contracts:
   `PlaceInfoFetcher` when a card is shown (Michelin guide page's og: meta
   when there's a michelinURL — mobile Safari UA — else the Google Maps place
   page — desktop UA). Store writes are fill-only; scraping never overwrites.
+  Google serves stock artwork (static map / geocode card) as og:image for
+  photo-less places — `isGenericImage` rejects those at fetch AND display
+  time. Card shows placeholders instead: `NoPictureCover` asset for user
+  places, a fork glyph for Michelin. The cover image doubles as the
+  open-in-Google-Maps button (there is no separate button).
 
 **Codable back-compat rule:** the persisted store (`store.json`) is decoded
 with synthesized Codable. Any NEW stored property MUST be `Optional` (or the
@@ -133,21 +147,27 @@ Michelin fields, never clear anything, never touch `isHidden`.
 
 ## Engine: `SuggestionEngine` (@MainActor, one instance per tab)
 
-- A "session" = (origin ±2 km, budget, candidate-id set). Any change rebuilds
-  the shuffled queue and clears the shown-set.
-- Straight-line prefilter radius = `budgetMinutes × 1.3 km` — generous, only
-  exists to avoid pointless ETA calls. Computed ONCE per session via a
-  `SpatialGrid` query (layered lat/lng cells, ~5.5/22/88 km), not per refresh.
+- Budget = `TravelBudget` (mode + value): `.distance` (meters, straight-line,
+  ZERO route lookups), `.walking` / `.driving` (minutes, route-verified).
+  Modes remember their own values (`AppSettings.travelBudget`); quick
+  selector on Tonight, fine steppers in Settings.
+- A "session" = (origin ± min(2 km, radius/2), budget, candidate-id set).
+  Any change rebuilds the shuffled queue and clears the shown-set.
+- Straight-line prefilter radius: exact `value` m for distance mode;
+  `min × 85 m` walking; `min × 1.3 km` driving — generous, only exists to
+  avoid pointless ETA calls. Computed ONCE per session via a `SpatialGrid`
+  query (layered lat/lng cells, ~5.5/22/88 km), not per refresh.
 - Queue order: shuffled within thirds-of-radius distance rings, nearest ring
   first — try the user's own "city" before neighboring ones so early ETA
   checks mostly pass.
-- Pops candidates one at a time, checks `MKDirections.calculateETA`
-  (automobile, `departureDate = now` → traffic-aware, free, no API key).
-  Passes if ETA ≤ budget. **Never batch ETA calls** — MapKit throttles;
-  `MKError.loadingThrottled` is caught, the candidate is requeued, and the
-  user is told to wait a minute.
-- ETA cache: 10 min TTL, keyed by restaurant id + origin bucketed to a
-  ~500 m grid. Max 12 ETA checks per refresh.
+- Pops candidates one at a time; distance mode accepts immediately
+  (`etaMinutes = nil`), walk/drive check `MKDirections.calculateETA`
+  (`.walking`/`.automobile`, `departureDate = now` → traffic-aware, free, no
+  API key). Passes if ETA ≤ budget. **Never batch ETA calls** — MapKit
+  throttles; `MKError.loadingThrottled` is caught, the candidate is requeued,
+  and the user is told to wait a minute.
+- ETA cache: 10 min TTL, keyed by restaurant id + mode + origin bucketed to
+  a ~500 m grid. Max 12 ETA checks per refresh.
 - No repeats until the in-range pool is exhausted, then reshuffle (avoiding
   an immediate repeat of the current card).
 - `etaProvider` is an injectable closure — tests (and any future routing
@@ -243,7 +263,10 @@ tests pass with an updated *synthetic* fixture.
 
 | Where | Key | Meaning |
 |---|---|---|
+| UserDefaults | `travelMode` | distance / walking / driving (default driving) |
 | UserDefaults | `driveBudgetMinutes` | 15–90, default 60 |
+| UserDefaults | `distanceBudgetMeters` | 100–50000, default 2000 |
+| UserDefaults | `walkBudgetMinutes` | 5–120, default 15 |
 | UserDefaults | `sharedListConfigs` | JSON `[SharedListConfig]` (incl. isEnabled) |
 | UserDefaults | `importedListConfigs` | JSON `[ImportedListConfig]` (Takeout lists) |
 | App Group `group.com.yuyu.FeedYu` | `pendingSharedListURLs` | share-extension inbox |
@@ -270,3 +293,16 @@ tests pass with an updated *synthetic* fixture.
 6. `xcodebuild` on this setup needs
    `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` unless
    `xcode-select` has been pointed at Xcode.
+7. **`.task(id:)` re-runs on every view (re)appearance**, not just when the
+   id changes — a task keyed on the travel budget re-fired on each tab
+   return and replaced the current suggestion. Watch *changes* with
+   `onChange`; use `.task(id:)` only with guards that make re-runs no-ops
+   (e.g. `engine.current == nil`).
+8. **A view's own background can vanish inside a grouped List** — the
+   panel's `secondarySystemBackground` box is invisible against
+   `systemGroupedBackground` (same gray in light mode). Inside a List, let
+   the row be the box (`TravelBudgetPanel(boxed: false)`).
+9. **A DragGesture on a standard TabView never fires over Lists/ScrollViews**
+   (they claim the drag first) — swipe-between-tabs only works via
+   `.tabViewStyle(.page)` + the custom bottom bar in `RootView`. Don't
+   "simplify" it back to a plain TabView with tabItems.

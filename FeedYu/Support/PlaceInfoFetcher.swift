@@ -66,7 +66,8 @@ final class PlaceInfoFetcher: ObservableObject {
     nonisolated static func parseInfo(fromHTML html: String) -> PlaceInfo {
         var info = PlaceInfo()
         if let image = metaContent(in: html, keys: ["og:image", "twitter:image"]),
-           let url = URL(string: image), url.scheme?.hasPrefix("http") == true {
+           let url = URL(string: image), url.scheme?.hasPrefix("http") == true,
+           !isGenericImage(url) {
             info.imageURL = url
         }
         // Prefer the longest candidate: Michelin's real description usually
@@ -77,6 +78,14 @@ final class PlaceInfoFetcher: ObservableObject {
             info.summary = String(best.prefix(500))
         }
         return info
+    }
+
+    /// Google serves stock artwork as og:image for places with no photos —
+    /// a map tile or the generic geocode pin card. Treat those as "no image"
+    /// so the app's own placeholder shows instead.
+    nonisolated static func isGenericImage(_ url: URL) -> Bool {
+        let s = url.absoluteString.lowercased()
+        return s.contains("staticmap") || s.contains("default_geocode") || s.contains("/tactile/")
     }
 
     /// `<meta property|name="key" content="…">`, tolerating either attribute

@@ -26,7 +26,6 @@ struct SettingsView: View {
                 michelinSection
                 restaurantsSection
             }
-            .navigationTitle("Settings")
         }
     }
 
@@ -54,38 +53,41 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Drive-time budget
-
-    private enum BudgetChoice: Hashable { case thirty, sixty, custom }
-
-    private var budgetChoice: Binding<BudgetChoice> {
-        Binding {
-            switch settings.driveBudgetMinutes {
-            case 30: return .thirty
-            case 60: return .sixty
-            default: return .custom
-            }
-        } set: { choice in
-            switch choice {
-            case .thirty: settings.driveBudgetMinutes = 30
-            case .sixty: settings.driveBudgetMinutes = 60
-            case .custom: break // keep current value, stepper takes over
-            }
-        }
-    }
+    // MARK: - Travel budget
 
     private var budgetSection: some View {
-        Section("Drive-time budget") {
-            Picker("Budget", selection: budgetChoice) {
-                Text("30 min").tag(BudgetChoice.thirty)
-                Text("60 min").tag(BudgetChoice.sixty)
-                Text("Custom").tag(BudgetChoice.custom)
+        Section {
+            Picker("Travel mode", selection: $settings.travelMode) {
+                ForEach(TravelMode.allCases) { mode in
+                    Text(mode.label).tag(mode)
+                }
             }
             .pickerStyle(.segmented)
-            if budgetChoice.wrappedValue == .custom {
-                Stepper("\(settings.driveBudgetMinutes) minutes",
+            switch settings.travelMode {
+            case .distance:
+                Stepper {
+                    LabeledContent("Max distance",
+                                   value: TravelBudget.formatMeters(settings.distanceBudgetMeters))
+                } onIncrement: {
+                    let step = TravelBudget.distanceStep(from: settings.distanceBudgetMeters)
+                    settings.distanceBudgetMeters = min(TravelBudget.distanceRange.upperBound,
+                                                        settings.distanceBudgetMeters + step)
+                } onDecrement: {
+                    let step = TravelBudget.distanceStep(from: settings.distanceBudgetMeters - 1)
+                    settings.distanceBudgetMeters = max(TravelBudget.distanceRange.lowerBound,
+                                                        settings.distanceBudgetMeters - step)
+                }
+            case .walking:
+                Stepper("\(settings.walkBudgetMinutes) min walk",
+                        value: $settings.walkBudgetMinutes, in: 5...120, step: 5)
+            case .driving:
+                Stepper("\(settings.driveBudgetMinutes) min drive",
                         value: $settings.driveBudgetMinutes, in: 15...90, step: 5)
             }
+        } header: {
+            Text("Travel budget")
+        } footer: {
+            Text("Distance filters by straight line — no route lookups at all. Walk and drive verify the real route time with Apple Maps, only for the place being suggested. The quick selector on the Tonight page changes the same setting.")
         }
     }
 

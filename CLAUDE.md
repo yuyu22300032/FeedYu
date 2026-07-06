@@ -1,9 +1,12 @@
 # FeedYu (formerly DinePick)
 
 iOS app (SwiftUI, iOS 17+, iPhone-only) suggesting tonight's restaurant from
-the user's saved Google Maps places within a traffic-aware drive-time budget,
+the user's saved Google Maps places within a travel budget (straight-line
+distance, walk time, or traffic-aware drive time),
 plus a full Michelin guide tab (all tiers, 2022+ listing history,
-local-language names). MIT licensed.
+local-language names). A second target, `FeedYuShare`, is a share-sheet
+extension that receives Google Maps list links (App Group hand-off).
+MIT licensed.
 
 ## Read before working
 

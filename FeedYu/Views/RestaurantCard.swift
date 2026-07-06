@@ -13,7 +13,12 @@ struct RestaurantCard: View {
         restaurant.displayName(nameLanguage: settings.michelinNameLanguage)
     }
 
-    private var coverImageURL: URL? { fetchedInfo?.imageURL ?? restaurant.imageURL }
+    private var coverImageURL: URL? {
+        // Filter here too: generic Google artwork may have been persisted by
+        // fetches done before the isGenericImage guard existed.
+        let url = fetchedInfo?.imageURL ?? restaurant.imageURL
+        return url.flatMap { PlaceInfoFetcher.isGenericImage($0) ? nil : $0 }
+    }
     private var summaryText: String? { fetchedInfo?.summary ?? restaurant.summary }
 
     var body: some View {
@@ -52,29 +57,25 @@ struct RestaurantCard: View {
             }
 
             HStack(spacing: 6) {
-                Image(systemName: "car.fill")
+                Image(systemName: suggestion.travelMode.systemImage)
                 if let eta = suggestion.etaMinutes {
-                    Text("\(eta) min in current traffic")
+                    if suggestion.travelMode == .walking {
+                        Text("\(eta) min on foot")
+                    } else {
+                        Text("\(eta) min in current traffic")
+                    }
                 } else {
                     Text(String(format: String(localized: "%.1f km away (straight line)"), suggestion.straightLineKm))
                 }
             }
             .font(.subheadline.weight(.medium))
 
-            if let summary = summaryText, !summary.isEmpty {
-                Text(summary)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(8)
-            }
-
-            Button {
-                openURL(GoogleMapsOpener.url(for: restaurant))
-            } label: {
-                Label("Open in Google Maps — check hours & traffic", systemImage: "arrow.up.right.square")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
+            // Always rendered with reserved space so cards keep one height
+            // whether or not a description was found.
+            Text(summaryText ?? "")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .lineLimit(4, reservesSpace: true)
 
             if let michelinURL = restaurant.michelinURL {
                 Button {
@@ -96,25 +97,61 @@ struct RestaurantCard: View {
         }
     }
 
-    @ViewBuilder
+    /// Always the same 180 pt frame so every card lines up; a fork stands in
+    /// when there's no photo (or it fails to load). Tapping it opens the
+    /// place in Google Maps (it replaced the old open-in-maps button — the
+    /// corner badge is the affordance).
     private var coverImage: some View {
-        if let coverImageURL {
-            AsyncImage(url: coverImageURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFill()
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 180)
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
-                case .failure:
-                    EmptyView()
-                default:
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(Color.gray.opacity(0.12))
-                        .frame(height: 180)
+        Button {
+            openURL(GoogleMapsOpener.url(for: restaurant))
+        } label: {
+            Group {
+                if let coverImageURL {
+                    AsyncImage(url: coverImageURL) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image.resizable().scaledToFill()
+                        case .failure:
+                            coverPlaceholder
+                        default:
+                            Color.gray.opacity(0.12)
+                        }
+                    }
+                } else {
+                    coverPlaceholder
                 }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 180)
+            .overlay(alignment: .bottomTrailing) {
+                Label("Google Maps", systemImage: "arrow.up.right.square.fill")
+                    .font(.caption.weight(.semibold))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(.thinMaterial, in: Capsule())
+                    .padding(8)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .contentShape(RoundedRectangle(cornerRadius: 14))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open in Google Maps")
+    }
+
+    /// User-saved Google places get the illustrated "no pictures~" cover;
+    /// Michelin places (which nearly always have a photo) keep the plain fork.
+    @ViewBuilder
+    private var coverPlaceholder: some View {
+        if restaurant.michelinAward == nil {
+            Image("NoPictureCover")
+                .resizable()
+                .scaledToFill()
+        } else {
+            ZStack {
+                Color.gray.opacity(0.12)
+                Image(systemName: "fork.knife")
+                    .font(.system(size: 44, weight: .light))
+                    .foregroundStyle(.tertiary)
             }
         }
     }

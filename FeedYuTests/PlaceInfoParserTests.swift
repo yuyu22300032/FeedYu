@@ -28,6 +28,20 @@ final class PlaceInfoParserTests: XCTestCase {
         XCTAssertEqual(info.summary, "★★★★☆ · $$ · Izakaya")
     }
 
+    func testRejectsGenericGooglePlaceholderImages() {
+        // Places with no photos get a static map / stock geocode card as
+        // og:image — those must count as "no image".
+        for generic in [
+            "https://maps.googleapis.com/maps/api/staticmap?center=25.03,121.56&zoom=15",
+            "https://www.gstatic.com/tactile/pane/default_geocode-2x.png",
+        ] {
+            let html = "<meta property=\"og:image\" content=\"\(generic)\">"
+            XCTAssertNil(PlaceInfoFetcher.parseInfo(fromHTML: html).imageURL, generic)
+        }
+        let real = "<meta property=\"og:image\" content=\"https://lh5.googleusercontent.com/p/AF1Q=w900\">"
+        XCTAssertNotNil(PlaceInfoFetcher.parseInfo(fromHTML: real).imageURL)
+    }
+
     func testRejectsNonHTTPImageAndEmptyContent() {
         let html = """
         <meta property="og:image" content="data:image/png;base64,AAAA">
