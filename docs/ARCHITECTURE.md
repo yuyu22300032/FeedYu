@@ -64,6 +64,13 @@ FeedYu/
 │           live only in the custom bottom bar. TravelBudgetPanel scrolls
 │           WITH the content on both tabs (not pinned) and is `boxed: false`
 │           inside the Michelin List (see Gotchas #8).
+│           Color scheme app-wide = grouped style: GRAY page, WHITE boxes.
+│           Lists/Forms do it natively; Tonight/Uber set
+│           systemGroupedBackground on the page themselves, and the card +
+│           boxed panel use secondarySystemGroupedBackground (solid — the
+│           old thinMaterial card vanished on gray). Michelin's panel and
+│           filters share ONE section (one box); its suggestion-card row is
+│           listRowBackground(.clear) because the card brings its own box.
 └── Resources/
     ├── michelin.csv               current guide, all awards (~19.4k rows)
     ├── michelin_history.csv       years-on-list overlay + former places

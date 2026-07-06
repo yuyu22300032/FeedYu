@@ -60,8 +60,8 @@ struct MichelinView: View {
 
     private var list: some View {
         List {
+            // One box: travel constraint + Michelin filters share a section.
             Section {
-                // Scrolls with the list; unboxed — this row IS the box.
                 TravelBudgetPanel(boxed: false)
                 Picker("Guide", selection: $includeFormer) {
                     Text("Current guide").tag(false)
@@ -80,7 +80,6 @@ struct MichelinView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(engine.isSearching || suggestionCandidates.isEmpty)
-                .listRowBackground(Color.clear)
             } footer: {
                 if suggestionCandidates.isEmpty {
                     Text("No Michelin places match the filters within \(settings.travelBudget.label).")
@@ -93,7 +92,8 @@ struct MichelinView: View {
                 Section {
                     if let suggestion = engine.current {
                         // "Suggest a restaurant" above re-rolls; no separate
-                        // change-restaurant button needed.
+                        // change-restaurant button needed. Clear row: the
+                        // card brings its own white box, same as Tonight.
                         RestaurantCard(suggestion: suggestion)
                             .listRowInsets(EdgeInsets())
                             .listRowBackground(Color.clear)
@@ -118,6 +118,8 @@ struct MichelinView: View {
                 }
             }
         }
+        // Pull the first section up flush with the top, like the other tabs.
+        .contentMargins(.top, 8, for: .scrollContent)
         .task(id: localizationTaskKey) {
             // Fill local-language names for what's on screen, nearest first.
             await localizer.fill(restaurants: michelinInRange.map(\.restaurant),

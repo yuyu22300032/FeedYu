@@ -103,7 +103,8 @@ struct RestaurantCard: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 20))
+        // Grouped-style white box (thinMaterial vanished on gray pages).
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20))
         .task(id: restaurant.id) {
             fetchedInfo = PlaceInfoFetcher.PlaceInfo(summary: restaurant.summary,
                                                      imageURL: restaurant.imageURL)

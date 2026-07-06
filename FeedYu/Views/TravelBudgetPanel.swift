@@ -62,7 +62,9 @@ struct TravelBudgetPanel: View {
             }
         }
         .padding(boxed ? 12 : 0)
-        .background(boxed ? AnyShapeStyle(Color(.secondarySystemBackground)) : AnyShapeStyle(.clear),
+        // White box on the gray page (grouped-style row color); unboxed
+        // inside a List, where the row itself is the box.
+        .background(boxed ? AnyShapeStyle(Color(.secondarySystemGroupedBackground)) : AnyShapeStyle(.clear),
                     in: RoundedRectangle(cornerRadius: 14))
     }
 

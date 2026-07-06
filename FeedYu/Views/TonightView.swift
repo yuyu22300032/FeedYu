@@ -27,6 +27,9 @@ struct TonightView: View {
 
     var body: some View {
         content
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Grouped-style colors app-wide: gray page, white boxes.
+            .background(Color(.systemGroupedBackground))
     }
 
     @ViewBuilder

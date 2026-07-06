@@ -25,37 +25,7 @@ struct ManageRestaurantsView: View {
 
     var body: some View {
         List {
-            Section("Your places (\(userPlaces.count))") {
-                ForEach(userPlaces.filter { !$0.isHidden }) { restaurant in
-                    row(restaurant)
-                        .swipeActions(edge: .trailing) {
-                            Button(role: .destructive) {
-                                store.remove(id: restaurant.id)
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                            Button {
-                                store.setHidden(true, id: restaurant.id)
-                            } label: {
-                                Label("Hide", systemImage: "eye.slash")
-                            }
-                        }
-                }
-            }
-            if !hiddenPlaces.isEmpty {
-                Section("Hidden (\(hiddenPlaces.count))") {
-                    ForEach(hiddenPlaces) { restaurant in
-                        row(restaurant)
-                            .swipeActions(edge: .trailing) {
-                                Button {
-                                    store.setHidden(false, id: restaurant.id)
-                                } label: {
-                                    Label("Unhide", systemImage: "eye")
-                                }
-                            }
-                    }
-                }
-            }
+            sections
         }
         .searchable(text: $searchText, prompt: "Search restaurants")
         .navigationTitle("Restaurants")
@@ -68,6 +38,41 @@ struct ManageRestaurantsView: View {
         }
         .sheet(isPresented: $showingAddSheet) {
             AddRestaurantSheet()
+        }
+    }
+
+    @ViewBuilder
+    private var sections: some View {
+        Section("Your places (\(userPlaces.count))") {
+            ForEach(userPlaces.filter { !$0.isHidden }) { restaurant in
+                row(restaurant)
+                    .swipeActions(edge: .trailing) {
+                        Button(role: .destructive) {
+                            store.remove(id: restaurant.id)
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                        Button {
+                            store.setHidden(true, id: restaurant.id)
+                        } label: {
+                            Label("Hide", systemImage: "eye.slash")
+                        }
+                    }
+            }
+        }
+        if !hiddenPlaces.isEmpty {
+            Section("Hidden (\(hiddenPlaces.count))") {
+                ForEach(hiddenPlaces) { restaurant in
+                    row(restaurant)
+                        .swipeActions(edge: .trailing) {
+                            Button {
+                                store.setHidden(false, id: restaurant.id)
+                            } label: {
+                                Label("Unhide", systemImage: "eye")
+                            }
+                        }
+                }
+            }
         }
     }
 
