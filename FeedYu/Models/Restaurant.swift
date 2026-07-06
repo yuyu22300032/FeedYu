@@ -84,6 +84,7 @@ struct Restaurant: Codable, Identifiable, Hashable {
     var priceBand: Int?          // 1–4, i.e. $–$$$$
     var cuisine: String?
     var summary: String?
+    var imageURL: URL?           // cover photo, lazily scraped (Optional — store back-compat)
     var isHidden = false
     var addedManually = false
     var lastSeenInSourceAt: [String: Date] = [:]
@@ -163,6 +164,7 @@ struct Restaurant: Codable, Identifiable, Hashable {
         if let band = incoming.priceBand { priceBand = band }
         if cuisine == nil { cuisine = incoming.cuisine }
         if summary == nil { summary = incoming.summary }
+        if imageURL == nil { imageURL = incoming.imageURL }
         if coordinate == nil, incoming.coordinate != nil {
             latitude = incoming.latitude
             longitude = incoming.longitude

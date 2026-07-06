@@ -17,6 +17,13 @@ targets:
     platform: iOS
     sources:
       - FeedYu
+    dependencies:
+      - target: FeedYuShare
+    entitlements:
+      path: FeedYu/FeedYu.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.yuyu.FeedYu
     settings:
       base:
         TARGETED_DEVICE_FAMILY: "1"
@@ -33,6 +40,37 @@ targets:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         ITSAppUsesNonExemptEncryption: false
+
+  # Share-sheet target: lets Google Maps "Share list" send links straight to
+  # the app (via the ShareInbox app-group hand-off).
+  FeedYuShare:
+    type: app-extension
+    platform: iOS
+    sources:
+      - FeedYuShare
+      - FeedYu/Support/ShareInbox.swift
+    entitlements:
+      path: FeedYuShare/FeedYuShare.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.yuyu.FeedYu
+    settings:
+      base:
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: 84336L2H62
+        PRODUCT_BUNDLE_IDENTIFIER: com.yuyu.FeedYu.Share
+    info:
+      path: FeedYuShare/Info.plist
+      properties:
+        CFBundleDisplayName: FeedYu
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
+          NSExtensionAttributes:
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsWebURLWithMaxCount: 1
+              NSExtensionActivationSupportsText: true
 
   FeedYuTests:
     type: bundle.unit-test

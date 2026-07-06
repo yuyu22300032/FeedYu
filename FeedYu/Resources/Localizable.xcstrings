@@ -97,6 +97,22 @@
         }
       }
     },
+    "%lld places": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 件"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 個地點"
+          }
+        }
+      }
+    },
     "1 MICHELIN Star": {
       "localizations": {
         "ja": {
@@ -193,6 +209,22 @@
         }
       }
     },
+    "Add a Google Maps shared list": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google マップの共有リストを追加"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新增 Google 地圖共享清單"
+          }
+        }
+      }
+    },
     "Add a shared Google Maps list link or import your Google Takeout in the Settings tab.": {
       "localizations": {
         "ja": {
@@ -237,6 +269,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "新增餐廳"
+          }
+        }
+      }
+    },
+    "Added %lld shared list(s) — syncing now. Name and manage them in Settings.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 件の共有リストを追加し、同期しています。名前の設定や管理は設定画面でどうぞ。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已加入 %lld 個共享清單，正在同步。可到設定中命名與管理。"
           }
         }
       }
@@ -545,22 +593,6 @@
         }
       }
     },
-    "FeedYu filters suggestions by drive time from where you are. Allow location access in the Settings app.": {
-      "localizations": {
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "FeedYu は現在地からの運転時間でおすすめを絞り込みます。「設定」アプリで位置情報へのアクセスを許可してください。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "FeedYu 會依你目前位置的車程時間篩選建議。請在「設定」App 中允許取用定位。"
-          }
-        }
-      }
-    },
     "Drive-time budget": {
       "localizations": {
         "ja": {
@@ -589,6 +621,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "允許定位後，即可查看車程範圍內的米其林餐廳。"
+          }
+        }
+      }
+    },
+    "FeedYu filters suggestions by drive time from where you are. Allow location access in the Settings app.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FeedYu は現在地からの運転時間でおすすめを絞り込みます。「設定」アプリで位置情報へのアクセスを許可してください。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FeedYu 會依你目前位置的車程時間篩選建議。請在「設定」App 中允許取用定位。"
           }
         }
       }
@@ -829,6 +877,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "在 Google 地圖中：你的清單 → 分享 → 複製連結。已加星號的地點無法共享——請用下方的 Takeout 匯入。若 Google 更改頁面格式，同步會失敗，但 App 仍會保留上次的資料。"
+          }
+        }
+      }
+    },
+    "In Google Maps: your list → Share → send it to FeedYu, or copy the link and paste it here. Starred places can't be shared — import them via Takeout below. If Google changes their page format, sync fails here but the app keeps your last data.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google マップで：リスト → 共有 → FeedYu に送るか、リンクをコピーしてここに貼り付けます。スター付きの場所は共有できないため、下の Takeout からインポートしてください。Google がページ形式を変更すると同期は失敗しますが、前回のデータは保持されます。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Google 地圖：你的清單 → 分享 → 直接傳給 FeedYu，或複製連結貼到這裡。已加星號的地點無法分享——請用下方的 Takeout 匯入。若 Google 更改頁面格式，這裡的同步會失敗，但 App 會保留你上次的資料。"
           }
         }
       }
@@ -1233,6 +1297,22 @@
         }
       }
     },
+    "OK": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "好"
+          }
+        }
+      }
+    },
     "On the Michelin list: %@": {
       "localizations": {
         "ja": {
@@ -1537,6 +1617,22 @@
         }
       }
     },
+    "Shared lists": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "共有リスト"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "共享清單"
+          }
+        }
+      }
+    },
     "Starred": {
       "localizations": {
         "ja": {
@@ -1633,6 +1729,22 @@
         }
       }
     },
+    "Takeout import": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takeout インポート"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takeout 匯入"
+          }
+        }
+      }
+    },
     "Takeout: %@": {
       "localizations": {
         "ja": {
@@ -1677,6 +1789,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "重新啟動 App 後生效。Google 清單中的餐廳名稱會跟隨此語言——變更後請按「立即同步」重新取得。"
+          }
+        }
+      }
+    },
+    "Toggle a list off to leave it out of Tonight suggestions without deleting it — handy for trying out a friend's list. Deleting a list keeps its places in the store but stops suggesting them.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "リストをオフにすると、削除せずに「今夜」の提案から外せます。友達のリストを試すときに便利です。リストを削除しても場所のデータは残りますが、提案されなくなります。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關掉清單開關就能暫時不列入「今晚」建議，不必刪除——試用朋友分享的清單時特別方便。刪除清單後，其中的地點仍會保留在資料庫，只是不再被建議。"
           }
         }
       }
@@ -1757,6 +1885,54 @@
           "stringUnit": {
             "state": "translated",
             "value": "約 %1$lld 分鐘內（%2$lld 間）"
+          }
+        }
+      }
+    },
+    "You've reached %lld lists — delete one before adding another.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "リストは最大 %lld 件です。追加するには先にいずれかを削除してください。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已達 %lld 個清單上限——請先刪除一個再新增。"
+          }
+        }
+      }
+    },
+    "You've reached %lld lists — delete one in Settings, then share the link again.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "リストは最大 %lld 件です。設定でいずれかを削除してから、もう一度リンクを共有してください。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已達 %lld 個清單上限——請先在設定中刪除一個，再重新分享連結。"
+          }
+        }
+      }
+    },
+    "Your lists (%lld/%lld)": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "マイリスト（%lld/%lld）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你的清單（%lld/%lld）"
           }
         }
       }

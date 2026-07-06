@@ -1,0 +1,38 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "No link found in the share." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共有された内容にリンクが見つかりませんでした。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分享的內容中找不到連結。"
+          }
+        }
+      }
+    },
+    "Saved! FeedYu adds this list next time you open it." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "保存しました！次に FeedYu を開くと、このリストが追加されます。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已儲存！下次打開 FeedYu 時會加入這個清單。"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

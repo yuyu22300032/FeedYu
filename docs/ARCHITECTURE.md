@@ -43,20 +43,39 @@ FeedYu/
 │   └── MichelinDataSource.swift
 ├── Store/RestaurantStore.swift
 ├── Engine/SuggestionEngine.swift
+├── Engine/SpatialGrid.swift       layered lat/lng-cell index for radius queries
 ├── Support/
-│   ├── AppSettings.swift          UserDefaults-backed settings object
+│   ├── AppSettings.swift          UserDefaults-backed settings + list registry
 │   ├── CSVParser.swift            RFC 4180, CRLF-safe (see Gotchas)
 │   ├── GoogleMapsOpener.swift     stored URL → app scheme → web fallback
 │   ├── LocationProvider.swift     CLLocationManager wrapper
-│   └── MichelinNameLocalizer.swift
+│   ├── MichelinNameLocalizer.swift
+│   ├── PlaceInfoFetcher.swift     lazy cover-photo/description scrape (og: meta)
+│   └── ShareInbox.swift           app-group hand-off from the share extension
 ├── Views/ (TonightView, MichelinView, SettingsView, ManageRestaurantsView,
 │           RestaurantCard)
 └── Resources/
     ├── michelin.csv               current guide, all awards (~19.4k rows)
     ├── michelin_history.csv       years-on-list overlay + former places
-    ├── Localizable.xcstrings      en source + zh-Hant + ja (114 keys)
+    ├── Localizable.xcstrings      en source + zh-Hant + ja (125 keys)
     └── InfoPlist.xcstrings        location-permission string
+
+FeedYuShare/                       share-sheet extension target: accepts a
+                                   Google Maps share (URL or text), drops the
+                                   link in ShareInbox; the app drains it on
+                                   next activation into a SharedListConfig.
+                                   Own 2-key Localizable.xcstrings.
 ```
+
+**User lists** (up to `AppSettings.maxLists` = 20): every list — shared
+Google Maps links (`SharedListConfig`) and Takeout imports
+(`ImportedListConfig`, registered at import; legacy imports self-register at
+bootstrap) — has an `isEnabled` toggle in Settings. Tonight candidates =
+places whose `lastSeenInSourceAt` contains an *enabled* list's sourceID (or
+`addedManually`); membership is the source stamps, not `lists: Set<ListKind>`
+(which only feeds badges/kind icons now). Both config types decode with
+`decodeIfPresent` defaults — a synthesized decoder would drop every persisted
+list when a new field is added (same trap as the Restaurant rule).
 
 ## Model: `Restaurant`
 
@@ -76,6 +95,10 @@ manual). Key fields and their contracts:
 - `lastSeenInSourceAt: [sourceID: Date]` — sync bookkeeping; sources never
   delete, they just stop stamping (user prunes manually).
 - `isHidden` — user flag; **must survive re-syncs** (merge never touches it).
+- `summary`/`imageURL` — description + cover photo, filled lazily by
+  `PlaceInfoFetcher` when a card is shown (Michelin guide page's og: meta
+  when there's a michelinURL — mobile Safari UA — else the Google Maps place
+  page — desktop UA). Store writes are fill-only; scraping never overwrites.
 
 **Codable back-compat rule:** the persisted store (`store.json`) is decoded
 with synthesized Codable. Any NEW stored property MUST be `Optional` (or the
@@ -113,7 +136,11 @@ Michelin fields, never clear anything, never touch `isHidden`.
 - A "session" = (origin ±2 km, budget, candidate-id set). Any change rebuilds
   the shuffled queue and clears the shown-set.
 - Straight-line prefilter radius = `budgetMinutes × 1.3 km` — generous, only
-  exists to avoid pointless ETA calls.
+  exists to avoid pointless ETA calls. Computed ONCE per session via a
+  `SpatialGrid` query (layered lat/lng cells, ~5.5/22/88 km), not per refresh.
+- Queue order: shuffled within thirds-of-radius distance rings, nearest ring
+  first — try the user's own "city" before neighboring ones so early ETA
+  checks mostly pass.
 - Pops candidates one at a time, checks `MKDirections.calculateETA`
   (automobile, `departureDate = now` → traffic-aware, free, no API key).
   Passes if ETA ≤ budget. **Never batch ETA calls** — MapKit throttles;
@@ -217,7 +244,9 @@ tests pass with an updated *synthetic* fixture.
 | Where | Key | Meaning |
 |---|---|---|
 | UserDefaults | `driveBudgetMinutes` | 15–90, default 60 |
-| UserDefaults | `sharedListConfigs` | JSON `[SharedListConfig]` |
+| UserDefaults | `sharedListConfigs` | JSON `[SharedListConfig]` (incl. isEnabled) |
+| UserDefaults | `importedListConfigs` | JSON `[ImportedListConfig]` (Takeout lists) |
+| App Group `group.com.yuyu.FeedYu` | `pendingSharedListURLs` | share-extension inbox |
 | UserDefaults | `languageChoice` + `AppleLanguages` | UI language override |
 | UserDefaults | `michelinNameLanguage` | local/en/zh/ja, default local |
 | UserDefaults | `michelinLastRemoteRefresh` | weekly refresh clock |

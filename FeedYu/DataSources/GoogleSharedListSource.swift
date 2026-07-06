@@ -5,8 +5,25 @@ struct SharedListConfig: Codable, Identifiable, Hashable {
     var urlString: String
     var kind: ListKind = .wantToGo
     var label = ""
+    var isEnabled = true
 
     var sourceID: String { "sharedList-\(id.uuidString)" }
+
+    init(urlString: String) {
+        self.urlString = urlString
+    }
+
+    // Custom decoding: configs persisted before isEnabled existed must keep
+    // decoding (a synthesized decoder would fail on the missing key and
+    // silently drop every saved list).
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        urlString = try container.decode(String.self, forKey: .urlString)
+        kind = try container.decodeIfPresent(ListKind.self, forKey: .kind) ?? .wantToGo
+        label = try container.decodeIfPresent(String.self, forKey: .label) ?? ""
+        isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? true
+    }
 }
 
 /// Scrapes a *shared* Google Maps list link (https://maps.app.goo.gl/…).

@@ -20,7 +20,8 @@ struct SettingsView: View {
             Form {
                 languageSection
                 budgetSection
-                sharedListsSection
+                listsSection
+                addListSection
                 takeoutSection
                 michelinSection
                 restaurantsSection
@@ -88,38 +89,23 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Shared Google Maps lists
+    // MARK: - Your lists (shared links + Takeout imports, each toggleable)
 
-    private var sharedListsSection: some View {
+    /// Visible-place count per list source, one pass over the store.
+    private var placeCounts: [String: Int] {
+        var counts: [String: Int] = [:]
+        for restaurant in store.restaurants where !restaurant.isHidden {
+            for sourceID in restaurant.lastSeenInSourceAt.keys {
+                counts[sourceID, default: 0] += 1
+            }
+        }
+        return counts
+    }
+
+    private var listsSection: some View {
         Section {
             ForEach($settings.sharedLists) { $config in
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Text(config.label.isEmpty ? "Shared list" : config.label)
-                            .font(.body.weight(.medium))
-                        Spacer()
-                        if store.syncingSourceIDs.contains(config.sourceID) {
-                            ProgressView()
-                        } else {
-                            Button("Sync now") {
-                                Task { await store.sync(GoogleSharedListSource(config: config)) }
-                            }
-                            .font(.footnote)
-                            .buttonStyle(.borderless)
-                        }
-                    }
-                    Text(config.urlString)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                    Picker("Counts as", selection: $config.kind) {
-                        Text("Want to go").tag(ListKind.wantToGo)
-                        Text("Custom list").tag(ListKind.custom)
-                    }
-                    .font(.footnote)
-                    syncStatusLine(for: config.sourceID)
-                }
+                sharedListRow($config)
             }
             .onDelete { offsets in
                 for index in offsets {
@@ -127,7 +113,75 @@ struct SettingsView: View {
                 }
                 settings.sharedLists.remove(atOffsets: offsets)
             }
+            ForEach($settings.importedLists) { $config in
+                importedListRow($config)
+            }
+            .onDelete { offsets in
+                for index in offsets {
+                    store.clearSyncStatus(sourceID: settings.importedLists[index].sourceID)
+                }
+                settings.importedLists.remove(atOffsets: offsets)
+            }
+        } header: {
+            Text("Your lists (\(settings.listCount)/\(AppSettings.maxLists))")
+        } footer: {
+            Text("Toggle a list off to leave it out of Tonight suggestions without deleting it — handy for trying out a friend's list. Deleting a list keeps its places in the store but stops suggesting them.")
+        }
+    }
 
+    private func sharedListRow(_ config: Binding<SharedListConfig>) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Toggle(isOn: config.isEnabled) {
+                Text(config.wrappedValue.label.isEmpty ? String(localized: "Shared list") : config.wrappedValue.label)
+                    .font(.body.weight(.medium))
+            }
+            Text(config.wrappedValue.urlString)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            HStack {
+                Text("\(placeCounts[config.wrappedValue.sourceID] ?? 0) places")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                if store.syncingSourceIDs.contains(config.wrappedValue.sourceID) {
+                    ProgressView()
+                } else {
+                    Button("Sync now") {
+                        Task { await store.sync(GoogleSharedListSource(config: config.wrappedValue)) }
+                    }
+                    .font(.footnote)
+                    .buttonStyle(.borderless)
+                }
+            }
+            syncStatusLine(for: config.wrappedValue.sourceID)
+        }
+    }
+
+    private func importedListRow(_ config: Binding<ImportedListConfig>) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Toggle(isOn: config.isEnabled) {
+                Text(config.wrappedValue.label)
+                    .font(.body.weight(.medium))
+            }
+            HStack {
+                Text("\(placeCounts[config.wrappedValue.sourceID] ?? 0) places")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text("Takeout import")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            syncStatusLine(for: config.wrappedValue.sourceID)
+        }
+    }
+
+    // MARK: - Add a shared Google Maps list
+
+    private var addListSection: some View {
+        Section {
             // Each control on its own Form row — a Button sharing a row with
             // a Picker gets its taps swallowed by the picker's row-wide target.
             TextField("Paste a maps.app.goo.gl share link", text: $newListURL)
@@ -146,15 +200,20 @@ struct SettingsView: View {
                 Label("Add list", systemImage: "plus.circle.fill")
             }
             .buttonStyle(.borderless)
-            .disabled(newListURL.trimmingCharacters(in: .whitespaces).isEmpty)
+            .disabled(newListURL.trimmingCharacters(in: .whitespaces).isEmpty || !settings.canAddList)
         } header: {
-            Text("Google Maps shared lists")
+            Text("Add a Google Maps shared list")
         } footer: {
-            Text("In Google Maps: your list → Share → copy the link. Starred places can't be shared — import them via Takeout below. If Google changes their page format, sync fails here but the app keeps your last data.")
+            if settings.canAddList {
+                Text("In Google Maps: your list → Share → send it to FeedYu, or copy the link and paste it here. Starred places can't be shared — import them via Takeout below. If Google changes their page format, sync fails here but the app keeps your last data.")
+            } else {
+                Text("You've reached \(AppSettings.maxLists) lists — delete one before adding another.")
+            }
         }
     }
 
     private func addSharedList() {
+        guard settings.canAddList else { return }
         var config = SharedListConfig(urlString: newListURL.trimmingCharacters(in: .whitespacesAndNewlines))
         config.kind = newListKind
         config.label = newListLabel.trimmingCharacters(in: .whitespaces)
@@ -217,18 +276,33 @@ struct SettingsView: View {
                 return
             }
             let source: TakeoutImportSource
+            let listLabel: String
+            let listKind: ListKind
             if isCSV {
                 let listName = url.deletingPathExtension().lastPathComponent
                 source = TakeoutImportSource(payload: .listCSV(data, kind: csvImportKind, listName: listName))
+                listLabel = listName
+                listKind = csvImportKind
             } else {
                 source = TakeoutImportSource(payload: .savedPlacesJSON(data))
+                listLabel = String(localized: "Starred")
+                listKind = .starred
+            }
+            let isNewList = !settings.importedLists.contains { $0.sourceID == source.id }
+            guard !isNewList || settings.canAddList else {
+                importMessage = String(localized: "You've reached \(AppSettings.maxLists) lists — delete one before adding another.")
+                return
             }
             importMessage = String(localized: "Importing \(url.lastPathComponent)…")
             Task {
                 await store.sync(source)
                 if let status = store.syncStatuses[source.id] {
-                    importMessage = status.lastError.map { String(localized: "Import failed: \($0)") }
-                        ?? String(localized: "Imported \(status.lastCount ?? 0) places from \(url.lastPathComponent).")
+                    if let error = status.lastError {
+                        importMessage = String(localized: "Import failed: \(error)")
+                    } else {
+                        settings.registerImportedList(sourceID: source.id, label: listLabel, kind: listKind)
+                        importMessage = String(localized: "Imported \(status.lastCount ?? 0) places from \(url.lastPathComponent).")
+                    }
                 }
             }
         }

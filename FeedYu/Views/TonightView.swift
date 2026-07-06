@@ -9,10 +9,15 @@ struct TonightView: View {
     @EnvironmentObject private var locationProvider: LocationProvider
     @StateObject private var engine = SuggestionEngine()
 
-    /// The user's own saved places (not the whole Michelin dataset).
+    /// The user's own saved places (not the whole Michelin dataset), drawn
+    /// only from lists that are currently enabled in Settings. Membership is
+    /// tracked by which sources have stamped the place (lastSeenInSourceAt).
     private var candidates: [Restaurant] {
-        store.restaurants.filter {
-            !$0.isHidden && (!$0.lists.isEmpty || $0.addedManually) && $0.coordinate != nil
+        let enabledSourceIDs = settings.enabledListSourceIDs
+        return store.restaurants.filter { restaurant in
+            guard !restaurant.isHidden, restaurant.coordinate != nil else { return false }
+            if restaurant.addedManually { return true }
+            return restaurant.lastSeenInSourceAt.keys.contains { enabledSourceIDs.contains($0) }
         }
     }
 

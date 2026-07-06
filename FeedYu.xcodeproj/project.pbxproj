@@ -7,20 +7,28 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		089BF3E36BE8BE15F24777ED /* ListConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B33BB285D942D95E724120F /* ListConfigTests.swift */; };
+		09160FACC01AA89EED164C64 /* SpatialGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB7800CF46B79EF2FB01A4E8 /* SpatialGrid.swift */; };
+		0AFC76C8DD8C287AA5CBCE5D /* ShareInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31E365692CA272180A4463F3 /* ShareInbox.swift */; };
 		0DE46D7C8811C7D63EEE8882 /* CSVParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93696CE048929DAD36825626 /* CSVParserTests.swift */; };
 		104ED0718D77629B6B681D93 /* GoogleSharedListParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7AFC05E50102E224796464C /* GoogleSharedListParserTests.swift */; };
 		127E3A519FF1BAF00A3BBC40 /* MichelinNameLocalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBDDB96AA140C4789C158FE2 /* MichelinNameLocalizer.swift */; };
 		1B8B61BD78E2F3C17D2562D4 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 2E07D91437F28E5C19586AF6 /* InfoPlist.xcstrings */; };
+		2A4F51A6244E0A599D08815F /* SpatialGridTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC4FB93CA23818F3EFA90FA9 /* SpatialGridTests.swift */; };
 		31A8907714B479C41FF55EA5 /* RestaurantCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0632AABABEE4EE0DF805725B /* RestaurantCard.swift */; };
 		332B404B71BACFBB58D1C8A4 /* GoogleSharedListSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E863C1A658E83709ACF30F3 /* GoogleSharedListSource.swift */; };
 		35AFBAB012AD52326BB3F532 /* GetlistParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373DC8B167718D9BA1CB186E /* GetlistParserTests.swift */; };
 		38EB37038022F717BD6683E7 /* MichelinView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC350E4BCEDE22E40384D423 /* MichelinView.swift */; };
 		3BBAED62166C4A9D7EB4640A /* SuggestionEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06BC1CCFBB9E4A24509799E0 /* SuggestionEngineTests.swift */; };
 		3CE6C8459566B975930D823D /* RestaurantDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A132986CFC1E674A5FBC277 /* RestaurantDataSource.swift */; };
+		485758D4AF1D01709B6F1BDA /* PlaceInfoParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC06CBC112A0920428803DD6 /* PlaceInfoParserTests.swift */; };
 		4C9A9FA8E170CE084BFFD612 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E576C52182D9D2C25BE69CD4 /* Localizable.xcstrings */; };
 		4EBE3B2C54958A5E41B26431 /* ManageRestaurantsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47C659FC58BBF88A8F91F526 /* ManageRestaurantsView.swift */; };
 		5B0A4639F8773C3601A80D9E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1914B0A776984DBECA0096B5 /* SettingsView.swift */; };
+		6C97E2BD8A07EC48944CAC5C /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A66057BA03A40B7B63265782 /* ShareViewController.swift */; };
 		6E7DFE363409F8A538532F7E /* michelin.csv in Resources */ = {isa = PBXBuildFile; fileRef = D488BB5547F8CF49571AEF1E /* michelin.csv */; };
+		6FB539D7051158D54A26BE32 /* FeedYuShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 9013BBD3A3C8E4EEF4F509CA /* FeedYuShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		710C08AB5272DF2C5891B6D4 /* PlaceInfoFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70FE8D89BA1EDBC49B840F51 /* PlaceInfoFetcher.swift */; };
 		797218FF1579686DF1DD8261 /* sharedlist.html in Resources */ = {isa = PBXBuildFile; fileRef = 09A301BC00F62F51D7D38F27 /* sharedlist.html */; };
 		8101CD8AC130040B8E116BAD /* listpage-snippet.html in Resources */ = {isa = PBXBuildFile; fileRef = 9E460EA21E57BF64877848CF /* listpage-snippet.html */; };
 		882129A2BBD747841C3DFA76 /* GoogleMapsOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86B4F9280933BB1481377E91 /* GoogleMapsOpener.swift */; };
@@ -30,9 +38,11 @@
 		A8DD4D227ADEE765889EF15E /* getlist-response.txt in Resources */ = {isa = PBXBuildFile; fileRef = 5E40014594BE6D3A13690A00 /* getlist-response.txt */; };
 		B013A9E8339B4C26BC80DB27 /* StoreMergeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B6065279F321F9CFCCEE66 /* StoreMergeTests.swift */; };
 		B1C2CA4E26C3BF0D0EC7CCE5 /* TakeoutImportSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = F95E08C5A89D792EBEA32DE1 /* TakeoutImportSource.swift */; };
+		B804703D8DE8DA10B242DE7C /* ShareInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31E365692CA272180A4463F3 /* ShareInbox.swift */; };
 		C6616D5A5B127BB24DDD484D /* MichelinDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 674E0CB6863B06B44D081B1F /* MichelinDataSource.swift */; };
 		C7BA6CB48E76B0B7E0FDA32B /* FeedYuApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2E45202029D98BC6820F34B /* FeedYuApp.swift */; };
 		D3096BE6D68773D1810AB1A4 /* michelin_history.csv in Resources */ = {isa = PBXBuildFile; fileRef = 868FDC93F30440F46EF17705 /* michelin_history.csv */; };
+		D9F069332CB620231ADF60B7 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 4F5F48B846712A0332E6CF99 /* Localizable.xcstrings */; };
 		DC8670623867400F431097D2 /* TakeoutImportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14DB6D8877F7B81FD101D0AE /* TakeoutImportTests.swift */; };
 		DE0A42CE61510DD174923C93 /* SuggestionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B4D29F84EB9156C3A560E92 /* SuggestionEngine.swift */; };
 		E61FAE124C65EA0CC8D6FDD7 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC54A845814EB8E3943093C9 /* AppSettings.swift */; };
@@ -44,6 +54,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		5B8B65E1008455868B206C19 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4ECC933B718667BC5BA7E5AC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3B8A03B5C09FD04854FF27CC;
+			remoteInfo = FeedYuShare;
+		};
 		882E91E959DE4555E3E81330 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 4ECC933B718667BC5BA7E5AC /* Project object */;
@@ -53,6 +70,20 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		FB1856BC9DD39D95D1918D53 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				6FB539D7051158D54A26BE32 /* FeedYuShare.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		0632AABABEE4EE0DF805725B /* RestaurantCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantCard.swift; sourceTree = "<group>"; };
 		06BC1CCFBB9E4A24509799E0 /* SuggestionEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionEngineTests.swift; sourceTree = "<group>"; };
@@ -60,23 +91,31 @@
 		0B4D29F84EB9156C3A560E92 /* SuggestionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionEngine.swift; sourceTree = "<group>"; };
 		14DB6D8877F7B81FD101D0AE /* TakeoutImportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TakeoutImportTests.swift; sourceTree = "<group>"; };
 		1914B0A776984DBECA0096B5 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		19B5D617609B97380A61C89D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		1E8C4DE08B5CD7113AB19850 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		2A132986CFC1E674A5FBC277 /* RestaurantDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantDataSource.swift; sourceTree = "<group>"; };
 		2E07D91437F28E5C19586AF6 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
+		31E365692CA272180A4463F3 /* ShareInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareInbox.swift; sourceTree = "<group>"; };
 		34B6065279F321F9CFCCEE66 /* StoreMergeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreMergeTests.swift; sourceTree = "<group>"; };
 		373DC8B167718D9BA1CB186E /* GetlistParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetlistParserTests.swift; sourceTree = "<group>"; };
 		3AB19E04C4D27D4B71BE11A0 /* FeedYuTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FeedYuTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		41E4DE5A3946C287DFD3B86E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		47C659FC58BBF88A8F91F526 /* ManageRestaurantsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageRestaurantsView.swift; sourceTree = "<group>"; };
+		4B33BB285D942D95E724120F /* ListConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListConfigTests.swift; sourceTree = "<group>"; };
+		4F5F48B846712A0332E6CF99 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		5E40014594BE6D3A13690A00 /* getlist-response.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "getlist-response.txt"; sourceTree = "<group>"; };
 		674E0CB6863B06B44D081B1F /* MichelinDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MichelinDataSource.swift; sourceTree = "<group>"; };
+		6F3B26041EB3C319D8A14BC2 /* FeedYuShare.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FeedYuShare.entitlements; sourceTree = "<group>"; };
+		70FE8D89BA1EDBC49B840F51 /* PlaceInfoFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceInfoFetcher.swift; sourceTree = "<group>"; };
 		868FDC93F30440F46EF17705 /* michelin_history.csv */ = {isa = PBXFileReference; path = michelin_history.csv; sourceTree = "<group>"; };
 		86B4F9280933BB1481377E91 /* GoogleMapsOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleMapsOpener.swift; sourceTree = "<group>"; };
+		9013BBD3A3C8E4EEF4F509CA /* FeedYuShare.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = FeedYuShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		91CD30035E365D5CF1E2AAB8 /* RestaurantStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantStore.swift; sourceTree = "<group>"; };
 		93696CE048929DAD36825626 /* CSVParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVParserTests.swift; sourceTree = "<group>"; };
 		9E460EA21E57BF64877848CF /* listpage-snippet.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = "listpage-snippet.html"; sourceTree = "<group>"; };
 		9E863C1A658E83709ACF30F3 /* GoogleSharedListSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleSharedListSource.swift; sourceTree = "<group>"; };
 		A3CDBB494C753B3891660634 /* CSVParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVParser.swift; sourceTree = "<group>"; };
+		A66057BA03A40B7B63265782 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		A7AFC05E50102E224796464C /* GoogleSharedListParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleSharedListParserTests.swift; sourceTree = "<group>"; };
 		AACDF96AEA6F672396F0978F /* MichelinDataSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MichelinDataSourceTests.swift; sourceTree = "<group>"; };
 		BB513F70D6923F97E196A17D /* Restaurant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Restaurant.swift; sourceTree = "<group>"; };
@@ -88,8 +127,12 @@
 		DBDDB96AA140C4789C158FE2 /* MichelinNameLocalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MichelinNameLocalizer.swift; sourceTree = "<group>"; };
 		DE3C9B1C838CE37F91201446 /* LocationProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationProvider.swift; sourceTree = "<group>"; };
 		E34DEB9870F10C198917A9EF /* MichelinNameLocalizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MichelinNameLocalizerTests.swift; sourceTree = "<group>"; };
+		E4A25A0F5B085FB19175259B /* FeedYu.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FeedYu.entitlements; sourceTree = "<group>"; };
 		E576C52182D9D2C25BE69CD4 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		EB7800CF46B79EF2FB01A4E8 /* SpatialGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpatialGrid.swift; sourceTree = "<group>"; };
+		EC4FB93CA23818F3EFA90FA9 /* SpatialGridTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpatialGridTests.swift; sourceTree = "<group>"; };
 		F95E08C5A89D792EBEA32DE1 /* TakeoutImportSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TakeoutImportSource.swift; sourceTree = "<group>"; };
+		FC06CBC112A0920428803DD6 /* PlaceInfoParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceInfoParserTests.swift; sourceTree = "<group>"; };
 		FC54A845814EB8E3943093C9 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -117,6 +160,7 @@
 			isa = PBXGroup;
 			children = (
 				41E4DE5A3946C287DFD3B86E /* Assets.xcassets */,
+				E4A25A0F5B085FB19175259B /* FeedYu.entitlements */,
 				D2E45202029D98BC6820F34B /* FeedYuApp.swift */,
 				1E8C4DE08B5CD7113AB19850 /* Info.plist */,
 				433CBEC41374CDD333D7ABA0 /* DataSources */,
@@ -134,6 +178,7 @@
 			isa = PBXGroup;
 			children = (
 				D678E8A22314D4DE091C4048 /* FeedYu.app */,
+				9013BBD3A3C8E4EEF4F509CA /* FeedYuShare.appex */,
 				3AB19E04C4D27D4B71BE11A0 /* FeedYuTests.xctest */,
 			);
 			name = Products;
@@ -143,6 +188,7 @@
 			isa = PBXGroup;
 			children = (
 				5610213A6962B4244BE8AD8F /* FeedYu */,
+				A8938D632E042AC74232017F /* FeedYuShare */,
 				86D78D28E1BD8BCAD4FA27F5 /* FeedYuTests */,
 				5754FB443FA4F36CE566E13F /* Products */,
 			);
@@ -166,8 +212,11 @@
 				93696CE048929DAD36825626 /* CSVParserTests.swift */,
 				373DC8B167718D9BA1CB186E /* GetlistParserTests.swift */,
 				A7AFC05E50102E224796464C /* GoogleSharedListParserTests.swift */,
+				4B33BB285D942D95E724120F /* ListConfigTests.swift */,
 				AACDF96AEA6F672396F0978F /* MichelinDataSourceTests.swift */,
 				E34DEB9870F10C198917A9EF /* MichelinNameLocalizerTests.swift */,
+				FC06CBC112A0920428803DD6 /* PlaceInfoParserTests.swift */,
+				EC4FB93CA23818F3EFA90FA9 /* SpatialGridTests.swift */,
 				34B6065279F321F9CFCCEE66 /* StoreMergeTests.swift */,
 				06BC1CCFBB9E4A24509799E0 /* SuggestionEngineTests.swift */,
 				14DB6D8877F7B81FD101D0AE /* TakeoutImportTests.swift */,
@@ -194,8 +243,21 @@
 				86B4F9280933BB1481377E91 /* GoogleMapsOpener.swift */,
 				DE3C9B1C838CE37F91201446 /* LocationProvider.swift */,
 				DBDDB96AA140C4789C158FE2 /* MichelinNameLocalizer.swift */,
+				70FE8D89BA1EDBC49B840F51 /* PlaceInfoFetcher.swift */,
+				31E365692CA272180A4463F3 /* ShareInbox.swift */,
 			);
 			path = Support;
+			sourceTree = "<group>";
+		};
+		A8938D632E042AC74232017F /* FeedYuShare */ = {
+			isa = PBXGroup;
+			children = (
+				6F3B26041EB3C319D8A14BC2 /* FeedYuShare.entitlements */,
+				19B5D617609B97380A61C89D /* Info.plist */,
+				4F5F48B846712A0332E6CF99 /* Localizable.xcstrings */,
+				A66057BA03A40B7B63265782 /* ShareViewController.swift */,
+			);
+			path = FeedYuShare;
 			sourceTree = "<group>";
 		};
 		C74744CB42724DE02DD44652 /* Resources */ = {
@@ -220,6 +282,7 @@
 		E3B9EDBCECCA39B5012D43ED /* Engine */ = {
 			isa = PBXGroup;
 			children = (
+				EB7800CF46B79EF2FB01A4E8 /* SpatialGrid.swift */,
 				0B4D29F84EB9156C3A560E92 /* SuggestionEngine.swift */,
 			);
 			path = Engine;
@@ -247,16 +310,36 @@
 			productReference = 3AB19E04C4D27D4B71BE11A0 /* FeedYuTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		3B8A03B5C09FD04854FF27CC /* FeedYuShare */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F4A566523D890BB54E2108F6 /* Build configuration list for PBXNativeTarget "FeedYuShare" */;
+			buildPhases = (
+				CF8067479116B90C82A7831C /* Sources */,
+				3D2AEEFC681FE2F691423C62 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FeedYuShare;
+			packageProductDependencies = (
+			);
+			productName = FeedYuShare;
+			productReference = 9013BBD3A3C8E4EEF4F509CA /* FeedYuShare.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		5C2986D7E5576DA5E5422A5C /* FeedYu */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = BC5CD2EE94535A923A02EA7E /* Build configuration list for PBXNativeTarget "FeedYu" */;
 			buildPhases = (
 				B8BC85A469ED27968A566EE8 /* Sources */,
 				7787BAE42AADF1668FDF9155 /* Resources */,
+				FB1856BC9DD39D95D1918D53 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				C77B2D6D4F9D1B0C1661ACCF /* PBXTargetDependency */,
 			);
 			name = FeedYu;
 			packageProductDependencies = (
@@ -274,6 +357,10 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					3B8A03B5C09FD04854FF27CC = {
+						DevelopmentTeam = 84336L2H62;
+						ProvisioningStyle = Automatic;
+					};
 					5C2986D7E5576DA5E5422A5C = {
 						DevelopmentTeam = 84336L2H62;
 						ProvisioningStyle = Automatic;
@@ -297,12 +384,21 @@
 			projectRoot = "";
 			targets = (
 				5C2986D7E5576DA5E5422A5C /* FeedYu */,
+				3B8A03B5C09FD04854FF27CC /* FeedYuShare */,
 				0366DAE361FF6C0D989E52AE /* FeedYuTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		3D2AEEFC681FE2F691423C62 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D9F069332CB620231ADF60B7 /* Localizable.xcstrings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		7787BAE42AADF1668FDF9155 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -335,8 +431,11 @@
 				0DE46D7C8811C7D63EEE8882 /* CSVParserTests.swift in Sources */,
 				35AFBAB012AD52326BB3F532 /* GetlistParserTests.swift in Sources */,
 				104ED0718D77629B6B681D93 /* GoogleSharedListParserTests.swift in Sources */,
+				089BF3E36BE8BE15F24777ED /* ListConfigTests.swift in Sources */,
 				9381B7AA377E5C4F3FBC58B5 /* MichelinDataSourceTests.swift in Sources */,
 				FC5CD2E5B6FDF50421E2CDE0 /* MichelinNameLocalizerTests.swift in Sources */,
+				485758D4AF1D01709B6F1BDA /* PlaceInfoParserTests.swift in Sources */,
+				2A4F51A6244E0A599D08815F /* SpatialGridTests.swift in Sources */,
 				B013A9E8339B4C26BC80DB27 /* StoreMergeTests.swift in Sources */,
 				3BBAED62166C4A9D7EB4640A /* SuggestionEngineTests.swift in Sources */,
 				DC8670623867400F431097D2 /* TakeoutImportTests.swift in Sources */,
@@ -357,14 +456,26 @@
 				C6616D5A5B127BB24DDD484D /* MichelinDataSource.swift in Sources */,
 				127E3A519FF1BAF00A3BBC40 /* MichelinNameLocalizer.swift in Sources */,
 				38EB37038022F717BD6683E7 /* MichelinView.swift in Sources */,
+				710C08AB5272DF2C5891B6D4 /* PlaceInfoFetcher.swift in Sources */,
 				ED084799CF765FBB4694721A /* Restaurant.swift in Sources */,
 				31A8907714B479C41FF55EA5 /* RestaurantCard.swift in Sources */,
 				3CE6C8459566B975930D823D /* RestaurantDataSource.swift in Sources */,
 				E960F792195FAA2F331C91BB /* RestaurantStore.swift in Sources */,
 				5B0A4639F8773C3601A80D9E /* SettingsView.swift in Sources */,
+				0AFC76C8DD8C287AA5CBCE5D /* ShareInbox.swift in Sources */,
+				09160FACC01AA89EED164C64 /* SpatialGrid.swift in Sources */,
 				DE0A42CE61510DD174923C93 /* SuggestionEngine.swift in Sources */,
 				B1C2CA4E26C3BF0D0EC7CCE5 /* TakeoutImportSource.swift in Sources */,
 				FBB0AC0BF7F7A359251A06DB /* TonightView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CF8067479116B90C82A7831C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B804703D8DE8DA10B242DE7C /* ShareInbox.swift in Sources */,
+				6C97E2BD8A07EC48944CAC5C /* ShareViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -376,9 +487,32 @@
 			target = 5C2986D7E5576DA5E5422A5C /* FeedYu */;
 			targetProxy = 882E91E959DE4555E3E81330 /* PBXContainerItemProxy */;
 		};
+		C77B2D6D4F9D1B0C1661ACCF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3B8A03B5C09FD04854FF27CC /* FeedYuShare */;
+			targetProxy = 5B8B65E1008455868B206C19 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		1CDA29B9BE73DA7D2DDD1534 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = FeedYuShare/FeedYuShare.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 84336L2H62;
+				INFOPLIST_FILE = FeedYuShare/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.yuyu.FeedYu.Share;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 		3B307B5B388A2F8B199F0FC1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -478,10 +612,29 @@
 			};
 			name = Release;
 		};
+		88618C91FE70D3B924D730E5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = FeedYuShare/FeedYuShare.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 84336L2H62;
+				INFOPLIST_FILE = FeedYuShare/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.yuyu.FeedYu.Share;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
 		A438C4556690EE1B0354ED5C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = FeedYu/FeedYu.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 84336L2H62;
@@ -560,6 +713,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = FeedYu/FeedYu.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 84336L2H62;
@@ -602,6 +756,15 @@
 			buildConfigurations = (
 				3B307B5B388A2F8B199F0FC1 /* Debug */,
 				B14D5F9F54E3B15EC7EA9702 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F4A566523D890BB54E2108F6 /* Build configuration list for PBXNativeTarget "FeedYuShare" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				88618C91FE70D3B924D730E5 /* Debug */,
+				1CDA29B9BE73DA7D2DDD1534 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

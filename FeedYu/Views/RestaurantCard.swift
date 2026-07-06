@@ -4,6 +4,8 @@ struct RestaurantCard: View {
     let suggestion: Suggestion
     @Environment(\.openURL) private var openURL
     @EnvironmentObject private var settings: AppSettings
+    @EnvironmentObject private var store: RestaurantStore
+    @State private var fetchedInfo: PlaceInfoFetcher.PlaceInfo?
 
     private var restaurant: Restaurant { suggestion.restaurant }
 
@@ -11,8 +13,13 @@ struct RestaurantCard: View {
         restaurant.displayName(nameLanguage: settings.michelinNameLanguage)
     }
 
+    private var coverImageURL: URL? { fetchedInfo?.imageURL ?? restaurant.imageURL }
+    private var summaryText: String? { fetchedInfo?.summary ?? restaurant.summary }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            coverImage
+
             badgeRow
 
             Text(displayName)
@@ -54,11 +61,11 @@ struct RestaurantCard: View {
             }
             .font(.subheadline.weight(.medium))
 
-            if let summary = restaurant.summary, !summary.isEmpty {
+            if let summary = summaryText, !summary.isEmpty {
                 Text(summary)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-                    .lineLimit(3)
+                    .lineLimit(8)
             }
 
             Button {
@@ -82,6 +89,34 @@ struct RestaurantCard: View {
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 20))
+        .task(id: restaurant.id) {
+            fetchedInfo = PlaceInfoFetcher.PlaceInfo(summary: restaurant.summary,
+                                                     imageURL: restaurant.imageURL)
+            fetchedInfo = await PlaceInfoFetcher.shared.info(for: restaurant, store: store)
+        }
+    }
+
+    @ViewBuilder
+    private var coverImage: some View {
+        if let coverImageURL {
+            AsyncImage(url: coverImageURL) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 180)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                case .failure:
+                    EmptyView()
+                default:
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color.gray.opacity(0.12))
+                        .frame(height: 180)
+                }
+            }
+        }
     }
 
     private var badgeRow: some View {
@@ -95,10 +130,17 @@ struct RestaurantCard: View {
             if let price = restaurant.priceLabel {
                 BadgeChip(text: price, tint: .green)
             }
-            ForEach(Array(restaurant.lists).sorted { $0.rawValue < $1.rawValue }) { kind in
-                BadgeChip(text: kind.label, tint: .blue, systemImage: kind.systemImage)
+            ForEach(listLabels, id: \.self) { label in
+                BadgeChip(text: label, tint: .blue, systemImage: "list.bullet")
             }
         }
+    }
+
+    /// Labels of the user lists this place belongs to (via source stamps).
+    private var listLabels: [String] {
+        Array(Set(restaurant.lastSeenInSourceAt.keys.compactMap {
+            settings.listLabel(forSourceID: $0)
+        })).sorted()
     }
 }
 

@@ -29,6 +29,9 @@ final class SuggestionEngine: ObservableObject {
     private var sessionOrigin: CLLocation?
     private var sessionBudget = 0
     private var sessionCandidateIDs: Set<UUID> = []
+    /// In-range candidates for the session, from one grid query at session
+    /// start — refreshes stop paying an O(all candidates) distance scan.
+    private var sessionPool: [Restaurant] = []
 
     private struct CachedETA {
         let seconds: TimeInterval
@@ -43,6 +46,7 @@ final class SuggestionEngine: ObservableObject {
         sessionOrigin = nil
         queue = []
         shownIDs = []
+        sessionPool = []
     }
 
     /// Pops the next candidate within the drive-time budget (current traffic).
@@ -55,7 +59,7 @@ final class SuggestionEngine: ObservableObject {
 
         ensureSession(candidates: candidates, origin: origin, budgetMinutes: budgetMinutes)
 
-        let pool = prefilter(candidates, origin: origin, budgetMinutes: budgetMinutes)
+        let pool = sessionPool
         if pool.isEmpty {
             current = nil
             statusMessage = String(localized: "No restaurants within roughly \(budgetMinutes) min of you. Try a bigger budget or add more places.")
@@ -122,21 +126,30 @@ final class SuggestionEngine: ObservableObject {
         sessionBudget = budgetMinutes
         sessionCandidateIDs = ids
         shownIDs = []
-        rebuildQueue(from: prefilter(candidates, origin: origin, budgetMinutes: budgetMinutes))
-    }
-
-    /// Straight-line pre-filter: radius ≈ budget × 1.3 km/min. Generous, just
-    /// avoids ETA calls for hopeless candidates.
-    private func prefilter(_ candidates: [Restaurant], origin: CLLocation, budgetMinutes: Int) -> [Restaurant] {
+        // Straight-line pre-filter radius ≈ budget × 1.3 km/min. Generous,
+        // just avoids ETA calls for hopeless candidates. One layered-grid
+        // query here replaces a full distance scan on every refresh.
         let radiusMeters = Double(budgetMinutes) * 1.3 * 1000
-        return candidates.filter { candidate in
-            guard let distance = candidate.distance(from: origin) else { return false }
-            return distance <= radiusMeters
-        }
+        sessionPool = SpatialGrid(candidates).query(around: origin, radiusMeters: radiusMeters)
+        rebuildQueue(from: sessionPool)
     }
 
+    /// Random within distance rings, nearest ring first: try places in the
+    /// same "city" as the user before neighboring ones — early ETA checks
+    /// mostly pass, so fewer MapKit calls are wasted on far-out candidates.
     private func rebuildQueue(from pool: [Restaurant]) {
-        queue = pool.filter { !shownIDs.contains($0.id) }.shuffled()
+        let remaining = pool.filter { !shownIDs.contains($0.id) }
+        guard let origin = sessionOrigin else {
+            queue = remaining.shuffled()
+            return
+        }
+        let ringMeters = max(1.0, Double(sessionBudget) * 1.3 * 1000 / 3)
+        var rings: [Int: [Restaurant]] = [:]
+        for candidate in remaining {
+            let distance = candidate.distance(from: origin) ?? .greatestFiniteMagnitude
+            rings[Int(distance / ringMeters), default: []].append(candidate)
+        }
+        queue = rings.keys.sorted().flatMap { rings[$0]!.shuffled() }
     }
 
     // MARK: - ETA

@@ -144,6 +144,22 @@ final class RestaurantStore: ObservableObject {
         apply([r], sourceID: "manual")
     }
 
+    /// Fill-only (never overwrites existing data) — scraped info must not
+    /// clobber anything a source or the user already provided.
+    func setPlaceInfo(id: UUID, summary: String?, imageURL: URL?) {
+        guard let index = restaurants.firstIndex(where: { $0.id == id }) else { return }
+        var changed = false
+        if restaurants[index].summary == nil, let summary {
+            restaurants[index].summary = summary
+            changed = true
+        }
+        if restaurants[index].imageURL == nil, let imageURL {
+            restaurants[index].imageURL = imageURL
+            changed = true
+        }
+        if changed { scheduleSave() }
+    }
+
     func setLocalizedName(id: UUID, editionKey: String, name: String) {
         guard let index = restaurants.firstIndex(where: { $0.id == id }) else { return }
         var names = restaurants[index].localizedNames ?? [:]
