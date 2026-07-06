@@ -120,6 +120,37 @@ final class SuggestionEngineTests: XCTestCase {
         XCTAssertEqual(modes, [.walking])
     }
 
+    func testAvailabilityCheckDropsCandidateAndRollsAnother() async {
+        let engine = SuggestionEngine()
+        engine.etaProvider = { _, _, _ in 10 * 60 }
+        let unavailable = place("NotOnUber", latOffset: 0.001)
+        let available = place("OnUber", latOffset: 0.002)
+        engine.availabilityCheck = { $0.name == "OnUber" }
+        for _ in 0..<3 {
+            await engine.refreshSuggestion(candidates: [unavailable, available],
+                                           origin: origin, budget: drive(60))
+            XCTAssertEqual(engine.current?.restaurant.name, "OnUber")
+        }
+    }
+
+    func testAvailabilityCheckAppliesInDistanceMode() async {
+        let engine = SuggestionEngine()
+        engine.etaProvider = { _, _, _ in
+            XCTFail("distance mode must not request routes")
+            return 0
+        }
+        var checked: [String] = []
+        engine.availabilityCheck = { restaurant in
+            checked.append(restaurant.name)
+            return restaurant.name == "OnUber"
+        }
+        let candidates = [place("NotOnUber", latOffset: 0.001), place("OnUber", latOffset: 0.002)]
+        await engine.refreshSuggestion(candidates: candidates, origin: origin,
+                                       budget: TravelBudget(mode: .distance, value: 500))
+        XCTAssertEqual(engine.current?.restaurant.name, "OnUber")
+        XCTAssertTrue(checked.contains("NotOnUber") || checked == ["OnUber"])
+    }
+
     func testModeSwitchInvalidatesSessionAndETACache() async {
         let engine = SuggestionEngine()
         var etaCalls = 0

@@ -2,6 +2,9 @@ import SwiftUI
 
 struct RestaurantCard: View {
     let suggestion: Suggestion
+    /// Uber Eats tab: adds an order button (exact store page when the
+    /// availability check captured it, else a search universal link).
+    var showUberEatsButton = false
     @Environment(\.openURL) private var openURL
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var store: RestaurantStore
@@ -76,6 +79,17 @@ struct RestaurantCard: View {
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .lineLimit(4, reservesSpace: true)
+
+            if showUberEatsButton {
+                Button {
+                    openURL(restaurant.uberEatsURL ?? UberEatsChecker.searchURL(for: restaurant.name))
+                } label: {
+                    Label("Order on Uber Eats", systemImage: "takeoutbag.and.cup.and.straw.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.green)
+            }
 
             if let michelinURL = restaurant.michelinURL {
                 Button {

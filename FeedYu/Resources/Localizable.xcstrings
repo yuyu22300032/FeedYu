@@ -1377,6 +1377,22 @@
         }
       }
     },
+    "Order on Uber Eats": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uber Eats で注文"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 Uber Eats 訂餐"
+          }
+        }
+      }
+    },
     "Paste a maps.app.goo.gl share link": {
       "localizations": {
         "ja": {
@@ -1872,6 +1888,9 @@
           }
         }
       }
+    },
+    "Uber Eats": {
+      "shouldTranslate": false
     },
     "Unhide": {
       "localizations": {

@@ -4,6 +4,10 @@ import CoreLocation
 /// Main screen: opens straight to one suggestion from the user's saved places,
 /// reachable within the drive-time budget in current traffic.
 struct TonightView: View {
+    /// true = the Uber Eats tab: identical candidates and engine, plus a
+    /// "can you actually order it?" filter and an order button on the card.
+    var uberEatsMode = false
+
     @EnvironmentObject private var store: RestaurantStore
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var locationProvider: LocationProvider
@@ -55,10 +59,10 @@ struct TonightView: View {
                 VStack(spacing: 12) {
                     // Scrolls with the content (not pinned); still the first
                     // thing on the page, like the Michelin tab's filters.
-                    TravelBudgetPanel()
+                    TravelBudgetPanel(distanceOnly: uberEatsMode)
                         .padding(.top, 4)
                     if let suggestion = engine.current {
-                        RestaurantCard(suggestion: suggestion)
+                        RestaurantCard(suggestion: suggestion, showUberEatsButton: uberEatsMode)
                             .contextMenu {
                                 Button(role: .destructive) {
                                     store.setHidden(true, id: suggestion.restaurant.id)
@@ -101,11 +105,18 @@ struct TonightView: View {
         }
         // onChange (not .task(id:)): only actual constraint changes re-suggest.
         // A task would also re-fire on every tab return and replace the card.
-        .onChange(of: settings.travelBudget) { _, _ in
+        .onChange(of: effectiveBudget) { _, _ in
             if engine.current != nil, !engine.isSearching, locationProvider.location != nil {
                 Task { await refresh() }
             }
         }
+    }
+
+    /// Delivery only cares how far away the kitchen is — the Uber Eats tab
+    /// always runs on the distance budget, whatever mode the other tabs use.
+    private var effectiveBudget: TravelBudget {
+        uberEatsMode ? TravelBudget(mode: .distance, value: settings.distanceBudgetMeters)
+                     : settings.travelBudget
     }
 
     /// Re-runs the auto-suggest when data/location first become available.
@@ -115,9 +126,18 @@ struct TonightView: View {
 
     private func refresh() async {
         guard let origin = locationProvider.location else { return }
+        engine.availabilityCheck = uberEatsMode ? { [weak store] restaurant in
+            let result = await UberEatsChecker.shared.availability(for: restaurant, near: origin)
+            if case .available(let storeURL) = result, let storeURL {
+                store?.setUberEatsURL(id: restaurant.id, url: storeURL)
+            }
+            // unknown stays in: better a search-link button than an empty tab
+            // when Uber's bot wall blocks the check.
+            return result != .notFound
+        } : nil
         await engine.refreshSuggestion(candidates: candidates,
                                        origin: origin,
-                                       budget: settings.travelBudget)
+                                       budget: effectiveBudget)
     }
 
     @ViewBuilder

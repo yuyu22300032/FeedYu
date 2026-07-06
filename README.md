@@ -4,7 +4,10 @@ Formerly “DinePick”. iPhone app that suggests a restaurant for tonight from
 your saved Google Maps places, within a travel budget you pick right on the
 page: straight-line distance (200 m–50 km, no route lookups), walking time,
 or driving time in current traffic. A Michelin tab (all tiers) does the same
-with price/award filters. Suggestion cards show a cover photo and description
+with price/award filters. An Uber Eats tab suggests from the same lists
+(distance-only constraint), skips places it can't find on Uber Eats, and
+its card gets an order button that deep-links into the Uber Eats app.
+Suggestion cards show a cover photo and description
 (scraped lazily from the place's Michelin or Google Maps page); tapping the
 photo opens Google Maps to confirm hours and live traffic. Manage up to 20
 saved lists — your own and friends' — each with an on/off toggle in Settings,

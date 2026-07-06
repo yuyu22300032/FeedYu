@@ -24,7 +24,7 @@ struct RootView: View {
     @State private var shareInboxMessage: String?
 
     private enum Tab: Int, CaseIterable, Identifiable {
-        case tonight, michelin, settings
+        case tonight, michelin, uberEats, settings
 
         var id: Int { rawValue }
 
@@ -32,6 +32,7 @@ struct RootView: View {
             switch self {
             case .tonight: return "Tonight"
             case .michelin: return "Michelin"
+            case .uberEats: return "Uber Eats"
             case .settings: return "Settings"
             }
         }
@@ -40,6 +41,7 @@ struct RootView: View {
             switch self {
             case .tonight: return "fork.knife"
             case .michelin: return "star.circle"
+            case .uberEats: return "takeoutbag.and.cup.and.straw"
             case .settings: return "gearshape"
             }
         }
@@ -54,6 +56,7 @@ struct RootView: View {
             TabView(selection: $selectedTab) {
                 TonightView().tag(Tab.tonight)
                 MichelinView().tag(Tab.michelin)
+                TonightView(uberEatsMode: true).tag(Tab.uberEats)
                 SettingsView().tag(Tab.settings)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))

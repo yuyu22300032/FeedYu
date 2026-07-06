@@ -29,6 +29,12 @@ final class SuggestionEngine: ObservableObject {
     /// MapKit throttles directions requests — bound the work per refresh.
     var maxETAChecksPerRefresh = 12
 
+    /// Optional post-selection filter (Uber Eats tab: "is it orderable?").
+    /// Runs after a candidate passes the travel budget; false drops the
+    /// candidate for the session and the search continues. Counted against
+    /// the per-refresh check budget — implementations should cache.
+    var availabilityCheck: ((Restaurant) async -> Bool)?
+
     private var queue: [Restaurant] = []
     private var shownIDs: Set<UUID> = []
     private var sessionOrigin: CLLocation?
@@ -91,8 +97,16 @@ final class SuggestionEngine: ObservableObject {
             guard let coordinate = candidate.coordinate else { continue }
 
             // Distance mode: the pool is already exactly within the radius —
-            // accept without any route lookup.
+            // no route lookup, but the availability filter still applies.
             guard budget.needsETACheck else {
+                if let availabilityCheck {
+                    guard checks < maxETAChecksPerRefresh else {
+                        queue.insert(candidate, at: 0)
+                        break
+                    }
+                    checks += 1
+                    guard await availabilityCheck(candidate) else { continue }
+                }
                 accept(candidate, etaSeconds: nil, origin: origin, mode: budget.mode)
                 return
             }
@@ -105,6 +119,9 @@ final class SuggestionEngine: ObservableObject {
             do {
                 let eta = try await cachedETA(id: candidate.id, from: origin, to: coordinate, mode: budget.mode)
                 if eta <= budget.maxTravelSeconds {
+                    if let availabilityCheck, await !availabilityCheck(candidate) {
+                        continue // in range but not orderable — roll another
+                    }
                     accept(candidate, etaSeconds: eta, origin: origin, mode: budget.mode)
                     return
                 }

@@ -8,36 +8,53 @@ struct TravelBudgetPanel: View {
     /// false when embedded in a grouped List row — the row is the box there
     /// (the panel's own gray fill would vanish against the list background).
     var boxed = true
+    /// Uber Eats tab: straight-line distance is all that matters for
+    /// delivery — no mode row, slider drives distanceBudgetMeters directly
+    /// (the other tabs' mode choice is untouched).
+    var distanceOnly = false
+
+    private var activeMode: TravelMode { distanceOnly ? .distance : settings.travelMode }
+
+    private var activeBudget: TravelBudget {
+        distanceOnly ? TravelBudget(mode: .distance, value: settings.distanceBudgetMeters)
+                     : settings.travelBudget
+    }
 
     var body: some View {
         VStack(spacing: 14) {
-            HStack(spacing: 8) {
-                ForEach(TravelMode.allCases) { mode in
-                    let isOn = settings.travelMode == mode
-                    Button {
-                        settings.travelMode = mode
-                    } label: {
-                        VStack(spacing: 4) {
-                            Image(systemName: mode.systemImage)
-                                .font(.body.weight(.medium))
-                            Text(mode.label)
-                                .font(.caption.weight(.semibold))
+            if !distanceOnly {
+                HStack(spacing: 8) {
+                    ForEach(TravelMode.allCases) { mode in
+                        let isOn = settings.travelMode == mode
+                        Button {
+                            settings.travelMode = mode
+                        } label: {
+                            VStack(spacing: 4) {
+                                Image(systemName: mode.systemImage)
+                                    .font(.body.weight(.medium))
+                                Text(mode.label)
+                                    .font(.caption.weight(.semibold))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(isOn ? Color.accentColor.opacity(0.18) : Color.gray.opacity(0.12),
+                                        in: RoundedRectangle(cornerRadius: 10))
+                            .foregroundStyle(isOn ? Color.accentColor : Color.primary)
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .background(isOn ? Color.accentColor.opacity(0.18) : Color.gray.opacity(0.12),
-                                    in: RoundedRectangle(cornerRadius: 10))
-                        .foregroundStyle(isOn ? Color.accentColor : Color.primary)
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
             }
             HStack(spacing: 12) {
+                if distanceOnly {
+                    Image(systemName: TravelMode.distance.systemImage)
+                        .foregroundStyle(.secondary)
+                }
                 Slider(value: budgetSliderIndex,
-                       in: 0...Double(TravelBudget.presets(for: settings.travelMode).count - 1),
+                       in: 0...Double(TravelBudget.presets(for: activeMode).count - 1),
                        step: 1)
-                    .id(settings.travelMode) // rebuild when the preset scale changes
-                Text(settings.travelBudget.label)
+                    .id(activeMode) // rebuild when the preset scale changes
+                Text(activeBudget.label)
                     .font(.subheadline.weight(.semibold))
                     .monospacedDigit()
                     .lineLimit(1)
@@ -49,19 +66,23 @@ struct TravelBudgetPanel: View {
                     in: RoundedRectangle(cornerRadius: 14))
     }
 
-    /// Slider position ↔ nearest preset of the current mode.
+    /// Slider position ↔ nearest preset of the active mode.
     private var budgetSliderIndex: Binding<Double> {
         Binding {
-            let presets = TravelBudget.presets(for: settings.travelMode)
-            let value = settings.travelBudget.value
+            let presets = TravelBudget.presets(for: activeMode)
+            let value = activeBudget.value
             let nearest = presets.enumerated().min {
                 abs($0.element - value) < abs($1.element - value)
             }
             return Double(nearest?.offset ?? 0)
         } set: { position in
-            let presets = TravelBudget.presets(for: settings.travelMode)
+            let presets = TravelBudget.presets(for: activeMode)
             let index = min(max(Int(position.rounded()), 0), presets.count - 1)
-            settings.setTravelBudgetValue(presets[index])
+            if distanceOnly {
+                settings.distanceBudgetMeters = presets[index]
+            } else {
+                settings.setTravelBudgetValue(presets[index])
+            }
         }
     }
 }

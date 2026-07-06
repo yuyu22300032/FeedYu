@@ -56,7 +56,8 @@ FeedYu/
 │   ├── LocationProvider.swift     CLLocationManager wrapper
 │   ├── MichelinNameLocalizer.swift
 │   ├── PlaceInfoFetcher.swift     lazy cover-photo/description scrape (og: meta)
-│   └── ShareInbox.swift           app-group hand-off from the share extension
+│   ├── ShareInbox.swift           app-group hand-off from the share extension
+│   └── UberEatsChecker.swift      "orderable?" search-page probe (see below)
 ├── Views/ (TonightView, MichelinView, SettingsView, ManageRestaurantsView,
 │           RestaurantCard, TravelBudgetPanel)
 │           No navigation titles — pages start at the content; the tab names
@@ -168,6 +169,20 @@ Michelin fields, never clear anything, never touch `isHidden`.
   and the user is told to wait a minute.
 - ETA cache: 10 min TTL, keyed by restaurant id + mode + origin bucketed to
   a ~500 m grid. Max 12 ETA checks per refresh.
+- `availabilityCheck` (optional injectable): post-budget filter used by the
+  Uber Eats tab (`TonightView(uberEatsMode: true)` — same candidates and
+  engine as Tonight, but ALWAYS on the distance budget:
+  `TravelBudgetPanel(distanceOnly: true)` drives `distanceBudgetMeters`
+  without touching the other tabs' mode). `UberEatsChecker` fetches the
+  ubereats.com search page
+  for the name (uev2.loc cookie = origin) and looks for a matching /store/
+  link: match → available (exact store URL persisted to
+  `Restaurant.uberEatsURL`, order button deep-links to it), real results but
+  no match → drop candidate, blocked/unparseable → PERMISSIVE (kept, button
+  falls back to a search universal link). ubereats.com 403s CLI clients —
+  universal links still work because iOS hands them to the installed app
+  without any web request. Checks count against the 12-per-refresh budget;
+  results are session-cached by normalized name.
 - No repeats until the in-range pool is exhausted, then reshuffle (avoiding
   an immediate repeat of the current card).
 - `etaProvider` is an injectable closure — tests (and any future routing

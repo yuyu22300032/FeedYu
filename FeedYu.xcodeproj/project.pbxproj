@@ -20,6 +20,7 @@
 		35AFBAB012AD52326BB3F532 /* GetlistParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373DC8B167718D9BA1CB186E /* GetlistParserTests.swift */; };
 		38EB37038022F717BD6683E7 /* MichelinView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC350E4BCEDE22E40384D423 /* MichelinView.swift */; };
 		3BBAED62166C4A9D7EB4640A /* SuggestionEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06BC1CCFBB9E4A24509799E0 /* SuggestionEngineTests.swift */; };
+		3C9265B49B50DFC875DB5D33 /* UberEatsChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B19191B684F5A7115F8C2DE /* UberEatsChecker.swift */; };
 		3CE6C8459566B975930D823D /* RestaurantDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A132986CFC1E674A5FBC277 /* RestaurantDataSource.swift */; };
 		485758D4AF1D01709B6F1BDA /* PlaceInfoParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC06CBC112A0920428803DD6 /* PlaceInfoParserTests.swift */; };
 		4A74AD126607E16A2AC2F042 /* TravelBudget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77DAF0A5144600E21C0FD5F3 /* TravelBudget.swift */; };
@@ -43,6 +44,7 @@
 		B804703D8DE8DA10B242DE7C /* ShareInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31E365692CA272180A4463F3 /* ShareInbox.swift */; };
 		C6616D5A5B127BB24DDD484D /* MichelinDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 674E0CB6863B06B44D081B1F /* MichelinDataSource.swift */; };
 		C7BA6CB48E76B0B7E0FDA32B /* FeedYuApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2E45202029D98BC6820F34B /* FeedYuApp.swift */; };
+		CA6603C1788608774BB03596 /* UberEatsCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 232CBF584D87559F7AEF634F /* UberEatsCheckerTests.swift */; };
 		D3096BE6D68773D1810AB1A4 /* michelin_history.csv in Resources */ = {isa = PBXBuildFile; fileRef = 868FDC93F30440F46EF17705 /* michelin_history.csv */; };
 		D9F069332CB620231ADF60B7 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 4F5F48B846712A0332E6CF99 /* Localizable.xcstrings */; };
 		DC8670623867400F431097D2 /* TakeoutImportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14DB6D8877F7B81FD101D0AE /* TakeoutImportTests.swift */; };
@@ -95,6 +97,7 @@
 		1914B0A776984DBECA0096B5 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		19B5D617609B97380A61C89D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		1E8C4DE08B5CD7113AB19850 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		232CBF584D87559F7AEF634F /* UberEatsCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UberEatsCheckerTests.swift; sourceTree = "<group>"; };
 		2A132986CFC1E674A5FBC277 /* RestaurantDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantDataSource.swift; sourceTree = "<group>"; };
 		2E07D91437F28E5C19586AF6 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		31E365692CA272180A4463F3 /* ShareInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareInbox.swift; sourceTree = "<group>"; };
@@ -111,6 +114,7 @@
 		6F3B26041EB3C319D8A14BC2 /* FeedYuShare.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FeedYuShare.entitlements; sourceTree = "<group>"; };
 		70FE8D89BA1EDBC49B840F51 /* PlaceInfoFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceInfoFetcher.swift; sourceTree = "<group>"; };
 		77DAF0A5144600E21C0FD5F3 /* TravelBudget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelBudget.swift; sourceTree = "<group>"; };
+		7B19191B684F5A7115F8C2DE /* UberEatsChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UberEatsChecker.swift; sourceTree = "<group>"; };
 		868FDC93F30440F46EF17705 /* michelin_history.csv */ = {isa = PBXFileReference; path = michelin_history.csv; sourceTree = "<group>"; };
 		86B4F9280933BB1481377E91 /* GoogleMapsOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleMapsOpener.swift; sourceTree = "<group>"; };
 		9013BBD3A3C8E4EEF4F509CA /* FeedYuShare.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = FeedYuShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -225,6 +229,7 @@
 				34B6065279F321F9CFCCEE66 /* StoreMergeTests.swift */,
 				06BC1CCFBB9E4A24509799E0 /* SuggestionEngineTests.swift */,
 				14DB6D8877F7B81FD101D0AE /* TakeoutImportTests.swift */,
+				232CBF584D87559F7AEF634F /* UberEatsCheckerTests.swift */,
 				9303AD94E1C8C1CBEAEBD850 /* Fixtures */,
 			);
 			path = FeedYuTests;
@@ -250,6 +255,7 @@
 				DBDDB96AA140C4789C158FE2 /* MichelinNameLocalizer.swift */,
 				70FE8D89BA1EDBC49B840F51 /* PlaceInfoFetcher.swift */,
 				31E365692CA272180A4463F3 /* ShareInbox.swift */,
+				7B19191B684F5A7115F8C2DE /* UberEatsChecker.swift */,
 			);
 			path = Support;
 			sourceTree = "<group>";
@@ -445,6 +451,7 @@
 				B013A9E8339B4C26BC80DB27 /* StoreMergeTests.swift in Sources */,
 				3BBAED62166C4A9D7EB4640A /* SuggestionEngineTests.swift in Sources */,
 				DC8670623867400F431097D2 /* TakeoutImportTests.swift in Sources */,
+				CA6603C1788608774BB03596 /* UberEatsCheckerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -475,6 +482,7 @@
 				FBB0AC0BF7F7A359251A06DB /* TonightView.swift in Sources */,
 				4A74AD126607E16A2AC2F042 /* TravelBudget.swift in Sources */,
 				B485698D51327A515ED1899E /* TravelBudgetPanel.swift in Sources */,
+				3C9265B49B50DFC875DB5D33 /* UberEatsChecker.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -160,6 +160,13 @@ final class RestaurantStore: ObservableObject {
         if changed { scheduleSave() }
     }
 
+    func setUberEatsURL(id: UUID, url: URL) {
+        guard let index = restaurants.firstIndex(where: { $0.id == id }),
+              restaurants[index].uberEatsURL != url else { return }
+        restaurants[index].uberEatsURL = url
+        scheduleSave()
+    }
+
     func setLocalizedName(id: UUID, editionKey: String, name: String) {
         guard let index = restaurants.firstIndex(where: { $0.id == id }) else { return }
         var names = restaurants[index].localizedNames ?? [:]
