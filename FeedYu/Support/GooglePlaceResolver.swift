@@ -39,12 +39,19 @@ enum GooglePlaceResolver {
         return extractCid(fromHTML: html, near: coordinate)
     }
 
+    /// Two *different* places nearly equally close = our saved coordinates
+    /// can't tell them apart (food courts, twin branches next door) — refuse
+    /// rather than guess (see the guard in `extractCid`).
+    static let ambiguityMarginMeters: CLLocationDistance = 40
+
     /// Feature ids with a pin within `matchRadiusMeters` of `coordinate`;
     /// nearest wins. Tolerant scan — no assumptions about page structure
     /// beyond the `!1s…` / `!3d…!4d…` tokens appearing per result.
     static func extractCid(fromHTML html: String, near coordinate: CLLocationCoordinate2D) -> String? {
         let target = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-        var best: (distance: CLLocationDistance, cid: String)?
+        // Nearest pin per distinct cid — the same place usually appears
+        // several times in the page and must not trip the ambiguity guard.
+        var nearestByCid: [String: CLLocationDistance] = [:]
 
         for match in html.matches(of: #/0x[0-9a-fA-F]{6,}:0x([0-9a-fA-F]{1,16})/#) {
             // The pin belonging to this feature id sits in the same result
@@ -57,10 +64,23 @@ enum GooglePlaceResolver {
             let distance = target.distance(from: CLLocation(latitude: latitude, longitude: longitude))
             guard distance <= matchRadiusMeters else { continue }
             guard let value = UInt64(String(match.1), radix: 16), value != 0 else { continue }
-            if best == nil || distance < best!.distance {
-                best = (distance, String(value))
-            }
+            let cid = String(value)
+            nearestByCid[cid] = min(distance, nearestByCid[cid] ?? .infinity)
         }
-        return best?.cid
+
+        let ranked = nearestByCid.sorted { $0.value < $1.value }
+        guard let winner = ranked.first else { return nil }
+        // Ambiguity guard: a runner-up almost as close means a coin flip.
+        // Returning nil keeps the tap on the visible search page, where the
+        // user picks — a wrong cid would be persisted and silently open the
+        // wrong restaurant on every future tap. Possible future upgrade:
+        // disambiguate by scoring result names (UberEatsChecker.similarity)
+        // instead of refusing — needs a name scanner for the search-page
+        // blob, and names lie (romanization/translation), so pins must stay
+        // the primary signal. See DEVELOPMENT.md backlog.
+        if ranked.count > 1, ranked[1].value - winner.value < ambiguityMarginMeters {
+            return nil
+        }
+        return winner.key
     }
 }

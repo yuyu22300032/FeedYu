@@ -211,7 +211,11 @@ narrowest sensible scope:
   has no Maps URL) or with only a search URL (what Takeout list CSVs
   export) get a cid resolved on the tap (≤2.5 s wait; the resolution keeps
   running past the timeout and persists, upgrading later taps; the store
-  only ever upgrades search URL → exact, never the reverse). Fallback is a name search anchored at
+  only ever upgrades search URL → exact, never the reverse). Resolution
+  matches by pin proximity (nearest within 150 m) and refuses when two
+  different places are nearly equally close — a persisted wrong cid would
+  silently open the wrong restaurant forever, while the search fallback is
+  visible and self-correcting. Fallback is a name search anchored at
   the place's own coordinates (`/maps/search/<name>/@lat,lng,17z`), using
   the cached local-market name when the localizer has one — Google often
   can't match the dataset's romanization near the anchor and dumps the

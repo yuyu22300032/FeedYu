@@ -10,6 +10,10 @@ MIT licensed.
 
 ## Read before working
 
+- `docs/MAINTENANCE.md` — **start here when something is broken**:
+  symptom→cause debugging playbooks, the external-dependency risk register
+  (every scraped surface and what we assume about it), fixture-recapture
+  procedure, and what "verified" means in this project.
 - `docs/ARCHITECTURE.md` — structure, data flow, merge/engine semantics, and
   a **"gotchas that already caused bugs"** list. Read it before structural
   changes or touching parsers.
@@ -19,6 +23,11 @@ MIT licensed.
 - `docs/DEVELOPMENT.md` — build/test/deploy commands, device data-container
   recipes, data pipeline, fixture policy, backlog.
 - `PLAN.md` — original spec (historical; uses the old DinePick name).
+
+Notes for agents: `AGENTS.md` is a symlink to this file — edit this one.
+`.claude/skills/` has executable recipes: `deploy-device` (build + install
+on a connected iPhone, with known failure modes) and `verify` (how to prove
+a change works beyond the unit suite).
 
 ## Commands
 

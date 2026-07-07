@@ -156,3 +156,11 @@ grep -oE 'entitylist/getlist\?[^"]*' page.html   # → fetch under /maps/preview
 5. Michelin name prefetch could batch smarter (currently ≤40/visit).
 6. Store file could move to SwiftData if it outgrows JSON (fine at ~25k rows).
 7. History overlay ships in the bundle only — could auto-refresh yearly.
+8. `GooglePlaceResolver` refuses ambiguous matches (two different places
+   nearly equally close — food courts, twin branches) instead of guessing.
+   Upgrade path: extract result *names* from the search page and combine
+   pin distance with `UberEatsChecker.similarity` (like the Uber matcher's
+   distance ≤100 m + score ≥0.5 rule) to disambiguate instead of refusing.
+   Costs a new tolerant name scanner over the search-page blob (fragile
+   when Google changes format) and must keep pins primary — names lie
+   (romanization/translation), which is why the resolver is pins-only today.

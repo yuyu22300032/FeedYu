@@ -21,9 +21,12 @@ Full spec and decisions: [PLAN.md](PLAN.md) (original, historical).
 the suggestion pipeline, lazy loading & caching, and the Google Maps / Apple
 Maps / Michelin / Uber Eats integrations),
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (structure, data flow, design
-rules, known gotchas), and [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
+rules, known gotchas), [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
 (build/test/deploy workflows, data pipeline, fixture policy, enhancement
-backlog). `CLAUDE.md` orients AI coding sessions.
+backlog), and [docs/MAINTENANCE.md](docs/MAINTENANCE.md) (debugging
+playbooks and the external-dependency risk register — start there when
+something broke). `CLAUDE.md` (= `AGENTS.md`) orients AI coding sessions;
+`.claude/skills/` holds executable deploy/verify recipes.
 
 ## Getting it running (one-time setup)
 

@@ -28,4 +28,38 @@ final class GooglePlaceResolverTests: XCTestCase {
         XCTAssertNil(GooglePlaceResolver.extractCid(fromHTML: "<html>consent wall</html>",
                                                     near: CLLocationCoordinate2D(latitude: 25, longitude: 121)))
     }
+
+    // Two DIFFERENT places ~11 m and ~28 m from the target — inside the
+    // ambiguity margin of each other (food-court case): refuse to guess.
+    func testTwoPlacesAlmostEquallyCloseIsAmbiguous() {
+        let html = """
+        ["a"]!1s0x3442abd88ffb8341:0x0000000000000aaa!8m2!3d25.03340!4d121.56540!16s
+        ["b"]!1s0x3442abd88ffb8342:0x0000000000000bbb!8m2!3d25.03355!4d121.56545!16s
+        """
+        XCTAssertNil(GooglePlaceResolver.extractCid(fromHTML: html,
+                                                    near: CLLocationCoordinate2D(latitude: 25.0333, longitude: 121.5654)))
+    }
+
+    // Both in the bubble but ~11 m vs ~122 m — clearly separable: nearest wins.
+    func testClearlySeparatedInBubblePicksNearest() {
+        let html = """
+        ["a"]!1s0x3442abd88ffb8341:0x0000000000000aaa!8m2!3d25.03340!4d121.56540!16s
+        ["b"]!1s0x3442abd88ffb8342:0x0000000000000bbb!8m2!3d25.03440!4d121.56540!16s
+        """
+        let cid = GooglePlaceResolver.extractCid(fromHTML: html,
+                                                 near: CLLocationCoordinate2D(latitude: 25.0333, longitude: 121.5654))
+        XCTAssertEqual(cid, "2730")  // 0xaaa
+    }
+
+    // The SAME place repeated in the page (typical) must not read as
+    // ambiguity — dedupe is by cid, not by occurrence.
+    func testSameCidRepeatedIsNotAmbiguous() {
+        let html = """
+        ["a"]!1s0x3442abd88ffb8341:0x0000000000000aaa!8m2!3d25.03340!4d121.56540!16s
+        ["a2"]!1s0x3442abd88ffb8341:0x0000000000000aaa!8m2!3d25.03341!4d121.56541!16s
+        """
+        let cid = GooglePlaceResolver.extractCid(fromHTML: html,
+                                                 near: CLLocationCoordinate2D(latitude: 25.0333, longitude: 121.5654))
+        XCTAssertEqual(cid, "2730")
+    }
 }
