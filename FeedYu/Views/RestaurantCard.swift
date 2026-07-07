@@ -122,7 +122,11 @@ struct RestaurantCard: View {
         Button {
             // Live row, not the suggestion snapshot — a cid resolved after
             // the card appeared upgrades this tap (same trap as Uber's URL).
-            openURL(GoogleMapsOpener.url(for: liveRestaurant))
+            // If none resolved yet, try once more (briefly) before falling
+            // back to the search URL.
+            Task {
+                openURL(await PlaceInfoFetcher.shared.mapsURL(for: liveRestaurant, store: store))
+            }
         } label: {
             Group {
                 if let coverImageURL {

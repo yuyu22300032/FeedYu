@@ -352,3 +352,10 @@ tests pass with an updated *synthetic* fixture.
    (they claim the drag first) — swipe-between-tabs only works via
    `.tabViewStyle(.page)` + the custom bottom bar in `RootView`. Don't
    "simplify" it back to a plain TabView with tabItems.
+10. **Don't gate cid resolution behind the summary/image fetch guard.**
+    Michelin places ship with a CSV summary and get their photo on the
+    first card display, so `PlaceInfoFetcher`'s "both fields set → return
+    early" guard gave `GooglePlaceResolver` one shot ever per place — a
+    single failed attempt left it on (search-results-prone) search-URL
+    opens permanently. Resolution now has its own per-session gate
+    (`resolvedMapsURL`), and taps race it against a short timeout.

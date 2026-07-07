@@ -193,7 +193,12 @@ struct MichelinView: View {
 
     private func row(for restaurant: Restaurant, km: Double) -> some View {
         Button {
-            openURL(GoogleMapsOpener.url(for: restaurant))
+            // Michelin dataset rows carry no cid — resolve one on the fly
+            // (briefly, persisted) so the tap lands on the exact place page
+            // instead of a search-results list.
+            Task {
+                openURL(await PlaceInfoFetcher.shared.mapsURL(for: restaurant, store: store))
+            }
         } label: {
             VStack(alignment: .leading, spacing: 4) {
                 HStack {

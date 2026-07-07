@@ -72,4 +72,26 @@ final class RestaurantStoreMergeTests: XCTestCase {
         XCTAssertEqual(store.restaurants.count, 1)
         XCTAssertTrue(store.restaurants[0].isHidden)
     }
+
+    func testResolvedCidUpgradesStoredSearchURLButNeverExactOne() {
+        let store = makeStore()
+        var place = Restaurant(name: "Everywhere")
+        place.latitude = 25; place.longitude = 121
+        place.googleMapsURL = URL(string: "https://www.google.com/maps/search/Everywhere/data=!4m2")
+        store.apply([place], sourceID: "takeout-list")
+        let id = store.restaurants[0].id
+        let cidURL = URL(string: "https://maps.google.com/?cid=42")!
+
+        // Search URL → upgraded to the resolved cid.
+        store.setGoogleMapsURL(id: id, url: cidURL)
+        XCTAssertEqual(store.restaurants[0].googleMapsURL, cidURL)
+
+        // Exact URL → never clobbered, not even by another exact one.
+        store.setGoogleMapsURL(id: id, url: URL(string: "https://maps.google.com/?cid=99")!)
+        XCTAssertEqual(store.restaurants[0].googleMapsURL, cidURL)
+
+        // And never downgraded back to a search URL.
+        store.setGoogleMapsURL(id: id, url: URL(string: "https://www.google.com/maps/search/x")!)
+        XCTAssertEqual(store.restaurants[0].googleMapsURL, cidURL)
+    }
 }

@@ -189,11 +189,16 @@ final class RestaurantStore: ObservableObject {
         scheduleSave()
     }
 
-    /// Fill-only: a resolved cid link must never clobber a source-provided
-    /// URL (sources are authoritative; resolution is best-effort).
+    /// A resolved cid link must never clobber a source-provided *exact*
+    /// place URL (sources are authoritative; resolution is best-effort).
+    /// Source-provided search URLs (Takeout list CSVs) may be upgraded to
+    /// an exact link — that's the point of resolving.
     func setGoogleMapsURL(id: UUID, url: URL) {
-        guard let index = restaurants.firstIndex(where: { $0.id == id }),
-              restaurants[index].googleMapsURL == nil else { return }
+        guard let index = restaurants.firstIndex(where: { $0.id == id }) else { return }
+        if let existing = restaurants[index].googleMapsURL {
+            guard !GoogleMapsOpener.isExactPlaceURL(existing),
+                  GoogleMapsOpener.isExactPlaceURL(url) else { return }
+        }
         restaurants[index].googleMapsURL = url
         scheduleSave()
     }

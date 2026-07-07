@@ -206,10 +206,17 @@ narrowest sensible scope:
   list and list CSVs. Details and wire formats: ARCHITECTURE.md.
 - **Out:** tapping a card's photo (or a Michelin row) opens the place in
   Google Maps via universal links (iOS hands them to the installed app).
-  Stored `?cid=` URLs open the *exact* place; places without one open a
-  name search anchored at the place's own coordinates
-  (`/maps/search/<name>/@lat,lng,17z`) — an unanchored name search fails
-  with "place not found" for names Google can't resolve globally.
+  Stored exact place URLs (`?cid=`/`?ftid=`/`/maps/place/`) open the
+  *exact* place; places without one (all Michelin dataset places — the CSV
+  has no Maps URL) or with only a search URL (what Takeout list CSVs
+  export) get a cid resolved on the tap (≤2.5 s wait; the resolution keeps
+  running past the timeout and persists, upgrading later taps; the store
+  only ever upgrades search URL → exact, never the reverse). Fallback is a name search anchored at
+  the place's own coordinates (`/maps/search/<name>/@lat,lng,17z`), using
+  the cached local-market name when the localizer has one — Google often
+  can't match the dataset's romanization near the anchor and dumps the
+  user on a results list. An unanchored name search is never used (fails
+  with "place not found" for names Google can't resolve globally).
 - Place pages also serve as the photo/description source for non-Michelin
   places (social-preview `og:` metadata; Google's stock "no photos"
   artwork — static maps, generic geocode cards — is detected and rejected,

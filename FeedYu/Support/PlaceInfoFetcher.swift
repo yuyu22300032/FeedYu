@@ -17,10 +17,66 @@ final class PlaceInfoFetcher: ObservableObject {
 
     private var attemptedIDs: Set<UUID> = []
     private var inFlightIDs: Set<UUID> = []
+    private var attemptedCidIDs: Set<UUID> = []
+
+    /// The stored exact place link, or one resolved (and persisted) right
+    /// now. Stored *search* URLs (Takeout list CSVs export those) don't
+    /// count — they get upgraded to a cid like URL-less places do.
+    /// Gated separately from the summary/image fetch: Michelin places ship
+    /// with a CSV summary and get their photo on the first card display, so
+    /// hiding resolution behind the info guard gave it one shot, ever — a
+    /// single failed attempt left the place on search-URL opens for good.
+    /// One resolution attempt per place per session.
+    func resolvedMapsURL(for restaurant: Restaurant, store: RestaurantStore) async -> URL? {
+        if let stored = restaurant.googleMapsURL, GoogleMapsOpener.isExactPlaceURL(stored) {
+            return stored
+        }
+        guard let coordinate = restaurant.coordinate,
+              !attemptedCidIDs.contains(restaurant.id) else { return nil }
+        attemptedCidIDs.insert(restaurant.id)
+        // Local-market name first (matches Google's own listing), then the
+        // dataset romanization — the pin-proximity match rejects impostors.
+        var cid = await GooglePlaceResolver.resolveCid(name: restaurant.googleSearchName,
+                                                       coordinate: coordinate)
+        if cid == nil, restaurant.googleSearchName != restaurant.name {
+            cid = await GooglePlaceResolver.resolveCid(name: restaurant.name, coordinate: coordinate)
+        }
+        guard let cid, let resolved = URL(string: "https://maps.google.com/?cid=\(cid)") else { return nil }
+        store.setGoogleMapsURL(id: restaurant.id, url: resolved)
+        return resolved
+    }
+
+    /// URL for a user tap: the exact place page when a cid is stored or
+    /// resolves within `timeout`, else the search fallback. A resolution
+    /// that outlives the timeout keeps running and persists its result, so
+    /// the next tap opens the exact page.
+    func mapsURL(for restaurant: Restaurant, store: RestaurantStore,
+                 timeout: TimeInterval = 2.5) async -> URL {
+        if let stored = restaurant.googleMapsURL, GoogleMapsOpener.isExactPlaceURL(stored) {
+            return stored
+        }
+        let resolution = Task { await self.resolvedMapsURL(for: restaurant, store: store) }
+        let resolved = await withTaskGroup(of: URL?.self) { group in
+            group.addTask { await resolution.value }
+            group.addTask {
+                try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+                return nil
+            }
+            defer { group.cancelAll() }  // detached `resolution` is unaffected
+            return await group.next() ?? nil
+        }
+        return resolved ?? GoogleMapsOpener.url(for: restaurant)
+    }
 
     /// Returns the effective info for a restaurant, fetching it at most once
     /// per session when the store doesn't have it yet.
     func info(for restaurant: Restaurant, store: RestaurantStore) async -> PlaceInfo {
+        // Resolve the exact place id first (own gate, see above) — it
+        // upgrades slow search-URL opens to instant ?cid= links AND gives
+        // the og: fetch below a real place page to read. A stored search
+        // URL still serves the og: fetch when resolution comes up empty.
+        let mapsURL = await resolvedMapsURL(for: restaurant, store: store) ?? restaurant.googleMapsURL
+
         let existing = PlaceInfo(summary: restaurant.summary, imageURL: restaurant.imageURL)
         guard existing.summary == nil || existing.imageURL == nil else { return existing }
         guard !attemptedIDs.contains(restaurant.id), !inFlightIDs.contains(restaurant.id) else { return existing }
@@ -28,17 +84,6 @@ final class PlaceInfoFetcher: ObservableObject {
         defer {
             inFlightIDs.remove(restaurant.id)
             attemptedIDs.insert(restaurant.id)
-        }
-
-        // Cid-less scraped places: resolve the exact place id first — it
-        // upgrades slow search-URL opens to instant ?cid= links AND gives
-        // the og: fetch below a real place page to read.
-        var mapsURL = restaurant.googleMapsURL
-        if mapsURL == nil, let coordinate = restaurant.coordinate,
-           let cid = await GooglePlaceResolver.resolveCid(name: restaurant.name, coordinate: coordinate),
-           let resolved = URL(string: "https://maps.google.com/?cid=\(cid)") {
-            store.setGoogleMapsURL(id: restaurant.id, url: resolved)
-            mapsURL = resolved
         }
 
         var fetched = PlaceInfo()

@@ -14,6 +14,10 @@ import CoreLocation
 /// same principle as the Uber Eats matcher, names lie but pins don't.
 enum GooglePlaceResolver {
     /// Accept a result only when its pin is this close to our place.
+    /// Looser than the Uber Eats matcher's 100 m: that one matches by name
+    /// across a city-wide feed, while this search is already anchored at
+    /// the place's own coordinates and nearest-pin-wins — the extra 50 m
+    /// mostly forgives coarse Michelin/Takeout geocoding.
     static let matchRadiusMeters: CLLocationDistance = 150
 
     static func resolveCid(name: String, coordinate: CLLocationCoordinate2D) async -> String? {

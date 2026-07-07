@@ -147,6 +147,16 @@ struct Restaurant: Codable, Identifiable, Hashable {
         return localized
     }
 
+    /// Name to use when searching Google Maps around the place's own pin:
+    /// the local-market listing name when the localizer has cached one —
+    /// Google often can't match the Michelin dataset's romanization near
+    /// the anchor (e.g. "Uosho" vs 魚庄) — else the dataset name.
+    var googleSearchName: String {
+        guard let key = michelinLocalEditionKey,
+              let localized = localizedNames?[key], !localized.isEmpty else { return name }
+        return localized
+    }
+
     func distance(from origin: CLLocation) -> CLLocationDistance? {
         guard let location else { return nil }
         return origin.distance(from: location)
