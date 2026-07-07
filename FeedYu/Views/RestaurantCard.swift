@@ -82,7 +82,9 @@ struct RestaurantCard: View {
 
             if showUberEatsButton {
                 Button {
-                    openURL(restaurant.uberEatsURL ?? UberEatsChecker.searchURL(for: restaurant.name))
+                    // Live store lookup: the suggestion snapshot was taken
+                    // BEFORE the availability check persisted the store URL.
+                    openURL(liveUberEatsURL ?? UberEatsChecker.searchURL(for: restaurant.name))
                 } label: {
                     Label("Order on Uber Eats", systemImage: "takeoutbag.and.cup.and.straw.fill")
                         .frame(maxWidth: .infinity)
@@ -186,6 +188,11 @@ struct RestaurantCard: View {
                 BadgeChip(text: label, tint: .blue, systemImage: "list.bullet")
             }
         }
+    }
+
+    private var liveUberEatsURL: URL? {
+        store.restaurants.first(where: { $0.id == restaurant.id })?.uberEatsURL
+            ?? restaurant.uberEatsURL
     }
 
     /// Labels of the user lists this place belongs to (via source stamps).
