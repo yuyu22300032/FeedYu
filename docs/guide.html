@@ -1,0 +1,649 @@
+<title>How to use FeedYu</title>
+<style>
+/* ---------- tokens ---------- */
+:root{
+  --bg:#FBF8F2;            /* warm paper, biased toward the gold accent */
+  --ink:#2B2118;
+  --muted:#7A6A58;
+  --line:#E7DECF;
+  --card:#FFFFFF;
+  --accent:#B98A2F;        /* map-pin gold */
+  --accent-ink:#8A6520;
+  --michelin:#C0392B;
+  --uber:#04915A;
+  --phone-shell:#2B2420;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#1E1820;          /* plum-charcoal night */
+    --ink:#F0E7DA;
+    --muted:#A99880;
+    --line:#3A3138;
+    --card:#292129;
+    --accent:#E0AD5B;
+    --accent-ink:#E0AD5B;
+    --michelin:#E06052;
+    --uber:#1FBE7E;
+    --phone-shell:#0F0B10;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1E1820; --ink:#F0E7DA; --muted:#A99880; --line:#3A3138; --card:#292129;
+  --accent:#E0AD5B; --accent-ink:#E0AD5B; --michelin:#E06052; --uber:#1FBE7E; --phone-shell:#0F0B10;
+}
+:root[data-theme="light"]{
+  --bg:#FBF8F2; --ink:#2B2118; --muted:#7A6A58; --line:#E7DECF; --card:#FFFFFF;
+  --accent:#B98A2F; --accent-ink:#8A6520; --michelin:#C0392B; --uber:#04915A; --phone-shell:#2B2420;
+}
+
+/* ---------- base ---------- */
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font:400 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+.wrap{max-width:1020px;margin:0 auto;padding:0 24px}
+h1,h2,h3{font-family:"Futura","Avenir Next","Century Gothic",-apple-system,sans-serif;text-wrap:balance;margin:0}
+p{margin:0}
+a{color:var(--accent-ink)}
+.eyebrow{
+  font-family:"Futura","Avenir Next","Century Gothic",sans-serif;
+  font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent-ink);font-weight:600;
+}
+
+/* ---------- hero ---------- */
+header{padding:72px 0 40px;text-align:left}
+.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center}
+header h1{font-size:clamp(38px,6vw,60px);font-weight:600;line-height:1.08;letter-spacing:-.01em;margin:14px 0 18px}
+header .lede{max-width:34em;color:var(--muted);font-size:19px}
+.pin{display:inline-block;width:.85em;height:.85em;border-radius:50% 50% 50% 0;background:var(--accent);
+  transform:rotate(-45deg) translateY(2px);margin-right:.35em}
+
+/* hero shuffle card */
+.shuffle{
+  background:var(--card);border:1px solid var(--line);border-radius:22px;padding:26px 28px;
+  box-shadow:0 18px 44px -22px rgba(35,20,5,.35);
+}
+.shuffle .q{font-size:14px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.names{position:relative;height:2.5em;margin-top:6px;font-family:"Futura","Avenir Next",sans-serif;font-size:30px;font-weight:600}
+.names span{position:absolute;inset:0;opacity:0;animation:cycle 12s infinite}
+.names span:nth-child(2){animation-delay:3s}
+.names span:nth-child(3){animation-delay:6s}
+.names span:nth-child(4){animation-delay:9s}
+@keyframes cycle{0%,22%{opacity:0;transform:translateY(10px)}4%,20%{opacity:1;transform:none}25%,100%{opacity:0;transform:translateY(-8px)}}
+.shuffle .meta{margin-top:8px;color:var(--muted);font-size:15px;font-variant-numeric:tabular-nums}
+
+/* ---------- steps ---------- */
+.step{display:grid;grid-template-columns:400px 1fr;gap:56px;align-items:center;padding:64px 0;border-top:1px solid var(--line)}
+.step:nth-child(even of .step){grid-template-columns:1fr 400px}
+.step:nth-child(even of .step) .phone-col{order:2}
+.step .num{font-family:"Futura","Avenir Next",sans-serif;font-size:15px;font-weight:600;color:var(--accent-ink);letter-spacing:.14em}
+.step h2{font-size:30px;font-weight:600;margin:10px 0 14px}
+.step p{color:var(--muted);max-width:32em;margin-bottom:10px}
+.step p b{color:var(--ink);font-weight:600}
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s ease}
+.reveal.vis{opacity:1;transform:none}
+
+/* ---------- phone frame ---------- */
+.phone{
+  width:300px;margin:0 auto;background:var(--phone-shell);border-radius:44px;padding:12px;
+  box-shadow:0 30px 60px -30px rgba(20,10,0,.5);
+}
+.screen{
+  position:relative;background:#F2F2F7;border-radius:34px;height:560px;overflow:hidden;
+  font:400 13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1c1c1e;
+}
+.island{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:86px;height:24px;background:#000;border-radius:14px;z-index:5}
+.app{position:absolute;inset:0;padding:48px 12px 60px;display:flex;flex-direction:column;gap:10px}
+/* mock tab bar */
+.tabs{position:absolute;left:0;right:0;bottom:0;height:54px;background:rgba(255,255,255,.94);
+  border-top:1px solid #e2e2e6;display:flex;z-index:4}
+.tabs div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  font-size:9px;color:#8e8e93}
+.tabs div.on{color:#B98A2F}
+.tabs svg{width:20px;height:20px}
+/* mock building blocks */
+.mbox{background:#fff;border-radius:14px;padding:12px}
+.mtitle{font-weight:600;font-size:14px}
+.msub{color:#8e8e93;font-size:11px}
+.mbtn{background:#3478F6;color:#fff;border-radius:10px;text-align:center;padding:9px 0;font-weight:600;font-size:13px}
+.chiprow{display:flex;gap:5px;margin-top:8px}
+.chip{flex:1;text-align:center;font-size:10px;font-weight:600;padding:6px 0;border-radius:8px;background:#ececf0;color:#3a3a3c}
+.chip.on{background:rgba(185,138,47,.22);color:#8A6520}
+.chip.red{background:rgba(192,57,43,.16);color:#a03225}
+/* slider */
+.slider{display:flex;align-items:center;gap:8px;margin-top:10px}
+.track{position:relative;flex:1;height:4px;border-radius:2px;background:#d9d9de}
+.fill{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:#B98A2F;width:30%}
+.thumb{position:absolute;top:50%;left:30%;width:18px;height:18px;border-radius:50%;background:#fff;
+  box-shadow:0 1px 4px rgba(0,0,0,.35);transform:translate(-50%,-50%)}
+.pm{width:20px;height:20px;border-radius:50%;background:rgba(185,138,47,.2);color:#8A6520;font-weight:700;
+  display:flex;align-items:center;justify-content:center;font-size:13px;flex:none}
+.val{min-width:56px;text-align:right;font-weight:600;font-size:12px;font-variant-numeric:tabular-nums;position:relative;height:1.3em}
+.val span{position:absolute;right:0;top:0;white-space:nowrap}
+/* suggestion card inside phone */
+.mcard{background:#fff;border-radius:16px;overflow:hidden}
+.mphoto{position:relative;height:96px;display:flex;align-items:center;justify-content:center}
+.mphoto.warm{background:linear-gradient(135deg,#E8B04B,#C46A2E)}
+.mphoto.plum{background:linear-gradient(135deg,#8E4A5B,#4A2634)}
+.mphoto.teal{background:linear-gradient(135deg,#3E7C6B,#1F4A44)}
+.plate{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center}
+.gm-badge{position:absolute;right:8px;bottom:8px;background:rgba(255,255,255,.9);border-radius:20px;
+  font-size:8.5px;font-weight:600;padding:3px 8px;color:#3a3a3c}
+.mbody{padding:10px 12px 12px;display:flex;flex-direction:column;gap:5px}
+.badges{display:flex;gap:4px}
+.b{font-size:8.5px;font-weight:700;padding:2px 7px;border-radius:20px}
+.b.gold{background:rgba(185,138,47,.18);color:#8A6520}
+.b.red{background:rgba(192,57,43,.14);color:#a03225}
+.b.green{background:rgba(4,145,90,.14);color:#04713F}
+.b.blue{background:rgba(52,120,246,.12);color:#2b62c4}
+.mname{font-weight:700;font-size:16px}
+.mline{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600}
+.mdesc{font-size:10px;color:#8e8e93;line-height:1.45}
+.ubtn{background:#04915A;color:#fff;border-radius:10px;text-align:center;padding:8px 0;font-weight:600;font-size:12px;margin-top:3px}
+/* tap indicator */
+.tap{position:absolute;width:34px;height:34px;border-radius:50%;background:rgba(40,40,40,.28);
+  border:2px solid rgba(255,255,255,.8);transform:scale(0);z-index:6;pointer-events:none}
+/* toast */
+.toast{position:absolute;left:24px;right:24px;top:120px;background:rgba(20,20,20,.86);color:#fff;
+  border-radius:14px;padding:12px;text-align:center;font-size:11.5px;opacity:0;z-index:6}
+
+svg .st{stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+/* =========== scene 1: share =========== */
+.s1 .maps-head{background:#fff;border-radius:14px;padding:12px}
+.s1 .sheet{
+  position:absolute;left:8px;right:8px;bottom:-260px;height:250px;background:#fff;border-radius:18px 18px 0 0;
+  box-shadow:0 -8px 30px rgba(0,0,0,.18);padding:14px;z-index:5;
+  animation:s1sheet 9s infinite;
+}
+@keyframes s1sheet{0%,10%{transform:none}16%,62%{transform:translateY(-266px)}70%,100%{transform:none}}
+.s1 .apps{display:flex;gap:12px;margin-top:12px}
+.s1 .apps .a{width:44px;text-align:center;font-size:8px;color:#8e8e93}
+.s1 .ic{width:44px;height:44px;border-radius:11px;background:#d8d8dc;margin-bottom:3px}
+.s1 .ic.feedyu{background:linear-gradient(160deg,#E0AD5B,#B9812F);display:flex;align-items:center;justify-content:center}
+.s1 .tap{left:118px;top:388px;animation:s1tap 9s infinite}
+@keyframes s1tap{0%,38%{transform:scale(0);opacity:0}42%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:0}100%{opacity:0}}
+.s1 .toast{animation:s1toast 9s infinite}
+@keyframes s1toast{0%,58%{opacity:0;transform:translateY(6px)}64%,86%{opacity:1;transform:none}92%,100%{opacity:0}}
+
+/* =========== scene 2: tonight =========== */
+.s2 .mcard{position:relative;animation:s2card 10s infinite}
+@keyframes s2card{0%,14%{opacity:0;transform:translateY(24px)}20%,100%{opacity:1;transform:none}}
+.s2 .swap{position:relative;height:214px}
+.s2 .swap .mcard{position:absolute;inset:0}
+.s2 .swap .c2{opacity:0;animation:s2c2 10s infinite}
+@keyframes s2c2{0%,62%{opacity:0;transform:translateY(24px)}68%,100%{opacity:1;transform:none}}
+.s2 .tap.t1{left:140px;bottom:72px;animation:s2t1 10s infinite}
+@keyframes s2t1{0%,6%{transform:scale(0);opacity:0}10%{transform:scale(1);opacity:1}18%{transform:scale(1.5);opacity:0}100%{opacity:0}}
+.s2 .tap.t2{left:140px;bottom:72px;animation:s2t2 10s infinite}
+@keyframes s2t2{0%,54%{transform:scale(0);opacity:0}58%{transform:scale(1);opacity:1}66%{transform:scale(1.5);opacity:0}100%{opacity:0}}
+
+/* =========== scene 3: budget =========== */
+.s3 .chip{position:relative}
+.s3 .m-dist{animation:s3dist 12s infinite}
+.s3 .m-walk{animation:s3walk 12s infinite}
+.s3 .m-drive{animation:s3drive 12s infinite}
+@keyframes s3dist{0%,32%{background:rgba(185,138,47,.22);color:#8A6520}36%,100%{background:#ececf0;color:#3a3a3c}}
+@keyframes s3walk{0%,32%{background:#ececf0;color:#3a3a3c}36%,66%{background:rgba(185,138,47,.22);color:#8A6520}70%,100%{background:#ececf0;color:#3a3a3c}}
+@keyframes s3drive{0%,66%{background:#ececf0;color:#3a3a3c}70%,100%{background:rgba(185,138,47,.22);color:#8A6520}}
+.s3 .thumb{animation:s3thumb 12s infinite}
+.s3 .fill{animation:s3fill 12s infinite}
+@keyframes s3thumb{0%,8%{left:30%}16%,36%{left:58%}40%,66%{left:33%}74%,100%{left:75%}}
+@keyframes s3fill{0%,8%{width:30%}16%,36%{width:58%}40%,66%{width:33%}74%,100%{width:75%}}
+.s3 .val span{opacity:0}
+.s3 .v1{animation:s3v1 12s infinite}.s3 .v2{animation:s3v2 12s infinite}
+.s3 .v3{animation:s3v3 12s infinite}.s3 .v4{animation:s3v4 12s infinite}
+@keyframes s3v1{0%,8%{opacity:1}12%,100%{opacity:0}}
+@keyframes s3v2{0%,12%{opacity:0}16%,36%{opacity:1}40%,100%{opacity:0}}
+@keyframes s3v3{0%,40%{opacity:0}44%,66%{opacity:1}70%,100%{opacity:0}}
+@keyframes s3v4{0%,70%{opacity:0}74%,100%{opacity:1}}
+.s3 .note{position:relative;height:1.5em;font-size:10px;color:#8e8e93;margin-top:6px}
+.s3 .note span{position:absolute;left:0;right:0;opacity:0}
+.s3 .n1{animation:s3v1 12s infinite}.s3 .n23{animation:s3n23 12s infinite}.s3 .n4{animation:s3v4 12s infinite}
+@keyframes s3n23{0%,12%{opacity:0}16%,66%{opacity:1}70%,100%{opacity:0}}
+
+/* =========== scene 4: michelin =========== */
+.s4 .star-chip{animation:s4chip 10s infinite}
+@keyframes s4chip{0%,18%{background:#ececf0;color:#3a3a3c}24%,100%{background:rgba(192,57,43,.16);color:#a03225}}
+.s4 .tap.t1{left:196px;top:150px;animation:s4t1 10s infinite}
+@keyframes s4t1{0%,12%{transform:scale(0);opacity:0}16%{transform:scale(1);opacity:1}24%{transform:scale(1.5);opacity:0}100%{opacity:0}}
+.s4 .tap.t2{left:140px;top:212px;animation:s4t2 10s infinite}
+@keyframes s4t2{0%,34%{transform:scale(0);opacity:0}38%{transform:scale(1);opacity:1}46%{transform:scale(1.5);opacity:0}100%{opacity:0}}
+.s4 .mcard{opacity:0;animation:s4card 10s infinite}
+@keyframes s4card{0%,44%{opacity:0;transform:translateY(24px)}52%,100%{opacity:1;transform:none}}
+
+/* =========== scene 5: uber =========== */
+.s5 .tap{left:140px;top:378px;animation:s5tap 11s infinite}
+@keyframes s5tap{0%,26%{transform:scale(0);opacity:0}30%{transform:scale(1);opacity:1}38%{transform:scale(1.5);opacity:0}100%{opacity:0}}
+.s5 .uber-screen{
+  position:absolute;inset:0;background:#fff;z-index:5;transform:translateX(102%);
+  animation:s5screen 11s infinite;display:flex;flex-direction:column;
+}
+@keyframes s5screen{0%,32%{transform:translateX(102%)}38%,82%{transform:none}88%,100%{transform:translateX(102%)}}
+.s5 .uhead{background:#04915A;color:#fff;padding:52px 16px 14px;font-weight:800;font-size:16px}
+.s5 .ubody{padding:16px;display:flex;flex-direction:column;gap:8px}
+.s5 .uphoto{height:110px;border-radius:12px;background:linear-gradient(135deg,#3E7C6B,#1F4A44);display:flex;align-items:center;justify-content:center}
+
+/* =========== scene 6: swipe =========== */
+.s6{position:relative}
+.s6 .pages{display:flex;width:400%;height:100%;animation:s6slide 9s infinite}
+.s6 .pages>div{width:25%;padding:48px 12px 60px;display:flex;flex-direction:column;gap:10px}
+@keyframes s6slide{0%,18%{transform:none}28%,48%{transform:translateX(-25%)}58%,78%{transform:translateX(-50%)}88%,100%{transform:translateX(-75%)}}
+.s6 .finger{position:absolute;bottom:210px;left:70%;width:30px;height:30px;border-radius:50%;
+  background:rgba(40,40,40,.3);border:2px solid rgba(255,255,255,.8);z-index:6;animation:s6finger 9s infinite}
+@keyframes s6finger{0%,16%{left:74%;opacity:0}20%{opacity:1}28%{left:16%;opacity:0}
+  46%{left:74%;opacity:0}50%{opacity:1}58%{left:16%;opacity:0}
+  76%{left:74%;opacity:0}80%{opacity:1}88%{left:16%;opacity:0}100%{opacity:0}}
+.s6 .tabs div{transition:color .3s}
+.s6 .tb1{animation:s6b1 9s infinite}.s6 .tb2{animation:s6b2 9s infinite}
+.s6 .tb3{animation:s6b3 9s infinite}.s6 .tb4{animation:s6b4 9s infinite}
+@keyframes s6b1{0%,24%{color:#B98A2F}28%,100%{color:#8e8e93}}
+@keyframes s6b2{0%,24%{color:#8e8e93}28%,54%{color:#B98A2F}58%,100%{color:#8e8e93}}
+@keyframes s6b3{0%,54%{color:#8e8e93}58%,84%{color:#B98A2F}88%,100%{color:#8e8e93}}
+@keyframes s6b4{0%,84%{color:#8e8e93}88%,100%{color:#B98A2F}}
+
+/* ---------- tips & footer ---------- */
+.tips{padding:64px 0;border-top:1px solid var(--line)}
+.tips h2{font-size:30px;font-weight:600;margin-bottom:26px}
+.tipgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.tip{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
+.tip h3{font-size:16px;font-weight:600;margin-bottom:8px}
+.tip p{font-size:14.5px;color:var(--muted)}
+footer{padding:40px 0 64px;color:var(--muted);font-size:14px;border-top:1px solid var(--line)}
+
+@media (max-width:820px){
+  .hero{grid-template-columns:1fr}
+  .step,.step:nth-child(even of .step){grid-template-columns:1fr}
+  .step:nth-child(even of .step) .phone-col{order:0}
+  .tipgrid{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation:none !important;transition:none !important}
+  .reveal{opacity:1;transform:none}
+  .names span:first-child{opacity:1}
+  .s2 .mcard,.s4 .mcard{opacity:1;transform:none}
+  .s3 .v1,.s3 .n1{opacity:1}
+  .tap,.s1 .sheet,.s1 .toast,.s5 .uber-screen,.s6 .finger{display:none}
+}
+</style>
+
+<header class="wrap">
+  <div class="hero">
+    <div>
+      <div class="eyebrow">How to use</div>
+      <h1><span class="pin"></span>FeedYu</h1>
+      <p class="lede">You saved 500 restaurants on Google Maps and still can't decide where to eat.
+      FeedYu picks one for you — from <b>your own lists</b>, close enough for <b>tonight</b>.</p>
+    </div>
+    <div class="shuffle">
+      <div class="q">Tonight's pick · 今晚吃什麼？</div>
+      <div class="names">
+        <span>鼎泰豐 信義店</span>
+        <span>老乾杯 慶城店</span>
+        <span>三元花園韓式餐廳</span>
+        <span>MO-MO-PARADISE</span>
+      </div>
+      <div class="meta">18 min in current traffic · $$ · Want to go</div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- STEP 1 -->
+  <section class="step reveal">
+    <div class="phone-col">
+      <div class="phone"><div class="screen s1">
+        <div class="island"></div>
+        <div class="app">
+          <div class="maps-head">
+            <div class="mtitle">Want to go ❤️</div>
+            <div class="msub">Google Maps · 42 places · private</div>
+          </div>
+          <div class="mbox" style="height:64px"></div>
+          <div class="mbox" style="height:64px"></div>
+          <div class="mbtn" style="margin-top:2px">Share list</div>
+        </div>
+        <div class="sheet">
+          <div class="mtitle" style="font-size:13px">Share “Want to go ❤️”</div>
+          <div class="apps">
+            <div class="a"><div class="ic"></div>Messages</div>
+            <div class="a"><div class="ic"></div>LINE</div>
+            <div class="a"><div class="ic feedyu">
+              <svg viewBox="0 0 24 24" width="24" height="24" style="color:#fff">
+                <path class="st" d="M9 4v6M12 4v6M15 4v6M9 10h6l-1.5 3h-3z"/>
+                <path class="st" d="M12 13v7"/>
+              </svg>
+            </div>FeedYu</div>
+            <div class="a"><div class="ic"></div>Mail</div>
+          </div>
+        </div>
+        <div class="tap"></div>
+        <div class="toast">Saved! FeedYu adds this list next time you open it.</div>
+      </div></div>
+    </div>
+    <div>
+      <div class="num">STEP 1</div>
+      <h2>Send your lists to FeedYu</h2>
+      <p>In Google Maps, open any saved list → <b>Share</b> → pick <b>FeedYu</b> in the share
+      sheet. That's it — the app imports every place the next time you open it.</p>
+      <p>Friends can share their lists with you the same way — keep up to <b>20 lists</b>, and
+      switch any of them on or off in Settings without deleting anything.</p>
+      <p>Your ⭐ Starred places can't be shared by Google — import those once via
+      <b>Google Takeout</b> in Settings.</p>
+    </div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="step reveal">
+    <div class="phone-col">
+      <div class="phone"><div class="screen s2">
+        <div class="island"></div>
+        <div class="app">
+          <div class="mbox">
+            <div class="chiprow" style="margin-top:0">
+              <div class="chip on">Distance</div><div class="chip">Walk</div><div class="chip">Drive</div>
+            </div>
+            <div class="slider">
+              <div class="pm">−</div>
+              <div class="track"><div class="fill"></div><div class="thumb"></div></div>
+              <div class="pm">+</div>
+              <div class="val"><span style="opacity:1">2 km</span></div>
+            </div>
+          </div>
+          <div class="swap">
+            <div class="mcard c1">
+              <div class="mphoto warm"><div class="plate">
+                <svg viewBox="0 0 24 24" width="26" height="26" style="color:#B9812F">
+                  <path class="st" d="M9 4v6M12 4v6M15 4v6M9 10h6l-1.5 3h-3zM12 13v7"/>
+                </svg></div>
+                <div class="gm-badge">Google Maps ↗</div>
+              </div>
+              <div class="mbody">
+                <div class="badges"><span class="b gold">$$</span><span class="b blue">Want to go</span></div>
+                <div class="mname">鼎泰豐 信義店</div>
+                <div class="mline">1.2 km away</div>
+                <div class="mdesc">Xiaolongbao institution — thin-skinned soup dumplings, always a queue.</div>
+              </div>
+            </div>
+            <div class="mcard c2">
+              <div class="mphoto plum"><div class="plate">
+                <svg viewBox="0 0 24 24" width="26" height="26" style="color:#8E4A5B">
+                  <path class="st" d="M9 4v6M12 4v6M15 4v6M9 10h6l-1.5 3h-3zM12 13v7"/>
+                </svg></div>
+                <div class="gm-badge">Google Maps ↗</div>
+              </div>
+              <div class="mbody">
+                <div class="badges"><span class="b gold">$$$</span><span class="b blue">Date nights</span></div>
+                <div class="mname">老乾杯 慶城店</div>
+                <div class="mline">1.8 km away</div>
+                <div class="mdesc">Premium wagyu yakiniku — grilled at the table, great set lunches.</div>
+              </div>
+            </div>
+          </div>
+          <div class="mbtn">Not feeling it — another</div>
+        </div>
+        <div class="tap t1"></div><div class="tap t2"></div>
+        <div class="tabs">
+          <div class="on"><svg viewBox="0 0 24 24"><path class="st" d="M8 3v8M12 3v8M8 7h4M16 3c-1.5 2-2 4-2 6h4c0-2-.5-4-2-6zM8 11v10M16 9v12"/></svg>Tonight</div>
+          <div><svg viewBox="0 0 24 24"><path class="st" d="M12 3l2.4 5 5.6.7-4 3.8 1 5.5-5-2.7-5 2.7 1-5.5-4-3.8 5.6-.7z"/></svg>Michelin</div>
+          <div><svg viewBox="0 0 24 24"><path class="st" d="M5 8h14l-2 12H7zM9 8a3 3 0 016 0"/></svg>Uber Eats</div>
+          <div><svg viewBox="0 0 24 24"><circle class="st" cx="12" cy="12" r="3.4"/><path class="st" d="M12 4v3M12 17v3M4 12h3M17 12h3M6.3 6.3l2.1 2.1M15.6 15.6l2.1 2.1M17.7 6.3l-2.1 2.1M8.4 15.6l-2.1 2.1"/></svg>Settings</div>
+        </div>
+      </div></div>
+    </div>
+    <div>
+      <div class="num">STEP 2</div>
+      <h2>Get tonight's pick</h2>
+      <p>The <b>Tonight</b> tab suggests one place at a time from your lists — never the same
+      place twice until you've seen everything in range.</p>
+      <p><b>Tap the photo</b> to open the restaurant in Google Maps and check reviews, hours,
+      and live traffic. Not feeling it? Tap for <b>another</b>.</p>
+      <p>Long-press a card to hide places you never want suggested again.</p>
+    </div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="step reveal">
+    <div class="phone-col">
+      <div class="phone"><div class="screen s3">
+        <div class="island"></div>
+        <div class="app">
+          <div class="mbox">
+            <div class="chiprow" style="margin-top:0">
+              <div class="chip m-dist">Distance</div><div class="chip m-walk">Walk</div><div class="chip m-drive">Drive</div>
+            </div>
+            <div class="slider">
+              <div class="pm">−</div>
+              <div class="track"><div class="fill"></div><div class="thumb"></div></div>
+              <div class="pm">+</div>
+              <div class="val">
+                <span class="v1">2 km</span><span class="v2">5 km</span>
+                <span class="v3">15 min walk</span><span class="v4">60 min drive</span>
+              </div>
+            </div>
+            <div class="note">
+              <span class="n1">Straight-line radius — instant, works offline</span>
+              <span class="n23">Real route time, checked with Apple Maps</span>
+              <span class="n4">Drive time in current traffic</span>
+            </div>
+          </div>
+          <div class="mbox" style="flex:1;display:flex;align-items:center;justify-content:center;color:#8e8e93;font-size:11px">
+            suggestions update instantly
+          </div>
+        </div>
+        <div class="tabs">
+          <div class="on"><svg viewBox="0 0 24 24"><path class="st" d="M8 3v8M12 3v8M8 7h4M16 3c-1.5 2-2 4-2 6h4c0-2-.5-4-2-6zM8 11v10M16 9v12"/></svg>Tonight</div>
+          <div><svg viewBox="0 0 24 24"><path class="st" d="M12 3l2.4 5 5.6.7-4 3.8 1 5.5-5-2.7-5 2.7 1-5.5-4-3.8 5.6-.7z"/></svg>Michelin</div>
+          <div><svg viewBox="0 0 24 24"><path class="st" d="M5 8h14l-2 12H7zM9 8a3 3 0 016 0"/></svg>Uber Eats</div>
+          <div><svg viewBox="0 0 24 24"><circle class="st" cx="12" cy="12" r="3.4"/><path class="st" d="M12 4v3M12 17v3M4 12h3M17 12h3M6.3 6.3l2.1 2.1M15.6 15.6l2.1 2.1M17.7 6.3l-2.1 2.1M8.4 15.6l-2.1 2.1"/></svg>Settings</div>
+        </div>
+      </div></div>
+    </div>
+    <div>
+      <div class="num">STEP 3</div>
+      <h2>Set how far you'll go</h2>
+      <p>The panel at the top of every page is your travel budget. Three ways to measure
+      "close enough":</p>
+      <p><b>Distance</b> — a straight-line radius, 200 m to 50 km.<br>
+      <b>Walk</b> — real walking time, 5 to 60 minutes.<br>
+      <b>Drive</b> — driving time in <b>current traffic</b>, 15 to 90 minutes.</p>
+      <p>Slide for big jumps, tap <b>+ / −</b> for one step. Each mode remembers its own
+      setting, and changing it re-rolls the suggestion immediately.</p>
+    </div>
+  </section>
+
+  <!-- STEP 4 -->
+  <section class="step reveal">
+    <div class="phone-col">
+      <div class="phone"><div class="screen s4">
+        <div class="island"></div>
+        <div class="app">
+          <div class="mbox">
+            <div class="msub" style="margin-bottom:6px">MICHELIN GUIDE · in range: 34</div>
+            <div class="chiprow" style="margin-top:0">
+              <div class="chip on">$</div><div class="chip on">$$</div><div class="chip">$$$</div><div class="chip">$$$$</div>
+            </div>
+            <div class="chiprow">
+              <div class="chip red">Selected</div><div class="chip red">Bib</div>
+              <div class="chip star-chip">⭐</div><div class="chip">⭐⭐</div><div class="chip">⭐⭐⭐</div>
+            </div>
+            <div class="mbtn" style="margin-top:10px">✦ Suggest a restaurant</div>
+          </div>
+          <div class="mcard">
+            <div class="mphoto teal"><div class="plate">
+              <svg viewBox="0 0 24 24" width="26" height="26" style="color:#3E7C6B">
+                <path class="st" d="M9 4v6M12 4v6M15 4v6M9 10h6l-1.5 3h-3zM12 13v7"/>
+              </svg></div>
+              <div class="gm-badge">Google Maps ↗</div>
+            </div>
+            <div class="mbody">
+              <div class="badges"><span class="b red">⭐ 1 star</span><span class="b gold">$$$$</span></div>
+              <div class="mname">彧割烹</div>
+              <div class="mline">25 min in current traffic</div>
+              <div class="mdesc">Kappo counter, seasonal omakase — on the list since 2023.</div>
+            </div>
+          </div>
+        </div>
+        <div class="tap t1"></div><div class="tap t2"></div>
+        <div class="tabs">
+          <div><svg viewBox="0 0 24 24"><path class="st" d="M8 3v8M12 3v8M8 7h4M16 3c-1.5 2-2 4-2 6h4c0-2-.5-4-2-6zM8 11v10M16 9v12"/></svg>Tonight</div>
+          <div class="on"><svg viewBox="0 0 24 24"><path class="st" d="M12 3l2.4 5 5.6.7-4 3.8 1 5.5-5-2.7-5 2.7 1-5.5-4-3.8 5.6-.7z"/></svg>Michelin</div>
+          <div><svg viewBox="0 0 24 24"><path class="st" d="M5 8h14l-2 12H7zM9 8a3 3 0 016 0"/></svg>Uber Eats</div>
+          <div><svg viewBox="0 0 24 24"><circle class="st" cx="12" cy="12" r="3.4"/><path class="st" d="M12 4v3M12 17v3M4 12h3M17 12h3M6.3 6.3l2.1 2.1M15.6 15.6l2.1 2.1M17.7 6.3l-2.1 2.1M8.4 15.6l-2.1 2.1"/></svg>Settings</div>
+        </div>
+      </div></div>
+    </div>
+    <div>
+      <div class="num">STEP 4</div>
+      <h2>Feeling fancy? Ask the Michelin tab</h2>
+      <p>The <b>Michelin</b> tab plays the same game over the entire Michelin Guide —
+      every tier, worldwide, built in. No setup needed.</p>
+      <p>Filter by <b>price band</b> and <b>award</b> (Selected, Bib Gourmand, one to three
+      stars), then let it pick. It also lists everything in range, nearest first — including
+      places that <b>dropped off the guide</b>, if you ask.</p>
+      <p>Names show in the local language — 鮨さいとう, not "Sushi Saito".</p>
+    </div>
+  </section>
+
+  <!-- STEP 5 -->
+  <section class="step reveal">
+    <div class="phone-col">
+      <div class="phone"><div class="screen s5">
+        <div class="island"></div>
+        <div class="app">
+          <div class="mbox">
+            <div class="slider" style="margin-top:0">
+              <div class="pm">−</div>
+              <div class="track"><div class="fill" style="width:45%"></div><div class="thumb" style="left:45%"></div></div>
+              <div class="pm">+</div>
+              <div class="val"><span style="opacity:1">5 km</span></div>
+            </div>
+          </div>
+          <div class="mcard">
+            <div class="mphoto warm"><div class="plate">
+              <svg viewBox="0 0 24 24" width="26" height="26" style="color:#B9812F">
+                <path class="st" d="M9 4v6M12 4v6M15 4v6M9 10h6l-1.5 3h-3zM12 13v7"/>
+              </svg></div>
+              <div class="gm-badge">Google Maps ↗</div>
+            </div>
+            <div class="mbody">
+              <div class="badges"><span class="b green">On Uber Eats</span><span class="b blue">Want to go</span></div>
+              <div class="mname">三元花園韓式餐廳</div>
+              <div class="mline">2.1 km away</div>
+              <div class="mdesc">Korean BBQ classic — verified orderable at this exact branch.</div>
+              <div class="ubtn">Order on Uber Eats</div>
+            </div>
+          </div>
+        </div>
+        <div class="tap"></div>
+        <div class="uber-screen">
+          <div class="uhead">Uber Eats</div>
+          <div class="ubody">
+            <div class="uphoto"><div class="plate" style="width:44px;height:44px">
+              <svg viewBox="0 0 24 24" width="22" height="22" style="color:#3E7C6B">
+                <path class="st" d="M9 4v6M12 4v6M15 4v6M9 10h6l-1.5 3h-3zM12 13v7"/>
+              </svg></div></div>
+            <div class="mname" style="font-size:17px">三元花園韓式餐廳</div>
+            <div class="msub">★ 4.7 · Korean · 30–45 min · delivery</div>
+            <div class="ubtn" style="margin-top:8px">Start your order</div>
+          </div>
+        </div>
+        <div class="tabs">
+          <div><svg viewBox="0 0 24 24"><path class="st" d="M8 3v8M12 3v8M8 7h4M16 3c-1.5 2-2 4-2 6h4c0-2-.5-4-2-6zM8 11v10M16 9v12"/></svg>Tonight</div>
+          <div><svg viewBox="0 0 24 24"><path class="st" d="M12 3l2.4 5 5.6.7-4 3.8 1 5.5-5-2.7-5 2.7 1-5.5-4-3.8 5.6-.7z"/></svg>Michelin</div>
+          <div class="on"><svg viewBox="0 0 24 24"><path class="st" d="M5 8h14l-2 12H7zM9 8a3 3 0 016 0"/></svg>Uber Eats</div>
+          <div><svg viewBox="0 0 24 24"><circle class="st" cx="12" cy="12" r="3.4"/><path class="st" d="M12 4v3M12 17v3M4 12h3M17 12h3M6.3 6.3l2.1 2.1M15.6 15.6l2.1 2.1M17.7 6.3l-2.1 2.1M8.4 15.6l-2.1 2.1"/></svg>Settings</div>
+        </div>
+      </div></div>
+    </div>
+    <div>
+      <div class="num">STEP 5</div>
+      <h2>Staying in? Same lists, delivered</h2>
+      <p>The <b>Uber Eats</b> tab suggests from the same saved places — but only ones it has
+      <b>verified you can actually order from</b>, matched to the exact branch by location.</p>
+      <p>The photo still opens Google Maps for reviews. The green button drops you
+      <b>inside the store on Uber Eats</b>, ready to order — not a search page.</p>
+      <p>Shops, closed places, and restaurants not on the platform are skipped automatically.</p>
+    </div>
+  </section>
+
+  <!-- STEP 6 -->
+  <section class="step reveal">
+    <div class="phone-col">
+      <div class="phone"><div class="screen s6">
+        <div class="island"></div>
+        <div class="pages">
+          <div>
+            <div class="mbox" style="height:110px"><div class="mtitle">Tonight</div><div class="msub">your saved places</div></div>
+            <div class="mbox" style="flex:1"></div>
+          </div>
+          <div>
+            <div class="mbox" style="height:110px"><div class="mtitle">Michelin</div><div class="msub">the whole guide</div></div>
+            <div class="mbox" style="flex:1"></div>
+          </div>
+          <div>
+            <div class="mbox" style="height:110px"><div class="mtitle">Uber Eats</div><div class="msub">verified delivery</div></div>
+            <div class="mbox" style="flex:1"></div>
+          </div>
+          <div>
+            <div class="mbox" style="height:110px"><div class="mtitle">Settings</div><div class="msub">lists · language · imports</div></div>
+            <div class="mbox" style="flex:1"></div>
+          </div>
+        </div>
+        <div class="finger"></div>
+        <div class="tabs">
+          <div class="tb1"><svg viewBox="0 0 24 24"><path class="st" d="M8 3v8M12 3v8M8 7h4M16 3c-1.5 2-2 4-2 6h4c0-2-.5-4-2-6zM8 11v10M16 9v12"/></svg>Tonight</div>
+          <div class="tb2"><svg viewBox="0 0 24 24"><path class="st" d="M12 3l2.4 5 5.6.7-4 3.8 1 5.5-5-2.7-5 2.7 1-5.5-4-3.8 5.6-.7z"/></svg>Michelin</div>
+          <div class="tb3"><svg viewBox="0 0 24 24"><path class="st" d="M5 8h14l-2 12H7zM9 8a3 3 0 016 0"/></svg>Uber Eats</div>
+          <div class="tb4"><svg viewBox="0 0 24 24"><circle class="st" cx="12" cy="12" r="3.4"/><path class="st" d="M12 4v3M12 17v3M4 12h3M17 12h3M6.3 6.3l2.1 2.1M15.6 15.6l2.1 2.1M17.7 6.3l-2.1 2.1M8.4 15.6l-2.1 2.1"/></svg>Settings</div>
+        </div>
+      </div></div>
+    </div>
+    <div>
+      <div class="num">STEP 6</div>
+      <h2>Swipe your way around</h2>
+      <p>Swipe left or right anywhere to move between the four pages — or tap the bar
+      at the bottom.</p>
+      <p>In <b>Settings</b> you manage everything: switch lists on and off (great for testing a
+      friend's list for a week), rename them, remove them safely — a place that's also on
+      another list is never deleted — and re-sync anytime. Lists refresh themselves weekly.</p>
+    </div>
+  </section>
+
+  <!-- tips -->
+  <section class="tips reveal">
+    <h2>Good to know</h2>
+    <div class="tipgrid">
+      <div class="tip">
+        <h3>Everything stays on your phone</h3>
+        <p>Your lists and places live in a local store. No account, no cloud, no tracking —
+        location is only used to measure "how far is dinner".</p>
+      </div>
+      <div class="tip">
+        <h3>Traffic is checked, not guessed</h3>
+        <p>Walk and drive budgets verify the real route with Apple Maps at suggestion time —
+        "30 min drive" means 30 minutes <em>right now</em>, not on an empty road.</p>
+      </div>
+      <div class="tip">
+        <h3>Hidden means hidden</h3>
+        <p>Long-press any suggestion to hide it forever. Hidden places survive re-syncs;
+        unhide them anytime in Settings → Manage restaurants.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    FeedYu · suggestions from your own saved places · Michelin data from the open
+    michelin-my-maps dataset · MIT licensed
+  </footer>
+</main>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { e.target.classList.add('vis'); io.unobserve(e.target); }
+  }, { threshold: 0.15 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
