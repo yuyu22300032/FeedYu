@@ -45,20 +45,23 @@ struct TravelBudgetPanel: View {
                     }
                 }
             }
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 if distanceOnly {
                     Image(systemName: TravelMode.distance.systemImage)
                         .foregroundStyle(.secondary)
                 }
+                // Slider = coarse presets; +/− = fine steps in between.
+                stepButton(direction: -1, systemImage: "minus.circle.fill")
                 Slider(value: budgetSliderIndex,
                        in: 0...Double(TravelBudget.presets(for: activeMode).count - 1),
                        step: 1)
                     .id(activeMode) // rebuild when the preset scale changes
+                stepButton(direction: 1, systemImage: "plus.circle.fill")
                 Text(activeBudget.label)
                     .font(.subheadline.weight(.semibold))
                     .monospacedDigit()
                     .lineLimit(1)
-                    .frame(minWidth: 88, alignment: .trailing)
+                    .frame(minWidth: 76, alignment: .trailing)
             }
         }
         .padding(boxed ? 12 : 0)
@@ -66,6 +69,20 @@ struct TravelBudgetPanel: View {
         // inside a List, where the row itself is the box.
         .background(boxed ? AnyShapeStyle(Color(.secondarySystemGroupedBackground)) : AnyShapeStyle(.clear),
                     in: RoundedRectangle(cornerRadius: 14))
+    }
+
+    private func stepButton(direction: Int, systemImage: String) -> some View {
+        Button {
+            // One preset slot, exactly like nudging the slider (its setter
+            // clamps to the scale's ends).
+            budgetSliderIndex.wrappedValue += Double(direction)
+        } label: {
+            Image(systemName: systemImage)
+                .font(.title3)
+                .foregroundStyle(Color.accentColor)
+        }
+        .buttonStyle(.borderless)
+        .accessibilityLabel(direction > 0 ? "Increase budget" : "Decrease budget")
     }
 
     /// Slider position ↔ nearest preset of the active mode.

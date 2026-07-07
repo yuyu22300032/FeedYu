@@ -15,17 +15,73 @@ struct SettingsView: View {
     @State private var csvImportKind: ListKind = .wantToGo
     @State private var importMessage: String?
 
+    /// Rename-list alert state: the sourceID being renamed + draft text.
+    @State private var renamingSourceID: String?
+    @State private var renameText = ""
+
+    /// Remove-list confirmation state.
+    @State private var removalSourceID: String?
+    @State private var removalLabel = ""
+
     var body: some View {
         NavigationStack {
             Form {
                 languageSection
-                budgetSection
                 listsSection
                 addListSection
                 takeoutSection
                 michelinSection
                 restaurantsSection
             }
+            .alert("Rename list", isPresented: Binding(
+                get: { renamingSourceID != nil },
+                set: { if !$0 { renamingSourceID = nil } }
+            )) {
+                TextField("List name", text: $renameText)
+                Button("Save") { applyRename() }
+                Button("Cancel", role: .cancel) { renamingSourceID = nil }
+            }
+            .confirmationDialog("Remove “\(removalLabel)”?", isPresented: Binding(
+                get: { removalSourceID != nil },
+                set: { if !$0 { removalSourceID = nil } }
+            ), titleVisibility: .visible) {
+                Button("Remove list and its places", role: .destructive) { applyRemoval() }
+                Button("Cancel", role: .cancel) { removalSourceID = nil }
+            } message: {
+                Text("Places only on this list are deleted. Places that are also on another list, added manually, or in the Michelin guide are kept.")
+            }
+        }
+    }
+
+    private func beginRemoval(sourceID: String, label: String) {
+        removalLabel = label
+        removalSourceID = sourceID
+    }
+
+    private func applyRemoval() {
+        guard let sourceID = removalSourceID else { return }
+        removalSourceID = nil
+        var otherListIDs = Set(settings.sharedLists.map(\.sourceID))
+        otherListIDs.formUnion(settings.importedLists.map(\.sourceID))
+        otherListIDs.remove(sourceID)
+        store.removeList(sourceID: sourceID, otherListSourceIDs: otherListIDs)
+        settings.sharedLists.removeAll { $0.sourceID == sourceID }
+        settings.importedLists.removeAll { $0.sourceID == sourceID }
+    }
+
+    private func beginRename(sourceID: String, currentLabel: String) {
+        renameText = currentLabel
+        renamingSourceID = sourceID
+    }
+
+    private func applyRename() {
+        guard let sourceID = renamingSourceID else { return }
+        renamingSourceID = nil
+        let label = renameText.trimmingCharacters(in: .whitespaces)
+        if let index = settings.sharedLists.firstIndex(where: { $0.sourceID == sourceID }) {
+            settings.sharedLists[index].label = label
+        } else if let index = settings.importedLists.firstIndex(where: { $0.sourceID == sourceID }), !label.isEmpty {
+            settings.importedLists[index].label = label
         }
     }
 
@@ -53,44 +109,6 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Travel budget
-
-    private var budgetSection: some View {
-        Section {
-            Picker("Travel mode", selection: $settings.travelMode) {
-                ForEach(TravelMode.allCases) { mode in
-                    Text(mode.label).tag(mode)
-                }
-            }
-            .pickerStyle(.segmented)
-            switch settings.travelMode {
-            case .distance:
-                Stepper {
-                    LabeledContent("Max distance",
-                                   value: TravelBudget.formatMeters(settings.distanceBudgetMeters))
-                } onIncrement: {
-                    let step = TravelBudget.distanceStep(from: settings.distanceBudgetMeters)
-                    settings.distanceBudgetMeters = min(TravelBudget.distanceRange.upperBound,
-                                                        settings.distanceBudgetMeters + step)
-                } onDecrement: {
-                    let step = TravelBudget.distanceStep(from: settings.distanceBudgetMeters - 1)
-                    settings.distanceBudgetMeters = max(TravelBudget.distanceRange.lowerBound,
-                                                        settings.distanceBudgetMeters - step)
-                }
-            case .walking:
-                Stepper("\(settings.walkBudgetMinutes) min walk",
-                        value: $settings.walkBudgetMinutes, in: 5...120, step: 5)
-            case .driving:
-                Stepper("\(settings.driveBudgetMinutes) min drive",
-                        value: $settings.driveBudgetMinutes, in: 15...90, step: 5)
-            }
-        } header: {
-            Text("Travel budget")
-        } footer: {
-            Text("Distance filters by straight line — no route lookups at all. Walk and drive verify the real route time with Apple Maps, only for the place being suggested. The quick selector on the Tonight page changes the same setting.")
-        }
-    }
-
     // MARK: - Your lists (shared links + Takeout imports, each toggleable)
 
     /// Visible-place count per list source, one pass over the store.
@@ -109,25 +127,13 @@ struct SettingsView: View {
             ForEach($settings.sharedLists) { $config in
                 sharedListRow($config)
             }
-            .onDelete { offsets in
-                for index in offsets {
-                    store.clearSyncStatus(sourceID: settings.sharedLists[index].sourceID)
-                }
-                settings.sharedLists.remove(atOffsets: offsets)
-            }
             ForEach($settings.importedLists) { $config in
                 importedListRow($config)
-            }
-            .onDelete { offsets in
-                for index in offsets {
-                    store.clearSyncStatus(sourceID: settings.importedLists[index].sourceID)
-                }
-                settings.importedLists.remove(atOffsets: offsets)
             }
         } header: {
             Text("Your lists (\(settings.listCount)/\(AppSettings.maxLists))")
         } footer: {
-            Text("Toggle a list off to leave it out of Tonight suggestions without deleting it — handy for trying out a friend's list. Deleting a list keeps its places in the store but stops suggesting them.")
+            Text("Toggle a list off to leave it out of Tonight suggestions without deleting it — handy for trying out a friend's list. Removing a list also deletes its places, except ones on another list, added manually, or in the Michelin guide.")
         }
     }
 
@@ -147,6 +153,24 @@ struct SettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
+                Button {
+                    beginRename(sourceID: config.wrappedValue.sourceID,
+                                currentLabel: config.wrappedValue.label)
+                } label: {
+                    Image(systemName: "pencil")
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel("Rename list")
+                Button {
+                    beginRemoval(sourceID: config.wrappedValue.sourceID,
+                                 label: config.wrappedValue.label.isEmpty
+                                     ? String(localized: "Shared list") : config.wrappedValue.label)
+                } label: {
+                    Image(systemName: "trash")
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(.red)
+                .accessibilityLabel("Remove list")
                 if store.syncingSourceIDs.contains(config.wrappedValue.sourceID) {
                     ProgressView()
                 } else {
@@ -172,6 +196,23 @@ struct SettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
+                Button {
+                    beginRename(sourceID: config.wrappedValue.sourceID,
+                                currentLabel: config.wrappedValue.label)
+                } label: {
+                    Image(systemName: "pencil")
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel("Rename list")
+                Button {
+                    beginRemoval(sourceID: config.wrappedValue.sourceID,
+                                 label: config.wrappedValue.label)
+                } label: {
+                    Image(systemName: "trash")
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(.red)
+                .accessibilityLabel("Remove list")
                 Text("Takeout import")
                     .font(.caption2)
                     .foregroundStyle(.secondary)

@@ -72,11 +72,4 @@ struct TravelBudget: Equatable, Hashable {
     }
 
     static let distanceRange = 100...50_000
-
-    /// Adaptive stepper increment: fine steps close by, coarse further out.
-    static func distanceStep(from meters: Int) -> Int {
-        if meters < 1000 { return 100 }
-        if meters < 5000 { return 500 }
-        return 1000
-    }
 }

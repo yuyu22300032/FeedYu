@@ -64,7 +64,10 @@ struct RootView: View {
         }
         .task { await bootstrap() }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { drainShareInbox() }
+            if phase == .active {
+                drainShareInbox()
+                Task { await syncOutdatedLists() }
+            }
         }
         .alert("Shared lists", isPresented: Binding(
             get: { shareInboxMessage != nil },
@@ -121,6 +124,12 @@ struct RootView: View {
 
     private func bootstrap() async {
         await store.load()
+        // Store URLs saved by the v1 name-only Uber matcher were noisy —
+        // clear once so the geo-verified checker re-resolves them.
+        if !UserDefaults.standard.bool(forKey: "uberEatsURLsResetV2") {
+            store.clearAllUberEatsURLs()
+            UserDefaults.standard.set(true, forKey: "uberEatsURLsResetV2")
+        }
         drainShareInbox()
         // Takeout imports done before the list registry existed get registered
         // so their places keep feeding Tonight.
@@ -128,10 +137,21 @@ struct RootView: View {
         locationProvider.requestPermissionIfNeeded()
         // Michelin first: bundled data means the Michelin tab works instantly.
         await store.sync(MichelinDataSource())
-        // Disabled lists are skipped (no point scraping a list that's off);
-        // they re-sync when toggled back on or via Sync now.
+        await syncOutdatedLists()
+    }
+
+    /// Weekly re-sync: each enabled shared list refreshes when its last
+    /// successful sync is over a week old (Sync now in Settings is always
+    /// available for an immediate refresh). Disabled lists are skipped —
+    /// no point scraping a list that's off.
+    private func syncOutdatedLists() async {
+        guard store.isLoaded else { return }
+        let weekAgo = Date().addingTimeInterval(-7 * 24 * 3600)
         for source in settings.sharedListSources where source.config.isEnabled {
-            await store.sync(source)
+            let lastSuccess = store.syncStatuses[source.id]?.lastSuccess
+            if lastSuccess == nil || lastSuccess! < weekAgo {
+                await store.sync(source)
+            }
         }
     }
 }

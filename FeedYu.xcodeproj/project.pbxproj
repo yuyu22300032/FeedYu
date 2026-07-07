@@ -22,6 +22,7 @@
 		3BBAED62166C4A9D7EB4640A /* SuggestionEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06BC1CCFBB9E4A24509799E0 /* SuggestionEngineTests.swift */; };
 		3C9265B49B50DFC875DB5D33 /* UberEatsChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B19191B684F5A7115F8C2DE /* UberEatsChecker.swift */; };
 		3CE6C8459566B975930D823D /* RestaurantDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A132986CFC1E674A5FBC277 /* RestaurantDataSource.swift */; };
+		42C91AAF8503A39D402C9CB1 /* WebPageFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D1968F4E0F1FE9E28854C7B /* WebPageFetcher.swift */; };
 		485758D4AF1D01709B6F1BDA /* PlaceInfoParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC06CBC112A0920428803DD6 /* PlaceInfoParserTests.swift */; };
 		4A74AD126607E16A2AC2F042 /* TravelBudget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77DAF0A5144600E21C0FD5F3 /* TravelBudget.swift */; };
 		4C9A9FA8E170CE084BFFD612 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E576C52182D9D2C25BE69CD4 /* Localizable.xcstrings */; };
@@ -49,6 +50,7 @@
 		D9F069332CB620231ADF60B7 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 4F5F48B846712A0332E6CF99 /* Localizable.xcstrings */; };
 		DC8670623867400F431097D2 /* TakeoutImportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14DB6D8877F7B81FD101D0AE /* TakeoutImportTests.swift */; };
 		DE0A42CE61510DD174923C93 /* SuggestionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B4D29F84EB9156C3A560E92 /* SuggestionEngine.swift */; };
+		E170A2CB474DCE3FFA635639 /* ListRemovalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9695CC3F82931F479F40109C /* ListRemovalTests.swift */; };
 		E61FAE124C65EA0CC8D6FDD7 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC54A845814EB8E3943093C9 /* AppSettings.swift */; };
 		E960F792195FAA2F331C91BB /* RestaurantStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91CD30035E365D5CF1E2AAB8 /* RestaurantStore.swift */; };
 		E9911EE522DB6B5303692F3C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 41E4DE5A3946C287DFD3B86E /* Assets.xcassets */; };
@@ -104,6 +106,7 @@
 		34B6065279F321F9CFCCEE66 /* StoreMergeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreMergeTests.swift; sourceTree = "<group>"; };
 		373DC8B167718D9BA1CB186E /* GetlistParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetlistParserTests.swift; sourceTree = "<group>"; };
 		3AB19E04C4D27D4B71BE11A0 /* FeedYuTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FeedYuTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3D1968F4E0F1FE9E28854C7B /* WebPageFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebPageFetcher.swift; sourceTree = "<group>"; };
 		41E4DE5A3946C287DFD3B86E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		47C659FC58BBF88A8F91F526 /* ManageRestaurantsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageRestaurantsView.swift; sourceTree = "<group>"; };
 		49448308B6F9C79BDA95FC45 /* TravelBudgetPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelBudgetPanel.swift; sourceTree = "<group>"; };
@@ -120,6 +123,7 @@
 		9013BBD3A3C8E4EEF4F509CA /* FeedYuShare.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = FeedYuShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		91CD30035E365D5CF1E2AAB8 /* RestaurantStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantStore.swift; sourceTree = "<group>"; };
 		93696CE048929DAD36825626 /* CSVParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVParserTests.swift; sourceTree = "<group>"; };
+		9695CC3F82931F479F40109C /* ListRemovalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListRemovalTests.swift; sourceTree = "<group>"; };
 		9E460EA21E57BF64877848CF /* listpage-snippet.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = "listpage-snippet.html"; sourceTree = "<group>"; };
 		9E863C1A658E83709ACF30F3 /* GoogleSharedListSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleSharedListSource.swift; sourceTree = "<group>"; };
 		A3CDBB494C753B3891660634 /* CSVParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVParser.swift; sourceTree = "<group>"; };
@@ -222,6 +226,7 @@
 				373DC8B167718D9BA1CB186E /* GetlistParserTests.swift */,
 				A7AFC05E50102E224796464C /* GoogleSharedListParserTests.swift */,
 				4B33BB285D942D95E724120F /* ListConfigTests.swift */,
+				9695CC3F82931F479F40109C /* ListRemovalTests.swift */,
 				AACDF96AEA6F672396F0978F /* MichelinDataSourceTests.swift */,
 				E34DEB9870F10C198917A9EF /* MichelinNameLocalizerTests.swift */,
 				FC06CBC112A0920428803DD6 /* PlaceInfoParserTests.swift */,
@@ -256,6 +261,7 @@
 				70FE8D89BA1EDBC49B840F51 /* PlaceInfoFetcher.swift */,
 				31E365692CA272180A4463F3 /* ShareInbox.swift */,
 				7B19191B684F5A7115F8C2DE /* UberEatsChecker.swift */,
+				3D1968F4E0F1FE9E28854C7B /* WebPageFetcher.swift */,
 			);
 			path = Support;
 			sourceTree = "<group>";
@@ -444,6 +450,7 @@
 				35AFBAB012AD52326BB3F532 /* GetlistParserTests.swift in Sources */,
 				104ED0718D77629B6B681D93 /* GoogleSharedListParserTests.swift in Sources */,
 				089BF3E36BE8BE15F24777ED /* ListConfigTests.swift in Sources */,
+				E170A2CB474DCE3FFA635639 /* ListRemovalTests.swift in Sources */,
 				9381B7AA377E5C4F3FBC58B5 /* MichelinDataSourceTests.swift in Sources */,
 				FC5CD2E5B6FDF50421E2CDE0 /* MichelinNameLocalizerTests.swift in Sources */,
 				485758D4AF1D01709B6F1BDA /* PlaceInfoParserTests.swift in Sources */,
@@ -483,6 +490,7 @@
 				4A74AD126607E16A2AC2F042 /* TravelBudget.swift in Sources */,
 				B485698D51327A515ED1899E /* TravelBudgetPanel.swift in Sources */,
 				3C9265B49B50DFC875DB5D33 /* UberEatsChecker.swift in Sources */,
+				42C91AAF8503A39D402C9CB1 /* WebPageFetcher.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

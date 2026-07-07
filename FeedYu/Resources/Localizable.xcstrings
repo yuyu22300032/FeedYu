@@ -529,6 +529,22 @@
         }
       }
     },
+    "Decrease budget": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上限を減らす"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "減少預算"
+          }
+        }
+      }
+    },
     "Delete": {
       "localizations": {
         "ja": {
@@ -557,22 +573,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "距離"
-          }
-        }
-      }
-    },
-    "Distance filters by straight line — no route lookups at all. Walk and drive verify the real route time with Apple Maps, only for the place being suggested. The quick selector on the Tonight page changes the same setting.": {
-      "localizations": {
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "「距離」は直線距離のみで絞り込み、経路検索は一切行いません。「徒歩」「車」は提案する場所についてのみ、Apple マップで実際の所要時間を確認します。「今夜」ページのクイック選択も同じ設定を変更します。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "「距離」以直線距離篩選，完全不查詢路線。「步行」和「開車」只會在建議某個地點時，用 Apple 地圖驗證實際路程時間。「今晚」頁面上的快速選擇器改的是同一個設定。"
           }
         }
       }
@@ -913,6 +913,22 @@
         }
       }
     },
+    "Increase budget": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上限を増やす"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "增加預算"
+          }
+        }
+      }
+    },
     "Label (optional)": {
       "localizations": {
         "ja": {
@@ -957,6 +973,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "上次同步：%@ · %lld 個地點"
+          }
+        }
+      }
+    },
+    "List name": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "リスト名"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清單名稱"
           }
         }
       }
@@ -1037,22 +1069,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "手動"
-          }
-        }
-      }
-    },
-    "Max distance": {
-      "localizations": {
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "最大距離"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "最大距離"
           }
         }
       }
@@ -1425,6 +1441,22 @@
         }
       }
     },
+    "Places only on this list are deleted. Places that are also on another list, added manually, or in the Michelin guide are kept.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このリストだけにある場所は削除されます。他のリストにもある場所、手動で追加した場所、ミシュランガイド掲載の場所は残ります。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "只在這個清單上的地點會被刪除。同時在其他清單上、手動加入、或列於米其林指南的地點會保留。"
+          }
+        }
+      }
+    },
     "Price bands — none selected means any price": {
       "localizations": {
         "ja": {
@@ -1501,6 +1533,70 @@
           "stringUnit": {
             "state": "translated",
             "value": "遠端米其林 CSV 只解析出 %lld 列——格式可能已變更。"
+          }
+        }
+      }
+    },
+    "Remove list": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "リストを削除"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除清單"
+          }
+        }
+      }
+    },
+    "Remove list and its places": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "リストとその場所を削除"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除清單與其中的地點"
+          }
+        }
+      }
+    },
+    "Remove “%@”?": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「%@」を削除しますか？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要移除「%@」嗎？"
+          }
+        }
+      }
+    },
+    "Rename list": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "リスト名を変更"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新命名清單"
           }
         }
       }
@@ -1825,18 +1921,18 @@
         }
       }
     },
-    "Toggle a list off to leave it out of Tonight suggestions without deleting it — handy for trying out a friend's list. Deleting a list keeps its places in the store but stops suggesting them.": {
+    "Toggle a list off to leave it out of Tonight suggestions without deleting it — handy for trying out a friend's list. Removing a list also deletes its places, except ones on another list, added manually, or in the Michelin guide.": {
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "リストをオフにすると、削除せずに「今夜」の提案から外せます。友達のリストを試すときに便利です。リストを削除しても場所のデータは残りますが、提案されなくなります。"
+            "value": "リストをオフにすると、削除せずに「今夜」の提案から外せます。友達のリストを試すときに便利です。リストを削除するとその場所も削除されますが、他のリストにも入っている場所、手動で追加した場所、ミシュランガイド掲載の場所は残ります。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "關掉清單開關就能暫時不列入「今晚」建議，不必刪除——試用朋友分享的清單時特別方便。刪除清單後，其中的地點仍會保留在資料庫，只是不再被建議。"
+            "value": "關掉清單開關就能暫時不列入「今晚」建議，不必刪除——試用朋友分享的清單時特別方便。移除清單會一併刪除其中的地點，但同時在其他清單上、手動加入、或列於米其林指南的地點會保留。"
           }
         }
       }
@@ -1853,38 +1949,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "今晚"
-          }
-        }
-      }
-    },
-    "Travel budget": {
-      "localizations": {
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "移動の上限"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "交通預算"
-          }
-        }
-      }
-    },
-    "Travel mode": {
-      "localizations": {
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "移動手段"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "交通方式"
           }
         }
       }

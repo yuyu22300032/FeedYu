@@ -127,6 +127,26 @@ final class RestaurantStore: ObservableObject {
 
     // MARK: - User edits
 
+    /// Removes a user list: strips its source stamp everywhere and deletes
+    /// the restaurants that belonged ONLY to it. A place survives when it is
+    /// manually added, part of the Michelin dataset, or stamped by any other
+    /// still-registered list (enabled or not).
+    func removeList(sourceID: String, otherListSourceIDs: Set<String>) {
+        restaurants = restaurants.compactMap { restaurant in
+            guard restaurant.lastSeenInSourceAt[sourceID] != nil else { return restaurant }
+            var updated = restaurant
+            updated.lastSeenInSourceAt[sourceID] = nil
+            let onAnotherList = updated.lastSeenInSourceAt.keys.contains { otherListSourceIDs.contains($0) }
+            let keep = updated.addedManually
+                || updated.michelinAward != nil
+                || updated.lastSeenInSourceAt["michelin"] != nil
+                || onAnotherList
+            return keep ? updated : nil
+        }
+        syncStatuses[sourceID] = nil
+        scheduleSave()
+    }
+
     func setHidden(_ hidden: Bool, id: UUID) {
         guard let index = restaurants.firstIndex(where: { $0.id == id }) else { return }
         restaurants[index].isHidden = hidden
@@ -158,6 +178,15 @@ final class RestaurantStore: ObservableObject {
             changed = true
         }
         if changed { scheduleSave() }
+    }
+
+    /// One-time cleanup: store URLs captured by the v1 name-only matcher
+    /// were unreliable; wipe them so the geo-verified checker re-resolves.
+    func clearAllUberEatsURLs() {
+        for index in restaurants.indices where restaurants[index].uberEatsURL != nil {
+            restaurants[index].uberEatsURL = nil
+        }
+        scheduleSave()
     }
 
     func setUberEatsURL(id: UUID, url: URL) {

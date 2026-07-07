@@ -129,6 +129,9 @@ struct TonightView: View {
 
     private func refresh() async {
         guard let origin = locationProvider.location else { return }
+        // WebView-rendered availability checks are slow (seconds each) —
+        // give up sooner than the ETA-check budget would.
+        engine.maxETAChecksPerRefresh = uberEatsMode ? 6 : 12
         engine.availabilityCheck = uberEatsMode ? { [weak store] restaurant in
             let result = await UberEatsChecker.shared.availability(for: restaurant, near: origin)
             if case .available(let storeURL) = result, let storeURL {

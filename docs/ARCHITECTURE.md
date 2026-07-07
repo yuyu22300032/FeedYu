@@ -38,7 +38,9 @@ FeedYu/
 ├── FeedYuApp.swift        @main; page-style TabView + custom bottom bar
 │                          (swipe between tabs — see Gotchas); bootstrap() =
 │                          load store → drain share inbox → request location
-│                          → sync Michelin → sync enabled shared lists
+│                          → sync Michelin → weekly list sync (enabled
+│                          shared lists re-sync when lastSuccess > 7 days;
+│                          also re-checked whenever the app foregrounds)
 ├── Models/Restaurant.swift        Restaurant + ListKind + MichelinAward
 ├── Models/TravelBudget.swift      TravelMode + TravelBudget (radius/presets)
 ├── DataSources/
@@ -93,6 +95,10 @@ places whose `lastSeenInSourceAt` contains an *enabled* list's sourceID (or
 (which only feeds badges/kind icons now). Both config types decode with
 `decodeIfPresent` defaults — a synthesized decoder would drop every persisted
 list when a new field is added (same trap as the Restaurant rule).
+Lists are renameable (pencil) and removable (trash + confirmation):
+`RestaurantStore.removeList` strips the list's stamp everywhere and deletes
+only places left with no other registered list that are neither manually
+added nor on the Michelin guide.
 
 ## Model: `Restaurant`
 
@@ -180,16 +186,22 @@ Michelin fields, never clear anything, never touch `isHidden`.
   Uber Eats tab (`TonightView(uberEatsMode: true)` — same candidates and
   engine as Tonight, but ALWAYS on the distance budget:
   `TravelBudgetPanel(distanceOnly: true)` drives `distanceBudgetMeters`
-  without touching the other tabs' mode). `UberEatsChecker` fetches the
-  ubereats.com search page
-  for the name (uev2.loc cookie = origin) and looks for a matching /store/
-  link: match → available (exact store URL persisted to
-  `Restaurant.uberEatsURL`, order button deep-links to it), real results but
-  no match → drop candidate, blocked/unparseable → PERMISSIVE (kept, button
-  falls back to a search universal link). ubereats.com 403s CLI clients —
-  universal links still work because iOS hands them to the installed app
-  without any web request. Checks count against the 12-per-refresh budget;
-  results are session-cached by normalized name.
+  without touching the other tabs' mode). `UberEatsChecker` verifies in two
+  stages: (1) ubereats.com search page for the name (uev2.loc cookie =
+  origin) → /store/ candidates prescreened by fuzzy slug similarity
+  (containment + normalized Levenshtein); (2) fetch ≤3 candidate store
+  pages and require the JSON-LD GeoCoordinates within **100 m** of our
+  saved coordinates plus a ≥0.5 name score (geo is the strong signal —
+  name-only matching linked wrong branches). No geo on the page → only a
+  ≥0.85 name score passes. Verified → exact store URL persisted to
+  `Restaurant.uberEatsURL` (order button deep-links to it); real results
+  but nothing verified → drop candidate; blocked/unparseable →
+  PERMISSIVE (kept, button falls back to a search universal link).
+  ubereats.com 403s CLI clients — universal links still work because iOS
+  hands them to the installed app without any web request. Checks count
+  against the 12-per-refresh budget; results are session-cached by
+  normalized name. (v1 name-only URLs are wiped once via the
+  `uberEatsURLsResetV2` flag.)
 - No repeats until the in-range pool is exhausted, then reshuffle (avoiding
   an immediate repeat of the current card).
 - `etaProvider` is an injectable closure — tests (and any future routing
