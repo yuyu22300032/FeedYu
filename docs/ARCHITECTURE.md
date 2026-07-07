@@ -1,8 +1,10 @@
 # FeedYu Architecture
 
 How the app is put together and *why*. Read this before changing anything
-structural. The original product spec is [../PLAN.md](../PLAN.md) (historical,
-uses the old name DinePick); this document reflects the code as built.
+structural. Page-by-page behavior, the suggestion pipeline, caching, and
+integration details are in [FEATURES.md](FEATURES.md). The original product
+spec is [../PLAN.md](../PLAN.md) (historical, uses the old name DinePick);
+this document reflects the code as built.
 
 ## Big picture
 
@@ -59,7 +61,8 @@ FeedYu/
 │   ├── MichelinNameLocalizer.swift
 │   ├── PlaceInfoFetcher.swift     lazy cover-photo/description scrape (og: meta)
 │   ├── ShareInbox.swift           app-group hand-off from the share extension
-│   └── UberEatsChecker.swift      "orderable?" search-page probe (see below)
+│   ├── UberEatsChecker.swift      "orderable?" verification (see Engine)
+│   └── WebPageFetcher.swift       hidden WKWebView: bot-cleared same-origin JS
 ├── Views/ (TonightView, MichelinView, SettingsView, ManageRestaurantsView,
 │           RestaurantCard, TravelBudgetPanel)
 │           No navigation titles — pages start at the content; the tab names
@@ -186,22 +189,29 @@ Michelin fields, never clear anything, never touch `isHidden`.
   Uber Eats tab (`TonightView(uberEatsMode: true)` — same candidates and
   engine as Tonight, but ALWAYS on the distance budget:
   `TravelBudgetPanel(distanceOnly: true)` drives `distanceBudgetMeters`
-  without touching the other tabs' mode). `UberEatsChecker` verifies in two
-  stages: (1) ubereats.com search page for the name (uev2.loc cookie =
-  origin) → /store/ candidates prescreened by fuzzy slug similarity
-  (containment + normalized Levenshtein); (2) fetch ≤3 candidate store
-  pages and require the JSON-LD GeoCoordinates within **100 m** of our
-  saved coordinates plus a ≥0.5 name score (geo is the strong signal —
-  name-only matching linked wrong branches). No geo on the page → only a
-  ≥0.85 name score passes. Verified → exact store URL persisted to
-  `Restaurant.uberEatsURL` (order button deep-links to it); real results
-  but nothing verified → drop candidate; blocked/unparseable →
-  PERMISSIVE (kept, button falls back to a search universal link).
-  ubereats.com 403s CLI clients — universal links still work because iOS
-  hands them to the installed app without any web request. Checks count
-  against the 12-per-refresh budget; results are session-cached by
-  normalized name. (v1 name-only URLs are wiped once via the
-  `uberEatsURLsResetV2` flag.)
+  without touching the other tabs' mode). `UberEatsChecker` verifies via
+  Uber's own JSON APIs called same-origin from a bot-cleared WKWebView
+  (`WebPageFetcher.callJS` — device logs proved ubereats.com serves a JS
+  bot-defense shell to bare URLSession and gates /search HTML behind a
+  location redirect; only real WebKit gets through):
+  (1) `getSearchSuggestionsV1` (user location via `document.cookie
+  uev2.loc`) → storeUuid/title candidates, parsed from each store's
+  enclosing JSON object via balanced-brace scan — field order isn't
+  guaranteed and a char-distance heuristic let stores inherit a neighbor's
+  coordinates; (2) fuzzy name rank (containment + normalized Levenshtein);
+  (3) geo within **100 m** of our saved coordinates (feed geo, else a
+  `getStoreV1` lookup, ≤2 per check) plus a ≥0.5 name score — geo is the
+  strong signal; with no geo anywhere only ≥0.85 passes. Verified → the
+  canonical `store-browse-uuid/<uuid>?diningMode=DELIVERY` URL persisted to
+  `Restaurant.uberEatsURL`; the card's order button re-reads the store row
+  at tap time (the Suggestion snapshot predates verification — this bug
+  shipped once). Real results but nothing verified → drop candidate;
+  API/JS failure (one retry) → PERMISSIVE unknown (kept; button falls back
+  to a search universal link — iOS hands ubereats.com URLs to the
+  installed app without any web request). Checks count against the
+  per-refresh budget (6 on this tab); results session-cached by normalized
+  name, notFound deliberately not persisted. (v1 name-only URLs were wiped
+  once via the `uberEatsURLsResetV2` flag.)
 - No repeats until the in-range pool is exhausted, then reshuffle (avoiding
   an immediate repeat of the current card).
 - `etaProvider` is an injectable closure — tests (and any future routing
