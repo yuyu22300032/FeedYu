@@ -56,7 +56,9 @@ FeedYu/
 ├── Support/
 │   ├── AppSettings.swift          UserDefaults-backed settings + list registry
 │   ├── CSVParser.swift            RFC 4180, CRLF-safe (see Gotchas)
-│   ├── GoogleMapsOpener.swift     stored URL → app scheme → web fallback
+│   ├── GoogleMapsOpener.swift     stored ?cid= URL → coordinate-anchored
+│   │                              name search (never an unanchored q= —
+│   │                              "place not found" for half the places)
 │   ├── LocationProvider.swift     CLLocationManager wrapper
 │   ├── MichelinNameLocalizer.swift
 │   ├── PlaceInfoFetcher.swift     lazy cover-photo/description scrape (og: meta)

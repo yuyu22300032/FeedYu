@@ -205,9 +205,11 @@ narrowest sensible scope:
   place's name, coordinates, and `cid`. Takeout files import the starred
   list and list CSVs. Details and wire formats: ARCHITECTURE.md.
 - **Out:** tapping a card's photo (or a Michelin row) opens the place in
-  Google Maps: the app's URL scheme (`comgooglemaps://`) when installed,
-  web fallback otherwise. Stored `?cid=` URLs open the *exact* place;
-  places without one fall back to a name+coordinates search.
+  Google Maps via universal links (iOS hands them to the installed app).
+  Stored `?cid=` URLs open the *exact* place; places without one open a
+  name search anchored at the place's own coordinates
+  (`/maps/search/<name>/@lat,lng,17z`) — an unanchored name search fails
+  with "place not found" for names Google can't resolve globally.
 - Place pages also serve as the photo/description source for non-Michelin
   places (social-preview `og:` metadata; Google's stock "no photos"
   artwork — static maps, generic geocode cards — is detected and rejected,

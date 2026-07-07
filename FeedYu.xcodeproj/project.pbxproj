@@ -43,6 +43,7 @@
 		B1C2CA4E26C3BF0D0EC7CCE5 /* TakeoutImportSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = F95E08C5A89D792EBEA32DE1 /* TakeoutImportSource.swift */; };
 		B485698D51327A515ED1899E /* TravelBudgetPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49448308B6F9C79BDA95FC45 /* TravelBudgetPanel.swift */; };
 		B804703D8DE8DA10B242DE7C /* ShareInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31E365692CA272180A4463F3 /* ShareInbox.swift */; };
+		C1F18CB2501E86F5A7B8DAC7 /* GoogleMapsOpenerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F1D491751B526F5A7C6D90C /* GoogleMapsOpenerTests.swift */; };
 		C6616D5A5B127BB24DDD484D /* MichelinDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 674E0CB6863B06B44D081B1F /* MichelinDataSource.swift */; };
 		C7BA6CB48E76B0B7E0FDA32B /* FeedYuApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2E45202029D98BC6820F34B /* FeedYuApp.swift */; };
 		CA6603C1788608774BB03596 /* UberEatsCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 232CBF584D87559F7AEF634F /* UberEatsCheckerTests.swift */; };
@@ -118,6 +119,7 @@
 		70FE8D89BA1EDBC49B840F51 /* PlaceInfoFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceInfoFetcher.swift; sourceTree = "<group>"; };
 		77DAF0A5144600E21C0FD5F3 /* TravelBudget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelBudget.swift; sourceTree = "<group>"; };
 		7B19191B684F5A7115F8C2DE /* UberEatsChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UberEatsChecker.swift; sourceTree = "<group>"; };
+		7F1D491751B526F5A7C6D90C /* GoogleMapsOpenerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleMapsOpenerTests.swift; sourceTree = "<group>"; };
 		868FDC93F30440F46EF17705 /* michelin_history.csv */ = {isa = PBXFileReference; path = michelin_history.csv; sourceTree = "<group>"; };
 		86B4F9280933BB1481377E91 /* GoogleMapsOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleMapsOpener.swift; sourceTree = "<group>"; };
 		9013BBD3A3C8E4EEF4F509CA /* FeedYuShare.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = FeedYuShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -224,6 +226,7 @@
 			children = (
 				93696CE048929DAD36825626 /* CSVParserTests.swift */,
 				373DC8B167718D9BA1CB186E /* GetlistParserTests.swift */,
+				7F1D491751B526F5A7C6D90C /* GoogleMapsOpenerTests.swift */,
 				A7AFC05E50102E224796464C /* GoogleSharedListParserTests.swift */,
 				4B33BB285D942D95E724120F /* ListConfigTests.swift */,
 				9695CC3F82931F479F40109C /* ListRemovalTests.swift */,
@@ -448,6 +451,7 @@
 			files = (
 				0DE46D7C8811C7D63EEE8882 /* CSVParserTests.swift in Sources */,
 				35AFBAB012AD52326BB3F532 /* GetlistParserTests.swift in Sources */,
+				C1F18CB2501E86F5A7B8DAC7 /* GoogleMapsOpenerTests.swift in Sources */,
 				104ED0718D77629B6B681D93 /* GoogleSharedListParserTests.swift in Sources */,
 				089BF3E36BE8BE15F24777ED /* ListConfigTests.swift in Sources */,
 				E170A2CB474DCE3FFA635639 /* ListRemovalTests.swift in Sources */,
