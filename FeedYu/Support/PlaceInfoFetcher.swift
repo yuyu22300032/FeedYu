@@ -17,7 +17,11 @@ final class PlaceInfoFetcher: ObservableObject {
 
     private var attemptedIDs: Set<UUID> = []
     private var inFlightIDs: Set<UUID> = []
-    private var attemptedCidIDs: Set<UUID> = []
+    /// Negative cache for cid resolution, keyed by the search name used —
+    /// when the localizer later fills a local-market name (魚庄 vs "Uosho"),
+    /// the place earns one fresh attempt with the better query.
+    private var attemptedCidSearchNames: [UUID: String] = [:]
+    private var isPrefetching = false
 
     /// The stored exact place link, or one resolved (and persisted) right
     /// now. Stored *search* URLs (Takeout list CSVs export those) don't
@@ -26,24 +30,58 @@ final class PlaceInfoFetcher: ObservableObject {
     /// with a CSV summary and get their photo on the first card display, so
     /// hiding resolution behind the info guard gave it one shot, ever — a
     /// single failed attempt left the place on search-URL opens for good.
-    /// One resolution attempt per place per session.
+    /// One resolution attempt per place per session per search name.
     func resolvedMapsURL(for restaurant: Restaurant, store: RestaurantStore) async -> URL? {
         if let stored = restaurant.googleMapsURL, GoogleMapsOpener.isExactPlaceURL(stored) {
             return stored
         }
+        let searchName = restaurant.googleSearchName
         guard let coordinate = restaurant.coordinate,
-              !attemptedCidIDs.contains(restaurant.id) else { return nil }
-        attemptedCidIDs.insert(restaurant.id)
+              attemptedCidSearchNames[restaurant.id] != searchName else { return nil }
+        attemptedCidSearchNames[restaurant.id] = searchName
         // Local-market name first (matches Google's own listing), then the
         // dataset romanization — the pin-proximity match rejects impostors.
-        var cid = await GooglePlaceResolver.resolveCid(name: restaurant.googleSearchName,
-                                                       coordinate: coordinate)
-        if cid == nil, restaurant.googleSearchName != restaurant.name {
+        var cid = await GooglePlaceResolver.resolveCid(name: searchName, coordinate: coordinate)
+        if cid == nil, searchName != restaurant.name {
             cid = await GooglePlaceResolver.resolveCid(name: restaurant.name, coordinate: coordinate)
         }
-        guard let cid, let resolved = URL(string: "https://maps.google.com/?cid=\(cid)") else { return nil }
+        guard let cid, let resolved = URL(string: "https://maps.google.com/?cid=\(cid)") else {
+            if Task.isCancelled {
+                // A cancelled fetch (tab switch mid-prefetch) must not burn
+                // the attempt — the tap path would skip straight to fallback.
+                attemptedCidSearchNames.removeValue(forKey: restaurant.id)
+            }
+            return nil
+        }
         store.setGoogleMapsURL(id: restaurant.id, url: resolved)
         return resolved
+    }
+
+    /// Warms exact place links for a visible, prioritized list (pass it
+    /// nearest-first) so row taps open the place page instantly instead of
+    /// racing the tap-time timeout. Bounded and throttled: aggressive
+    /// automated queries earn google.com's "unusual traffic" wall, which
+    /// would break resolution AND list sync. Resolved links persist, so
+    /// coverage grows with every visit. Overlapping calls are ignored;
+    /// cancellation (leaving the tab) stops between fetches.
+    func prefetchMapsURLs(for restaurants: [Restaurant], store: RestaurantStore,
+                          limit: Int = 12) async {
+        guard !isPrefetching else { return }
+        isPrefetching = true
+        defer { isPrefetching = false }
+        var fetched = 0
+        for snapshot in restaurants {
+            guard fetched < limit, !Task.isCancelled else { return }
+            // Live row — the localizer may have filled a better search name
+            // (or a tap already resolved this place) since the list was built.
+            let restaurant = store.restaurants.first(where: { $0.id == snapshot.id }) ?? snapshot
+            if let stored = restaurant.googleMapsURL, GoogleMapsOpener.isExactPlaceURL(stored) { continue }
+            guard restaurant.coordinate != nil,
+                  attemptedCidSearchNames[restaurant.id] != restaurant.googleSearchName else { continue }
+            fetched += 1
+            _ = await resolvedMapsURL(for: restaurant, store: store)
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+        }
     }
 
     /// URL for a user tap: the exact place page when a cid is stored or
