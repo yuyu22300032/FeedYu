@@ -120,7 +120,9 @@ struct RestaurantCard: View {
     /// corner badge is the affordance).
     private var coverImage: some View {
         Button {
-            openURL(GoogleMapsOpener.url(for: restaurant))
+            // Live row, not the suggestion snapshot — a cid resolved after
+            // the card appeared upgrades this tap (same trap as Uber's URL).
+            openURL(GoogleMapsOpener.url(for: liveRestaurant))
         } label: {
             Group {
                 if let coverImageURL {
@@ -190,9 +192,12 @@ struct RestaurantCard: View {
         }
     }
 
+    private var liveRestaurant: Restaurant {
+        store.restaurants.first(where: { $0.id == restaurant.id }) ?? restaurant
+    }
+
     private var liveUberEatsURL: URL? {
-        store.restaurants.first(where: { $0.id == restaurant.id })?.uberEatsURL
-            ?? restaurant.uberEatsURL
+        liveRestaurant.uberEatsURL ?? restaurant.uberEatsURL
     }
 
     /// Labels of the user lists this place belongs to (via source stamps).

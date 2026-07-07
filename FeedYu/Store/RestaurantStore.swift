@@ -189,6 +189,15 @@ final class RestaurantStore: ObservableObject {
         scheduleSave()
     }
 
+    /// Fill-only: a resolved cid link must never clobber a source-provided
+    /// URL (sources are authoritative; resolution is best-effort).
+    func setGoogleMapsURL(id: UUID, url: URL) {
+        guard let index = restaurants.firstIndex(where: { $0.id == id }),
+              restaurants[index].googleMapsURL == nil else { return }
+        restaurants[index].googleMapsURL = url
+        scheduleSave()
+    }
+
     func setUberEatsURL(id: UUID, url: URL) {
         guard let index = restaurants.firstIndex(where: { $0.id == id }),
               restaurants[index].uberEatsURL != url else { return }

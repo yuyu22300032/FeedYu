@@ -30,12 +30,23 @@ final class PlaceInfoFetcher: ObservableObject {
             attemptedIDs.insert(restaurant.id)
         }
 
+        // Cid-less scraped places: resolve the exact place id first — it
+        // upgrades slow search-URL opens to instant ?cid= links AND gives
+        // the og: fetch below a real place page to read.
+        var mapsURL = restaurant.googleMapsURL
+        if mapsURL == nil, let coordinate = restaurant.coordinate,
+           let cid = await GooglePlaceResolver.resolveCid(name: restaurant.name, coordinate: coordinate),
+           let resolved = URL(string: "https://maps.google.com/?cid=\(cid)") {
+            store.setGoogleMapsURL(id: restaurant.id, url: resolved)
+            mapsURL = resolved
+        }
+
         var fetched = PlaceInfo()
         if let michelinURL = restaurant.michelinURL {
             fetched = await Self.fetchInfo(from: MichelinDataSource.localizedGuideURL(michelinURL),
                                            userAgent: MichelinNameLocalizer.mobileUserAgent)
         }
-        if fetched.summary == nil, fetched.imageURL == nil, let mapsURL = restaurant.googleMapsURL {
+        if fetched.summary == nil, fetched.imageURL == nil, let mapsURL {
             fetched = await Self.fetchInfo(from: mapsURL,
                                            userAgent: GoogleSharedListSource.desktopUserAgent)
         }

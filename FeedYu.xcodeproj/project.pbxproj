@@ -14,6 +14,7 @@
 		104ED0718D77629B6B681D93 /* GoogleSharedListParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7AFC05E50102E224796464C /* GoogleSharedListParserTests.swift */; };
 		127E3A519FF1BAF00A3BBC40 /* MichelinNameLocalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBDDB96AA140C4789C158FE2 /* MichelinNameLocalizer.swift */; };
 		1B8B61BD78E2F3C17D2562D4 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 2E07D91437F28E5C19586AF6 /* InfoPlist.xcstrings */; };
+		1E80113577F6D0F16EC29118 /* GooglePlaceResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 230C40C297C005CC0A6CF154 /* GooglePlaceResolver.swift */; };
 		2A4F51A6244E0A599D08815F /* SpatialGridTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC4FB93CA23818F3EFA90FA9 /* SpatialGridTests.swift */; };
 		31A8907714B479C41FF55EA5 /* RestaurantCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0632AABABEE4EE0DF805725B /* RestaurantCard.swift */; };
 		332B404B71BACFBB58D1C8A4 /* GoogleSharedListSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E863C1A658E83709ACF30F3 /* GoogleSharedListSource.swift */; };
@@ -56,6 +57,7 @@
 		E960F792195FAA2F331C91BB /* RestaurantStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91CD30035E365D5CF1E2AAB8 /* RestaurantStore.swift */; };
 		E9911EE522DB6B5303692F3C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 41E4DE5A3946C287DFD3B86E /* Assets.xcassets */; };
 		ED084799CF765FBB4694721A /* Restaurant.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB513F70D6923F97E196A17D /* Restaurant.swift */; };
+		EFC8300B3021AAD38F649CF6 /* GooglePlaceResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E27C083663865EE9599BA70 /* GooglePlaceResolverTests.swift */; };
 		FBB0AC0BF7F7A359251A06DB /* TonightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3BCD75B1D89C6B67869D417 /* TonightView.swift */; };
 		FC5CD2E5B6FDF50421E2CDE0 /* MichelinNameLocalizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E34DEB9870F10C198917A9EF /* MichelinNameLocalizerTests.swift */; };
 /* End PBXBuildFile section */
@@ -100,6 +102,7 @@
 		1914B0A776984DBECA0096B5 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		19B5D617609B97380A61C89D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		1E8C4DE08B5CD7113AB19850 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		230C40C297C005CC0A6CF154 /* GooglePlaceResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GooglePlaceResolver.swift; sourceTree = "<group>"; };
 		232CBF584D87559F7AEF634F /* UberEatsCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UberEatsCheckerTests.swift; sourceTree = "<group>"; };
 		2A132986CFC1E674A5FBC277 /* RestaurantDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantDataSource.swift; sourceTree = "<group>"; };
 		2E07D91437F28E5C19586AF6 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
@@ -113,6 +116,7 @@
 		49448308B6F9C79BDA95FC45 /* TravelBudgetPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelBudgetPanel.swift; sourceTree = "<group>"; };
 		4B33BB285D942D95E724120F /* ListConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListConfigTests.swift; sourceTree = "<group>"; };
 		4F5F48B846712A0332E6CF99 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		5E27C083663865EE9599BA70 /* GooglePlaceResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GooglePlaceResolverTests.swift; sourceTree = "<group>"; };
 		5E40014594BE6D3A13690A00 /* getlist-response.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "getlist-response.txt"; sourceTree = "<group>"; };
 		674E0CB6863B06B44D081B1F /* MichelinDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MichelinDataSource.swift; sourceTree = "<group>"; };
 		6F3B26041EB3C319D8A14BC2 /* FeedYuShare.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FeedYuShare.entitlements; sourceTree = "<group>"; };
@@ -227,6 +231,7 @@
 				93696CE048929DAD36825626 /* CSVParserTests.swift */,
 				373DC8B167718D9BA1CB186E /* GetlistParserTests.swift */,
 				7F1D491751B526F5A7C6D90C /* GoogleMapsOpenerTests.swift */,
+				5E27C083663865EE9599BA70 /* GooglePlaceResolverTests.swift */,
 				A7AFC05E50102E224796464C /* GoogleSharedListParserTests.swift */,
 				4B33BB285D942D95E724120F /* ListConfigTests.swift */,
 				9695CC3F82931F479F40109C /* ListRemovalTests.swift */,
@@ -259,6 +264,7 @@
 				FC54A845814EB8E3943093C9 /* AppSettings.swift */,
 				A3CDBB494C753B3891660634 /* CSVParser.swift */,
 				86B4F9280933BB1481377E91 /* GoogleMapsOpener.swift */,
+				230C40C297C005CC0A6CF154 /* GooglePlaceResolver.swift */,
 				DE3C9B1C838CE37F91201446 /* LocationProvider.swift */,
 				DBDDB96AA140C4789C158FE2 /* MichelinNameLocalizer.swift */,
 				70FE8D89BA1EDBC49B840F51 /* PlaceInfoFetcher.swift */,
@@ -452,6 +458,7 @@
 				0DE46D7C8811C7D63EEE8882 /* CSVParserTests.swift in Sources */,
 				35AFBAB012AD52326BB3F532 /* GetlistParserTests.swift in Sources */,
 				C1F18CB2501E86F5A7B8DAC7 /* GoogleMapsOpenerTests.swift in Sources */,
+				EFC8300B3021AAD38F649CF6 /* GooglePlaceResolverTests.swift in Sources */,
 				104ED0718D77629B6B681D93 /* GoogleSharedListParserTests.swift in Sources */,
 				089BF3E36BE8BE15F24777ED /* ListConfigTests.swift in Sources */,
 				E170A2CB474DCE3FFA635639 /* ListRemovalTests.swift in Sources */,
@@ -474,6 +481,7 @@
 				94D9C2B4C350E211C149CF82 /* CSVParser.swift in Sources */,
 				C7BA6CB48E76B0B7E0FDA32B /* FeedYuApp.swift in Sources */,
 				882129A2BBD747841C3DFA76 /* GoogleMapsOpener.swift in Sources */,
+				1E80113577F6D0F16EC29118 /* GooglePlaceResolver.swift in Sources */,
 				332B404B71BACFBB58D1C8A4 /* GoogleSharedListSource.swift in Sources */,
 				9944786DF4D874DA364F17CD /* LocationProvider.swift in Sources */,
 				4EBE3B2C54958A5E41B26431 /* ManageRestaurantsView.swift in Sources */,
