@@ -13,6 +13,9 @@ MIT licensed.
 - `docs/ARCHITECTURE.md` — structure, data flow, merge/engine semantics, and
   a **"gotchas that already caused bugs"** list. Read it before structural
   changes or touching parsers.
+- `docs/FEATURES.md` — page-by-page behavior, the layered suggestion
+  pipeline, lazy-loading/cache strategy, and the Google Maps / Apple Maps /
+  Michelin / Uber Eats integration contracts.
 - `docs/DEVELOPMENT.md` — build/test/deploy commands, device data-container
   recipes, data pipeline, fixture policy, backlog.
 - `PLAN.md` — original spec (historical; uses the old DinePick name).

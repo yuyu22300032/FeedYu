@@ -5,21 +5,25 @@ your saved Google Maps places, within a travel budget you pick right on the
 page: straight-line distance (200 m–50 km, no route lookups), walking time,
 or driving time in current traffic. A Michelin tab (all tiers) does the same
 with price/award filters. An Uber Eats tab suggests from the same lists
-(distance-only constraint), skips places it can't find on Uber Eats, and
-its card gets an order button that deep-links into the Uber Eats app.
+(distance-only constraint), verifies each pick is actually orderable on
+Uber Eats near you (matched by location within 100 m + fuzzy name), and its
+order button deep-links straight into the verified store, ready to order.
 Suggestion cards show a cover photo and description
 (scraped lazily from the place's Michelin or Google Maps page); tapping the
 photo opens Google Maps to confirm hours and live traffic. Manage up to 20
-saved lists — your own and friends' — each with an on/off toggle in Settings,
+saved lists — your own and friends' — toggleable, renameable, and removable
+in Settings (removal never deletes places that are also on another list),
 and add new ones by sharing a Google Maps list link straight to FeedYu from
 the share sheet. Swipe left/right to move between tabs.
 Full spec and decisions: [PLAN.md](PLAN.md) (original, historical).
 
-**Developer documentation:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-(structure, data flow, design rules, known gotchas) and
-[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) (build/test/deploy workflows, data
-pipeline, fixture policy, enhancement backlog). `CLAUDE.md` orients AI coding
-sessions.
+**Documentation:** [docs/FEATURES.md](docs/FEATURES.md) (what each page does,
+the suggestion pipeline, lazy loading & caching, and the Google Maps / Apple
+Maps / Michelin / Uber Eats integrations),
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (structure, data flow, design
+rules, known gotchas), and [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
+(build/test/deploy workflows, data pipeline, fixture policy, enhancement
+backlog). `CLAUDE.md` orients AI coding sessions.
 
 ## Getting it running (one-time setup)
 
