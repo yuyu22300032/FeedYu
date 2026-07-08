@@ -171,6 +171,26 @@ final class SuggestionEngineTests: XCTestCase {
         XCTAssertEqual(checkedCount, 21, "everything before it was checked, then it stopped")
     }
 
+    func testRotationWrapsInsteadOfDemandingAnExtraPress() async {
+        // One orderable place among not-orderable neighbors: after it has
+        // been shown, the next refresh used to drain the queue and end with
+        // "nothing new — refresh to keep looking"; it must wrap the rotation
+        // and re-serve the orderable place in the same refresh.
+        let engine = SuggestionEngine()
+        engine.etaProvider = { _, _, _ in XCTFail("distance mode must not request routes"); return 0 }
+        engine.maxETAChecksPerRefresh = Int.max
+        engine.availabilityCheck = { $0.name == "OnUber" }
+        let candidates = [place("No0", latOffset: 0.0001),
+                          place("No1", latOffset: 0.0002),
+                          place("OnUber", latOffset: 0.0003)]
+        for attempt in 0..<3 {
+            await engine.refreshSuggestion(candidates: candidates, origin: origin,
+                                           budget: TravelBudget(mode: .distance, value: 500))
+            XCTAssertEqual(engine.current?.restaurant.name, "OnUber",
+                           "refresh #\(attempt) must land on the only orderable place, never give up")
+        }
+    }
+
     func testQuickRejectIsFreeAndDoesNotExhaustBudget() async {
         let engine = SuggestionEngine()
         engine.etaProvider = { _, _, _ in XCTFail("distance mode must not request routes"); return 0 }

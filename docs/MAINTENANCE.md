@@ -179,9 +179,13 @@ tab give up mid-queue and say "press again"); (2) a *verified* notFound
 persists in the store for a 7-day cooldown (`uberEatsNotFoundAt`; cleared
 by a later success, and `unknown`/bot-wall results are never persisted);
 (3) cooled-down places are skipped via the engine's free `quickReject`
-hook. Net: the first refresh in a new area may run long (loading card
-takes over after 1 s), and every refresh for the following week is
-near-instant.
+hook; (4) a refresh whose queue drains without a hit **wraps the rotation
+once in-place** — after the only orderable places had been shown, the
+drain used to end with "nothing new — refresh to keep looking" and demand
+a pointless extra press before the reshuffle ran. Net: the first refresh
+in a new area may run long (loading card takes over after 1 s), later
+refreshes are near-instant, and a refresh only ever ends in a suggestion,
+"nothing reachable", or a genuine walk/drive ETA-budget pause.
 
 ### "Suggestions are slow / ETAs missing"
 

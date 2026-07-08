@@ -85,68 +85,85 @@ final class SuggestionEngine: ObservableObject {
         }
 
         if queue.isEmpty {
-            // Exhausted: reshuffle the whole pool, avoiding an immediate repeat.
-            shownIDs = []
-            rebuildQueue(from: sessionPool)
-            if let currentID = current?.id, queue.count > 1,
-               let index = queue.firstIndex(where: { $0.id == currentID }) {
-                let repeated = queue.remove(at: index)
-                queue.append(repeated)
-            }
-            if current != nil {
-                statusMessage = String(localized: "Seen everything in range — starting the rotation over.")
-            }
+            restartRotation()
         }
 
         var checks = 0
-        while !queue.isEmpty {
-            let candidate = queue.removeFirst()
-            guard let coordinate = candidate.coordinate else { continue }
-            if let quickReject, quickReject(candidate) { continue }
+        // A drained queue wraps the rotation and rescans once (flag-bounded)
+        // — without this, "you've already seen every orderable place" ended
+        // the refresh with "nothing new, press again", demanding a pointless
+        // extra press before the next refresh's queue-empty reshuffle could
+        // run. Rescans are cheap: the ETA cache and notFound cooldowns skip
+        // the known answers.
+        var wrapped = false
+        search: while true {
+            while !queue.isEmpty {
+                let candidate = queue.removeFirst()
+                guard let coordinate = candidate.coordinate else { continue }
+                if let quickReject, quickReject(candidate) { continue }
 
-            // Distance mode: the pool is already exactly within the radius —
-            // no route lookup, but the availability filter still applies.
-            guard budget.needsETACheck else {
-                if let availabilityCheck {
-                    guard checks < maxETAChecksPerRefresh else {
-                        queue.insert(candidate, at: 0)
-                        break
+                // Distance mode: the pool is already exactly within the radius —
+                // no route lookup, but the availability filter still applies.
+                guard budget.needsETACheck else {
+                    if let availabilityCheck {
+                        guard checks < maxETAChecksPerRefresh else {
+                            queue.insert(candidate, at: 0)
+                            break search
+                        }
+                        checks += 1
+                        guard await availabilityCheck(candidate) else { continue }
                     }
-                    checks += 1
-                    guard await availabilityCheck(candidate) else { continue }
-                }
-                accept(candidate, etaSeconds: nil, origin: origin, mode: budget.mode)
-                return
-            }
-
-            guard checks < maxETAChecksPerRefresh else {
-                queue.insert(candidate, at: 0)
-                break
-            }
-            checks += 1
-            do {
-                let eta = try await cachedETA(id: candidate.id, from: origin, to: coordinate, mode: budget.mode)
-                if eta <= budget.maxTravelSeconds {
-                    if let availabilityCheck, await !availabilityCheck(candidate) {
-                        continue // in range but not orderable — roll another
-                    }
-                    accept(candidate, etaSeconds: eta, origin: origin, mode: budget.mode)
+                    accept(candidate, etaSeconds: nil, origin: origin, mode: budget.mode)
                     return
                 }
-                // Over budget by the real route — drop it for this session.
-            } catch let error as MKError where error.code == .loadingThrottled {
-                queue.insert(candidate, at: 0)
-                statusMessage = String(localized: "Apple Maps is rate-limiting drive-time checks. Wait a minute and refresh.")
-                return
-            } catch {
-                statusMessage = String(localized: "Couldn't check drive time for some places (network?).")
+
+                guard checks < maxETAChecksPerRefresh else {
+                    queue.insert(candidate, at: 0)
+                    break search
+                }
+                checks += 1
+                do {
+                    let eta = try await cachedETA(id: candidate.id, from: origin, to: coordinate, mode: budget.mode)
+                    if eta <= budget.maxTravelSeconds {
+                        if let availabilityCheck, await !availabilityCheck(candidate) {
+                            continue // in range but not orderable — roll another
+                        }
+                        accept(candidate, etaSeconds: eta, origin: origin, mode: budget.mode)
+                        return
+                    }
+                    // Over budget by the real route — drop it for this session.
+                } catch let error as MKError where error.code == .loadingThrottled {
+                    queue.insert(candidate, at: 0)
+                    statusMessage = String(localized: "Apple Maps is rate-limiting drive-time checks. Wait a minute and refresh.")
+                    return
+                } catch {
+                    statusMessage = String(localized: "Couldn't check drive time for some places (network?).")
+                }
             }
+            guard !wrapped, !shownIDs.isEmpty else { break }
+            wrapped = true
+            restartRotation()
         }
         if queue.isEmpty && shownIDs.isEmpty {
             current = nil
             statusMessage = String(localized: "Nothing reachable within \(budget.label) right now.")
         } else if statusMessage == nil {
             statusMessage = String(localized: "Nothing new within \(budget.label) so far — refresh to keep looking.")
+        }
+    }
+
+    /// Rotation exhausted: reshuffle the whole pool, avoiding an immediate
+    /// repeat of the current card, and say so.
+    private func restartRotation() {
+        shownIDs = []
+        rebuildQueue(from: sessionPool)
+        if let currentID = current?.id, queue.count > 1,
+           let index = queue.firstIndex(where: { $0.id == currentID }) {
+            let repeated = queue.remove(at: index)
+            queue.append(repeated)
+        }
+        if current != nil {
+            statusMessage = String(localized: "Seen everything in range — starting the rotation over.")
         }
     }
 
