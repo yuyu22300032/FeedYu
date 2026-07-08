@@ -41,14 +41,22 @@ final class PlaceInfoFetcher: ObservableObject {
         attemptedCidSearchNames[restaurant.id] = searchName
         // Local-market name first (matches Google's own listing), then the
         // dataset romanization — the pin-proximity match rejects impostors.
-        var cid = await GooglePlaceResolver.resolveCid(name: searchName, coordinate: coordinate)
+        let first = await GooglePlaceResolver.resolveCid(name: searchName, coordinate: coordinate)
+        var cid: String?
+        var transient = first == .unavailable
+        if case .resolved(let value) = first { cid = value }
         if cid == nil, searchName != restaurant.name {
-            cid = await GooglePlaceResolver.resolveCid(name: restaurant.name, coordinate: coordinate)
+            let second = await GooglePlaceResolver.resolveCid(name: restaurant.name, coordinate: coordinate)
+            if case .resolved(let value) = second { cid = value }
+            transient = transient || second == .unavailable
         }
         guard let cid, let resolved = URL(string: "https://maps.google.com/?cid=\(cid)") else {
-            if Task.isCancelled {
-                // A cancelled fetch (tab switch mid-prefetch) must not burn
-                // the attempt — the tap path would skip straight to fallback.
+            if transient || Task.isCancelled {
+                // Only a data-bearing "nothing near our pin" verdict is
+                // worth caching. Shell pages / network errors / cancelled
+                // fetches (tab switch mid-prefetch) must not burn the
+                // attempt — the card warm-up fails, then the user's tap
+                // (and the next visit's prefetch) deserve a real retry.
                 attemptedCidSearchNames.removeValue(forKey: restaurant.id)
             }
             return nil

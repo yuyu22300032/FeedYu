@@ -62,4 +62,35 @@ final class GooglePlaceResolverTests: XCTestCase {
                                                  near: CLLocationCoordinate2D(latitude: 25.0333, longitude: 121.5654))
         XCTAssertEqual(cid, "2730")
     }
+
+    // MARK: - Outcome classification (drives the retry-vs-cache decision)
+
+    private let taipei = CLLocationCoordinate2D(latitude: 25.0333, longitude: 121.5654)
+
+    func testDatalessShellPageIsUnavailable() {
+        // Google sometimes serves a valid Maps page with NO embedded result
+        // data (JS shell) — observed live 2026-07-08. Transient: retry-worthy.
+        let shell = "<html><title>Google 地圖</title>window.APP_INITIALIZATION_STATE=[[null]];</html>"
+        XCTAssertEqual(GooglePlaceResolver.resolution(fromHTML: shell, near: taipei), .unavailable)
+    }
+
+    func testDataBearingPageWithNoNearbyResultIsNoMatch() {
+        XCTAssertEqual(GooglePlaceResolver.resolution(fromHTML: searchHTML,
+                                                      near: CLLocationCoordinate2D(latitude: 24.0, longitude: 120.0)),
+                       .noMatch)
+    }
+
+    func testAmbiguousTieIsNoMatchNotUnavailable() {
+        // Retrying won't break a tie — cache it for the session.
+        let html = """
+        ["a"]!1s0x3442abd88ffb8341:0x0000000000000aaa!8m2!3d25.03340!4d121.56540!16s
+        ["b"]!1s0x3442abd88ffb8342:0x0000000000000bbb!8m2!3d25.03355!4d121.56545!16s
+        """
+        XCTAssertEqual(GooglePlaceResolver.resolution(fromHTML: html, near: taipei), .noMatch)
+    }
+
+    func testMatchClassifiesAsResolved() {
+        XCTAssertEqual(GooglePlaceResolver.resolution(fromHTML: searchHTML, near: taipei),
+                       .resolved("11259375"))
+    }
 }

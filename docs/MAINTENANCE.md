@@ -83,12 +83,17 @@ most likely first:
   long-pressing its pin to compare coordinates.
 - **Google changed the search-page wire format** — the `!1s0x…:0x…` /
   `!3d<lat>!4d<lng>` tokens moved or vanished. See "Recapturing fixtures".
-- Resolution is attempted **once per session per place per search name**
-  (`attemptedCidSearchNames`) — relaunch the app to retry, or a
-  newly-localized name grants one fresh attempt. The Michelin tab also
-  pre-warms the nearest rows in the background (`prefetchMapsURLs`, ≤12
-  per visit, 1.5 s apart). Keep it throttled: hammering google.com earns
-  the "unusual traffic" wall, breaking resolution *and* list sync.
+- **Google served its data-less JS shell page** — a valid Maps page with
+  zero embedded results (`0x…:0x…` tokens absent), served based on client
+  fingerprint/mood; observed live 2026-07-08. The resolver classifies this
+  as `.unavailable` (transient, retried on the next card display / tap /
+  prefetch), unlike `.noMatch` (data-bearing page, nothing within 150 m,
+  or an ambiguous tie), which is negatively cached per session per search
+  name (`attemptedCidSearchNames`; a newly-localized name grants a fresh
+  attempt). The Michelin tab also pre-warms the nearest rows in the
+  background (`prefetchMapsURLs`, ≤12 per visit, 1.5 s apart). Keep it
+  throttled: hammering google.com earns the "unusual traffic" wall,
+  breaking resolution *and* list sync.
 
 To inspect what a device has stored: pull `store.json` (recipe in
 DEVELOPMENT.md "App-container surgery") and check the place's

@@ -20,11 +20,23 @@ enum GooglePlaceResolver {
     /// mostly forgives coarse Michelin/Takeout geocoding.
     static let matchRadiusMeters: CLLocationDistance = 150
 
-    static func resolveCid(name: String, coordinate: CLLocationCoordinate2D) async -> String? {
+    /// Why a resolution attempt produced no cid matters for caching:
+    /// `.noMatch` (data-bearing page, but nothing near our pin — or an
+    /// ambiguous tie) won't change on retry; `.unavailable` (network error
+    /// or Google's data-less JS shell page, which it serves depending on
+    /// client fingerprint/mood) is transient and worth retrying — e.g. the
+    /// tap that follows a failed card-display warm-up.
+    enum Resolution: Equatable {
+        case resolved(String)
+        case noMatch
+        case unavailable
+    }
+
+    static func resolveCid(name: String, coordinate: CLLocationCoordinate2D) async -> Resolution {
         let encoded = name.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? name
         let anchor = String(format: "%.6f,%.6f", coordinate.latitude, coordinate.longitude)
         guard let url = URL(string: "https://www.google.com/maps/search/\(encoded)/@\(anchor),17z") else {
-            return nil
+            return .noMatch
         }
         var request = URLRequest(url: url)
         request.timeoutInterval = 20
@@ -33,10 +45,21 @@ enum GooglePlaceResolver {
         request.setValue(GoogleSharedListSource.acceptLanguage, forHTTPHeaderField: "Accept-Language")
         guard let (data, response) = try? await URLSession.shared.data(for: request),
               (response as? HTTPURLResponse).map({ (200..<300).contains($0.statusCode) }) != false else {
-            return nil
+            return .unavailable
         }
         let html = String(decoding: data.prefix(3_000_000), as: UTF8.self)
-        return extractCid(fromHTML: html, near: coordinate)
+        return resolution(fromHTML: html, near: coordinate)
+    }
+
+    /// Pure classification of a fetched search page (testable).
+    static func resolution(fromHTML html: String, near coordinate: CLLocationCoordinate2D) -> Resolution {
+        if let cid = extractCid(fromHTML: html, near: coordinate) {
+            return .resolved(cid)
+        }
+        // No feature-id tokens anywhere = the JS shell page (or a format
+        // change) — the query never really ran, so don't cache the failure.
+        let carriesData = html.firstMatch(of: #/0x[0-9a-fA-F]{6,}:0x[0-9a-fA-F]{1,16}/#) != nil
+        return carriesData ? .noMatch : .unavailable
     }
 
     /// Two *different* places nearly equally close = our saved coordinates
