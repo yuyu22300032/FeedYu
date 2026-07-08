@@ -1,3 +1,8 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>How to use FeedYu</title>
 <style>
 /* ---------- tokens ---------- */
@@ -268,6 +273,8 @@ footer{padding:40px 0 64px;color:var(--muted);font-size:14px;border-top:1px soli
   .tap,.s1 .sheet,.s1 .toast,.s5 .uber-screen,.s6 .finger{display:none}
 }
 </style>
+</head>
+<body>
 
 <header class="wrap">
   <div class="hero">
@@ -399,8 +406,8 @@ footer{padding:40px 0 64px;color:var(--muted);font-size:14px;border-top:1px soli
       <h2>Get tonight's pick</h2>
       <p>The <b>Tonight</b> tab suggests one place at a time from your lists — never the same
       place twice until you've seen everything in range.</p>
-      <p><b>Tap the photo</b> to open the restaurant in Google Maps and check reviews, hours,
-      and live traffic. Not feeling it? Tap for <b>another</b>.</p>
+      <p><b>Tap the photo</b> to jump straight to the restaurant's own page in Google Maps —
+      reviews, hours, live traffic. Not feeling it? Tap for <b>another</b>.</p>
       <p>Long-press a card to hide places you never want suggested again.</p>
     </div>
   </section>
@@ -502,8 +509,9 @@ footer{padding:40px 0 64px;color:var(--muted);font-size:14px;border-top:1px soli
       <p>The <b>Michelin</b> tab plays the same game over the entire Michelin Guide —
       every tier, worldwide, built in. No setup needed.</p>
       <p>Filter by <b>price band</b> and <b>award</b> (Selected, Bib Gourmand, one to three
-      stars), then let it pick. It also lists everything in range, nearest first — including
-      places that <b>dropped off the guide</b>, if you ask.</p>
+      stars), then let it pick. It also lists everything in range, nearest first — every row
+      taps through to Google Maps — including places that <b>dropped off the guide</b>,
+      if you ask.</p>
       <p>Names show in the local language — 鮨さいとう, not "Sushi Saito".</p>
     </div>
   </section>
@@ -647,3 +655,5 @@ footer{padding:40px 0 64px;color:var(--muted);font-size:14px;border-top:1px soli
   }, { threshold: 0.15 });
   document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 </script>
+</body>
+</html>
