@@ -8,6 +8,15 @@ protocol RestaurantDataSource {
     var id: String { get }
     var displayName: String { get }
     func fetch() async throws -> [Restaurant]
+    /// True when fetch() returns the source's COMPLETE current membership —
+    /// a successful sync may then unstamp places it no longer returned
+    /// (removing rows with no other reason to exist). The store still
+    /// guards against suspiciously small parses; see `RestaurantStore.apply`.
+    var fetchIsCompleteList: Bool { get }
+}
+
+extension RestaurantDataSource {
+    var fetchIsCompleteList: Bool { false }
 }
 
 struct SyncStatus: Codable, Hashable {

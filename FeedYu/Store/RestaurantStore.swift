@@ -65,7 +65,7 @@ final class RestaurantStore: ObservableObject {
         status.lastAttempt = Date()
         do {
             let fetched = try await source.fetch()
-            apply(fetched, sourceID: source.id)
+            apply(fetched, sourceID: source.id, removesMissing: source.fetchIsCompleteList)
             status.lastSuccess = Date()
             status.lastError = nil
             status.lastCount = fetched.count
@@ -76,11 +76,18 @@ final class RestaurantStore: ObservableObject {
         scheduleSave()
     }
 
-    /// Merge fetched records into the store. Never deletes: places a source
-    /// stopped returning just keep an older lastSeenInSourceAt stamp.
-    func apply(_ fetched: [Restaurant], sourceID: String) {
+    /// Merge fetched records into the store. Failures never delete anything.
+    /// With `removesMissing` (complete-list sources, e.g. shared Google
+    /// lists), a *successful* sync also unstamps places the source no longer
+    /// returned — removing rows with no other reason to exist — but only
+    /// when the fetch looks healthy: a Google format drift that parses half
+    /// the page must not mass-delete, so removal is skipped when the fetch
+    /// returned less than half the places previously stamped by this source.
+    func apply(_ fetched: [Restaurant], sourceID: String, removesMissing: Bool = false) {
         var updated = restaurants
         let now = Date()
+        let previouslyStamped = restaurants.filter { $0.lastSeenInSourceAt[sourceID] != nil }.count
+        var stampedIDs = Set<UUID>()
 
         // Hash indexes so a 7.5k-row Michelin sync stays O(n).
         var indexByName: [String: [Int]] = [:]
@@ -114,13 +121,29 @@ final class RestaurantStore: ObservableObject {
             incoming.lastSeenInSourceAt[sourceID] = now
             if let index = matchIndex(for: incoming) {
                 updated[index].merge(with: incoming)
+                stampedIDs.insert(updated[index].id)
             } else {
                 let index = updated.count
                 updated.append(incoming)
+                stampedIDs.insert(incoming.id)
                 indexByName[incoming.normalizedName, default: []].append(index)
                 if let url = incoming.googleMapsURL { indexByURL[url.absoluteString] = index }
             }
         }
+
+        if removesMissing, !fetched.isEmpty, fetched.count * 2 >= previouslyStamped {
+            updated = updated.compactMap { row in
+                guard row.lastSeenInSourceAt[sourceID] != nil, !stampedIDs.contains(row.id) else { return row }
+                var unstamped = row
+                unstamped.lastSeenInSourceAt[sourceID] = nil
+                // Same survival rules as removing a whole list.
+                let keep = unstamped.addedManually
+                    || unstamped.michelinAward != nil
+                    || !unstamped.lastSeenInSourceAt.isEmpty
+                return keep ? unstamped : nil
+            }
+        }
+
         restaurants = updated
         scheduleSave()
     }

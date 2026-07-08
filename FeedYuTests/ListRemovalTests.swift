@@ -46,4 +46,43 @@ final class ListRemovalTests: XCTestCase {
         XCTAssertTrue(store.restaurants.isEmpty)
     }
 
+    // MARK: - Removal on a successful complete-list re-sync
+
+    func testCompleteListSyncRemovesPlacesDroppedUpstream() {
+        let store = RestaurantStore()
+        let list = "sharedList-A"
+        store.apply([place("keep-1", sources: []),
+                     place("keep-2", sources: []),
+                     place("dropped", sources: []),
+                     place("dropped-but-manual", sources: [], manual: true),
+                     place("dropped-but-michelin", sources: ["michelin"], award: .oneStar),
+                     place("dropped-but-on-B", sources: ["sharedList-B"])],
+                    sourceID: list, removesMissing: true)
+
+        // Upstream now returns 4 of 6 (passes the ≥half sanity guard).
+        store.apply([place("keep-1", sources: []),
+                     place("keep-2", sources: []),
+                     place("keep-3", sources: []),
+                     place("keep-4", sources: [])],
+                    sourceID: list, removesMissing: true)
+
+        let names = Set(store.restaurants.map(\.name))
+        XCTAssertFalse(names.contains("dropped"), "exclusive place deleted with its upstream entry")
+        for survivor in ["dropped-but-manual", "dropped-but-michelin", "dropped-but-on-B"] {
+            XCTAssertTrue(names.contains(survivor), survivor)
+            let row = store.restaurants.first { $0.name == survivor }!
+            XCTAssertNil(row.lastSeenInSourceAt[list], "\(survivor) survives but loses the stamp")
+        }
+    }
+
+    func testSuspiciouslySmallSyncSkipsRemoval() {
+        let store = RestaurantStore()
+        let list = "sharedList-A"
+        store.apply((0..<6).map { place("p\($0)", sources: []) },
+                    sourceID: list, removesMissing: true)
+        // A half-broken parse returning 2 of 6 must NOT mass-delete.
+        store.apply([place("p0", sources: []), place("p1", sources: [])],
+                    sourceID: list, removesMissing: true)
+        XCTAssertEqual(store.restaurants.count, 6, "partial parse must not delete anything")
+    }
 }

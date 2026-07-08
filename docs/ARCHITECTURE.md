@@ -358,7 +358,15 @@ tests pass with an updated *synthetic* fixture.
    (they claim the drag first) — swipe-between-tabs only works via
    `.tabViewStyle(.page)` + the custom bottom bar in `RootView`. Don't
    "simplify" it back to a plain TabView with tabItems.
-10. **Don't gate cid resolution behind the summary/image fetch guard.**
+10. **Case-based heuristics silently eat caseless scripts.** The name
+    filter's "reject short ALL-CAPS codes" rule ("JP", "USD") also matched
+    every 2–3-character CJK restaurant name (松滿樓 == its own uppercased
+    form) — 17 places of one real list vanished. Any `== .uppercased()`
+    check needs a `!= .lowercased()` companion to prove the string has
+    case at all. Similarly, coordinate-rounding dedupe (~11 m) collapsed
+    *different restaurants in the same building* — dedupe scraped places
+    by name, not by pin.
+11. **Don't gate cid resolution behind the summary/image fetch guard.**
     Michelin places ship with a CSV summary and get their photo on the
     first card display, so `PlaceInfoFetcher`'s "both fields set → return
     early" guard gave `GooglePlaceResolver` one shot ever per place — a

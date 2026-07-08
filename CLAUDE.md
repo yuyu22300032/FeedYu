@@ -45,8 +45,11 @@ Device deploy + app-container data surgery: see docs/DEVELOPMENT.md.
 
 1. New stored properties on `Restaurant` MUST be `Optional` — non-optional
    additions silently wipe every user's persisted store on decode.
-2. Data sources never crash on bad input and never delete store entries;
-   failures go to per-source `SyncStatus`.
+2. Data sources never crash on bad input and never delete store entries on
+   failure; failures go to per-source `SyncStatus`. The only deletion path
+   from sync: a *successful* complete-list source (`fetchIsCompleteList`)
+   unstamps places it stopped returning — guarded to skip when the fetch
+   returns less than half the previously stamped count.
 3. Committed test fixtures MUST be synthetic. Real captured Google/Michelin
    responses contain account ids and personal place lists — keep them out of
    git (`.gitignore` covers `*-real.*`, Takeout exports, device stores).

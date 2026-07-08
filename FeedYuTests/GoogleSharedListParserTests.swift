@@ -49,4 +49,28 @@ final class GoogleSharedListParserTests: XCTestCase {
     func testDecodesUnicodeEscapes() {
         XCTAssertEqual(GoogleSharedListSource.decodeJSStringEscapes(#"Café \"Le\" Test"#), #"Café "Le" Test"#)
     }
+
+    /// CJK is caseless, so the "short ALL-CAPS code" filter must not fire on
+    /// it — 2–3-character CJK restaurant names were silently dropped (17
+    /// places of one real list: 雅閣, 歸香, 天香樓…).
+    func testShortCJKNamesAreValidRestaurantNames() {
+        for name in ["松滿樓", "雅閣", "歸香", "煉瓦亭", "天香樓"] {
+            XCTAssertTrue(GoogleSharedListSource.isPlausibleName(name), name)
+        }
+        // The codes the rule exists for still get rejected.
+        XCTAssertFalse(GoogleSharedListSource.isPlausibleName("JP"))
+        XCTAssertFalse(GoogleSharedListSource.isPlausibleName("USD"))
+    }
+
+    /// Two different restaurants in the same building share coordinates to
+    /// 4 decimals — the old coordinate-keyed dedupe collapsed them.
+    func testNeighboringPlacesAtTheSameAddressBothParse() {
+        let html = """
+        APP_INITIALIZATION_STATE
+        [null,null,25.0402,121.5349]"松滿樓"
+        [null,null,25.0402,121.5349]"隔壁小館"
+        """
+        XCTAssertEqual(GoogleSharedListSource.parsePlaces(fromHTML: html).map(\.name),
+                       ["松滿樓", "隔壁小館"])
+    }
 }

@@ -125,6 +125,24 @@ curl -sIL -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
   "https://maps.app.goo.gl/<any-shared-list>?_imcp=1" | head -1   # expect 200
 ```
 
+### "The app's list count doesn't match Google Maps"
+
+Compare three numbers: Google Maps' count, the getlist response's raw
+coordinate-entry count, and the app's stamped-row count (Settings, which
+also excludes *hidden* places). Causes seen in the wild, most first:
+
+- **Parser drops** — replay the list through the parse logic (pull the
+  list URL from the device prefs plist; fetch page + getlist with the
+  documented UA/params) and diff names. Two real bugs lived here: short
+  CJK names rejected by a case heuristic, and same-building neighbors
+  collapsed by coordinate dedupe (gotcha #10).
+- **Stale rows** — places deleted from the list upstream before removal-
+  on-sync existed keep an old stamp forever; one healthy re-sync now
+  clears them (see the sync row in FEATURES' cache table for the
+  half-count safety guard).
+- **Store-side merge** — same normalized name within 150 m merges two
+  list entries into one row (deliberate; see ARCHITECTURE "Store").
+
 ### "All my restaurants disappeared after an update"
 
 Almost certainly invariant #1 (a non-optional stored property was added to

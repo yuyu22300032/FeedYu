@@ -52,6 +52,9 @@ final class GoogleSharedListSource: RestaurantDataSource {
     }
 
     var id: String { config.sourceID }
+    /// The getlist response is the whole list — deletions on Google Maps
+    /// should disappear here too (guarded, see RestaurantStore.apply).
+    var fetchIsCompleteList: Bool { true }
 
     var displayName: String {
         config.label.isEmpty ? String(localized: "Shared list") : config.label
@@ -150,7 +153,10 @@ final class GoogleSharedListSource: RestaurantDataSource {
         let matches = coordinateRegex.matches(in: region, range: NSRange(location: 0, length: nsRegion.length))
 
         var places: [ParsedPlace] = []
-        var seenCoordinates: Set<String> = []
+        // Dedupe by NAME only. An earlier coordinate-based dedupe (~11 m
+        // rounding) collapsed *different restaurants in the same building*
+        // — two real places of one real list vanished that way. Repeated
+        // blobs for the same entry still dedupe via their identical name.
         var seenNames: Set<String> = []
 
         for match in matches {
@@ -158,9 +164,6 @@ final class GoogleSharedListSource: RestaurantDataSource {
                   let longitude = Double(nsRegion.substring(with: match.range(at: 2))),
                   abs(latitude) <= 90, abs(longitude) <= 180,
                   latitude != 0 || longitude != 0 else { continue }
-
-            let coordinateKey = "\(String(format: "%.4f", latitude)),\(String(format: "%.4f", longitude))"
-            guard !seenCoordinates.contains(coordinateKey) else { continue }
 
             let windowStart = match.range.location + match.range.length
             let windowLength = min(800, nsRegion.length - windowStart)
@@ -194,7 +197,6 @@ final class GoogleSharedListSource: RestaurantDataSource {
 
             guard var name, !seenNames.contains(name) else { continue }
             name = name.components(separatedBy: .newlines).joined(separator: " ")
-            seenCoordinates.insert(coordinateKey)
             seenNames.insert(name)
             places.append(ParsedPlace(name: name, latitude: latitude, longitude: longitude, ftid: ftid, cid: cid))
         }
@@ -216,8 +218,13 @@ final class GoogleSharedListSource: RestaurantDataSource {
         if withoutJSONNoise.isEmpty { return false }
         // Purely numeric/punctuation strings are coordinates or ids, not names.
         if trimmed.unicodeScalars.allSatisfy({ CharacterSet(charactersIn: "0123456789.,-+ °").contains($0) }) { return false }
-        // Locale/currency codes and similar short ALL-CAPS tokens.
-        if trimmed.count <= 3, trimmed == trimmed.uppercased(), trimmed.allSatisfy(\.isLetter) { return false }
+        // Locale/currency codes and similar short ALL-CAPS tokens ("JP",
+        // "USD"). Only for strings that actually HAVE case: CJK is caseless
+        // (松滿樓 == its own uppercased form), and the unqualified rule
+        // silently dropped every 2–3-character CJK restaurant name — 17
+        // places of one real list (雅閣, 歸香, 天香樓…).
+        if trimmed.count <= 3, trimmed.allSatisfy(\.isLetter),
+           trimmed == trimmed.uppercased(), trimmed != trimmed.lowercased() { return false }
         return true
     }
 
