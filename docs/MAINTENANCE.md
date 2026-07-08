@@ -92,9 +92,11 @@ most likely first:
   name (`attemptedCidSearchNames`; a newly-localized name grants a fresh
   attempt). Resolution is deliberately user-paced (card display + taps
   only; each attempt downloads a 1–2 MB search page — a background row
-  pre-warm was tried and removed as not worth the data). Keep it that
-  way: hammering google.com earns the "unusual traffic" wall, breaking
-  resolution *and* list sync.
+  pre-warm was tried and removed as not worth the data) and
+  network-aware: the card warm-up skips cellular/Low Data Mode
+  (`allowsExpensiveNetwork: false` → blocked fetch reads as transient),
+  taps always resolve. Keep it that way: hammering google.com earns the
+  "unusual traffic" wall, breaking resolution *and* list sync.
 
 To inspect what a device has stored: pull `store.json` (recipe in
 DEVELOPMENT.md "App-container surgery") and check the place's
@@ -166,6 +168,20 @@ places that show photos on google.com show none in the app.
 The checker (`UberEatsChecker`) matched no store within 100 m + name
 similarity ≥ 0.5. Same trade-off as the cid resolver: no link beats a wrong
 link. Format canaries live in its fixture tests.
+
+### "Uber Eats tab says no results, but refreshing finds one"
+
+Historical bug, fixed with three mechanisms — don't regress them:
+(1) the Uber tab searches **exhaustively** per refresh
+(`maxETAChecksPerRefresh = Int.max`; safe because the tab is
+distance-mode, so the cap never protected MapKit there — it only made the
+tab give up mid-queue and say "press again"); (2) a *verified* notFound
+persists in the store for a 7-day cooldown (`uberEatsNotFoundAt`; cleared
+by a later success, and `unknown`/bot-wall results are never persisted);
+(3) cooled-down places are skipped via the engine's free `quickReject`
+hook. Net: the first refresh in a new area may run long (loading card
+takes over after 1 s), and every refresh for the following week is
+near-instant.
 
 ### "Suggestions are slow / ETAs missing"
 

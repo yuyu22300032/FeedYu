@@ -35,13 +35,26 @@ final class UberEatsChecker: ObservableObject {
     static let matchRadiusMeters: CLLocationDistance = 100
     /// Store pages fetched per check, at most (WebView loads are slow).
     static let maxStorePageFetches = 2
+    /// A verified notFound persists in the store and is not re-checked for
+    /// this long — restaurants do join Uber Eats, so it's a cooldown, not
+    /// a verdict. `unknown` (bot wall) is never persisted.
+    static let notFoundCooldownSeconds: TimeInterval = 7 * 24 * 3600
+
+    /// True while a persisted verified notFound is still fresh — skip the
+    /// slow WebView check entirely.
+    nonisolated static func isInNotFoundCooldown(_ restaurant: Restaurant, now: Date = Date()) -> Bool {
+        guard restaurant.uberEatsURL == nil,
+              let checkedAt = restaurant.uberEatsNotFoundAt else { return false }
+        return now.timeIntervalSince(checkedAt) < notFoundCooldownSeconds
+    }
 
     /// Session cache keyed by normalized name (availability changes rarely
-    /// within a session; notFound is deliberately not persisted).
+    /// within a session; notFound persists via the store cooldown above).
     private var cache: [String: Availability] = [:]
 
     func availability(for restaurant: Restaurant, near origin: CLLocation?) async -> Availability {
         if let url = restaurant.uberEatsURL { return .available(url) }
+        if Self.isInNotFoundCooldown(restaurant) { return .notFound }
         let key = restaurant.normalizedName
         if let cached = cache[key] { return cached }
         let result = await Self.fetchAvailability(name: restaurant.name,

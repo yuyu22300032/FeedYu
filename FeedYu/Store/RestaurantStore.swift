@@ -200,6 +200,27 @@ final class RestaurantStore: ObservableObject {
                   GoogleMapsOpener.isExactPlaceURL(url) else { return }
         }
         restaurants[index].googleMapsURL = url
+        restaurants[index].mapsNoMatchAt = nil
+        restaurants[index].mapsNoMatchName = nil
+        scheduleSave()
+    }
+
+    /// Definitive "cid resolution found nothing near this place" — skipped
+    /// for a cooldown period instead of re-spending a 1–2 MB search per
+    /// session. Cleared by a later success (setGoogleMapsURL).
+    func setMapsNoMatch(id: UUID, searchName: String) {
+        guard let index = restaurants.firstIndex(where: { $0.id == id }) else { return }
+        restaurants[index].mapsNoMatchAt = Date()
+        restaurants[index].mapsNoMatchName = searchName
+        scheduleSave()
+    }
+
+    /// Verified "not on Uber Eats" — the Uber tab skips this place for a
+    /// cooldown period instead of re-running a slow WebView check every
+    /// session. Cleared by a later success (setUberEatsURL).
+    func setUberEatsNotFound(id: UUID) {
+        guard let index = restaurants.firstIndex(where: { $0.id == id }) else { return }
+        restaurants[index].uberEatsNotFoundAt = Date()
         scheduleSave()
     }
 
@@ -207,6 +228,7 @@ final class RestaurantStore: ObservableObject {
         guard let index = restaurants.firstIndex(where: { $0.id == id }),
               restaurants[index].uberEatsURL != url else { return }
         restaurants[index].uberEatsURL = url
+        restaurants[index].uberEatsNotFoundAt = nil
         scheduleSave()
     }
 

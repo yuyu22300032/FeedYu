@@ -32,6 +32,33 @@ final class ListConfigTests: XCTestCase {
         XCTAssertTrue(configs[0].isEnabled)
     }
 
+    /// The per-tab Uber toggle was added after single-toggle configs
+    /// shipped: a missing flag must inherit the old toggle, not default on.
+    func testUberToggleInheritsTonightToggleFromLegacyJSON() throws {
+        let legacy = """
+        [{"id":"6F9619FF-8B86-D011-B42D-00C04FC964FF","urlString":"https://maps.app.goo.gl/abc","isEnabled":false}]
+        """
+        let configs = try JSONDecoder().decode([SharedListConfig].self, from: Data(legacy.utf8))
+        XCTAssertFalse(configs[0].isEnabledForUberEats, "missing Uber flag inherits the old single toggle")
+    }
+
+    func testPerTabTogglesRoundTripIndependently() throws {
+        var config = SharedListConfig(urlString: "https://maps.app.goo.gl/x")
+        config.isEnabled = false
+        config.isEnabledForUberEats = true
+        let decoded = try JSONDecoder().decode([SharedListConfig].self,
+                                               from: JSONEncoder().encode([config]))
+        XCTAssertFalse(decoded[0].isEnabled)
+        XCTAssertTrue(decoded[0].isEnabledForUberEats)
+
+        var imported = ImportedListConfig(sourceID: "takeout-starred", label: "Starred")
+        imported.isEnabledForUberEats = false
+        let decodedImport = try JSONDecoder().decode([ImportedListConfig].self,
+                                                     from: JSONEncoder().encode([imported]))
+        XCTAssertTrue(decodedImport[0].isEnabled)
+        XCTAssertFalse(decodedImport[0].isEnabledForUberEats)
+    }
+
     func testShareInboxFindsURLInSharedText() {
         XCTAssertEqual(
             ShareInbox.firstHTTPURL(in: "Check out my list! https://maps.app.goo.gl/AbC123 shared from Google Maps"),

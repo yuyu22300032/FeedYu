@@ -38,6 +38,7 @@
 		882129A2BBD747841C3DFA76 /* GoogleMapsOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86B4F9280933BB1481377E91 /* GoogleMapsOpener.swift */; };
 		9381B7AA377E5C4F3FBC58B5 /* MichelinDataSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACDF96AEA6F672396F0978F /* MichelinDataSourceTests.swift */; };
 		94D9C2B4C350E211C149CF82 /* CSVParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3CDBB494C753B3891660634 /* CSVParser.swift */; };
+		968E3B7F27668B6BB91E8D33 /* LoadingCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E5E5141F35324023597705E /* LoadingCard.swift */; };
 		9944786DF4D874DA364F17CD /* LocationProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE3C9B1C838CE37F91201446 /* LocationProvider.swift */; };
 		A8DD4D227ADEE765889EF15E /* getlist-response.txt in Resources */ = {isa = PBXBuildFile; fileRef = 5E40014594BE6D3A13690A00 /* getlist-response.txt */; };
 		B013A9E8339B4C26BC80DB27 /* StoreMergeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B6065279F321F9CFCCEE66 /* StoreMergeTests.swift */; };
@@ -131,6 +132,7 @@
 		93696CE048929DAD36825626 /* CSVParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVParserTests.swift; sourceTree = "<group>"; };
 		9695CC3F82931F479F40109C /* ListRemovalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListRemovalTests.swift; sourceTree = "<group>"; };
 		9E460EA21E57BF64877848CF /* listpage-snippet.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = "listpage-snippet.html"; sourceTree = "<group>"; };
+		9E5E5141F35324023597705E /* LoadingCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingCard.swift; sourceTree = "<group>"; };
 		9E863C1A658E83709ACF30F3 /* GoogleSharedListSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleSharedListSource.swift; sourceTree = "<group>"; };
 		A3CDBB494C753B3891660634 /* CSVParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVParser.swift; sourceTree = "<group>"; };
 		A66057BA03A40B7B63265782 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
@@ -215,6 +217,7 @@
 		6959A77A4C10C9F1D2208052 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				9E5E5141F35324023597705E /* LoadingCard.swift */,
 				47C659FC58BBF88A8F91F526 /* ManageRestaurantsView.swift */,
 				CC350E4BCEDE22E40384D423 /* MichelinView.swift */,
 				0632AABABEE4EE0DF805725B /* RestaurantCard.swift */,
@@ -483,6 +486,7 @@
 				882129A2BBD747841C3DFA76 /* GoogleMapsOpener.swift in Sources */,
 				1E80113577F6D0F16EC29118 /* GooglePlaceResolver.swift in Sources */,
 				332B404B71BACFBB58D1C8A4 /* GoogleSharedListSource.swift in Sources */,
+				968E3B7F27668B6BB91E8D33 /* LoadingCard.swift in Sources */,
 				9944786DF4D874DA364F17CD /* LocationProvider.swift in Sources */,
 				4EBE3B2C54958A5E41B26431 /* ManageRestaurantsView.swift in Sources */,
 				C6616D5A5B127BB24DDD484D /* MichelinDataSource.swift in Sources */,

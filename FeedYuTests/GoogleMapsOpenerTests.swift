@@ -63,6 +63,19 @@ final class GoogleMapsOpenerTests: XCTestCase {
         XCTAssertTrue(url.contains("query=Somewhere"), url)
     }
 
+    func testMapsNoMatchCooldownGate() {
+        var r = Restaurant(name: "Uosho")
+        XCTAssertFalse(PlaceInfoFetcher.isInNoMatchCooldown(r, searchName: "Uosho"))
+        r.mapsNoMatchAt = Date(timeIntervalSinceNow: -24 * 3600)
+        r.mapsNoMatchName = "Uosho"
+        XCTAssertTrue(PlaceInfoFetcher.isInNoMatchCooldown(r, searchName: "Uosho"))
+        XCTAssertFalse(PlaceInfoFetcher.isInNoMatchCooldown(r, searchName: "魚庄"),
+                       "a newly localized name earns a fresh attempt despite the cooldown")
+        r.mapsNoMatchAt = Date(timeIntervalSinceNow: -31 * 24 * 3600)
+        XCTAssertFalse(PlaceInfoFetcher.isInNoMatchCooldown(r, searchName: "Uosho"),
+                       "expired cooldown re-checks")
+    }
+
     func testExactPlaceURLPredicate() {
         // Exact: cid/ftid links (scraper, Takeout GeoJSON) and place paths.
         XCTAssertTrue(GoogleMapsOpener.isExactPlaceURL(URL(string: "https://maps.google.com/?cid=123")!))

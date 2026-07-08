@@ -133,16 +133,34 @@ struct SettingsView: View {
         } header: {
             Text("Your lists (\(settings.listCount)/\(AppSettings.maxLists))")
         } footer: {
-            Text("Toggle a list off to leave it out of Tonight suggestions without deleting it — handy for trying out a friend's list. Removing a list also deletes its places, except ones on another list, added manually, or in the Michelin guide.")
+            Text("Each list feeds the Tonight and Uber Eats tabs independently — toggle either off without deleting anything (handy for trying out a friend's list). Removing a list also deletes its places, except ones on another list, added manually, or in the Michelin guide.")
         }
+    }
+
+    /// Tonight / Uber Eats enablement, one compact line per tab. Two plain
+    /// Toggles in the same row work (unlike Button+Picker — gotcha #2:
+    /// switches have their own hit targets).
+    private func tabToggles(tonight: Binding<Bool>, uberEats: Binding<Bool>) -> some View {
+        VStack(spacing: 4) {
+            Toggle(isOn: tonight) {
+                Label("Tonight", systemImage: "fork.knife")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            Toggle(isOn: uberEats) {
+                Label("Uber Eats", systemImage: "takeoutbag.and.cup.and.straw")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .controlSize(.mini)
     }
 
     private func sharedListRow(_ config: Binding<SharedListConfig>) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Toggle(isOn: config.isEnabled) {
-                Text(config.wrappedValue.label.isEmpty ? String(localized: "Shared list") : config.wrappedValue.label)
-                    .font(.body.weight(.medium))
-            }
+            Text(config.wrappedValue.label.isEmpty ? String(localized: "Shared list") : config.wrappedValue.label)
+                .font(.body.weight(.medium))
+            tabToggles(tonight: config.isEnabled, uberEats: config.isEnabledForUberEats)
             Text(config.wrappedValue.urlString)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
@@ -187,10 +205,9 @@ struct SettingsView: View {
 
     private func importedListRow(_ config: Binding<ImportedListConfig>) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Toggle(isOn: config.isEnabled) {
-                Text(config.wrappedValue.label)
-                    .font(.body.weight(.medium))
-            }
+            Text(config.wrappedValue.label)
+                .font(.body.weight(.medium))
+            tabToggles(tonight: config.isEnabled, uberEats: config.isEnabledForUberEats)
             HStack {
                 Text("\(placeCounts[config.wrappedValue.sourceID] ?? 0) places")
                     .font(.caption)

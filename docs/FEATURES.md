@@ -81,7 +81,8 @@ plus a browsable nearby list.
 ## Uber Eats page
 
 **Purpose:** "what should I order delivery from?" — the same suggestion
-engine and the same enabled lists as Tonight, with two differences:
+engine as Tonight (lists toggle per tab: each list in Settings has
+independent Tonight and Uber Eats switches), with two differences:
 
 1. **Distance-only budget.** Delivery doesn't care about drive time; the
    panel shows just the distance slider (its value is shared with the other
@@ -190,7 +191,8 @@ narrowest sensible scope:
 | In-range pool | once per engine session | lives for the session (origin/budget/candidate change rebuilds) |
 | Cover photo + description | first time a place's card is shown | persisted to the store (fill-only — never overwrites source data); failures retried once per app run |
 | Michelin local-script names | per Michelin-tab visit, visible rows first | persisted forever; ≤40 fetches/visit, 0.4 s apart; failures negatively cached per session |
-| Uber Eats availability | per candidate, Uber tab only | verified store URL persisted to the store (next suggestion skips the check); not-found cached per session only — places can join Uber Eats later |
+| Uber Eats availability | per candidate, Uber tab only | verified store URL persisted to the store (next suggestion skips the check); a *verified* not-found persists with a **1-week cooldown** and is skipped for free (not counted against the per-refresh check budget — counted, a neighborhood of known-absent places exhausted it and the tab showed "no results"); `unknown` (bot wall) is never persisted |
+| Maps cid resolution no-match | per card display / tap | definitive no-match persists with a **30-day cooldown**, keyed by search name (a newly localized name retries sooner); transient failures never persist |
 | Michelin dataset | bundled CSV instantly; GitHub refresh weekly | downloaded copy cached on disk (`michelin-cache.csv`); offline falls back silently |
 | Google list sync | on add, on demand, and weekly per enabled list | merged into the store; a failed sync keeps the previous data |
 | The store itself | — | single JSON file, saved with a 0.8 s debounce off-main; loads off-main at launch |
@@ -219,7 +221,10 @@ narrowest sensible scope:
   display and taps only, no background pre-warm over list rows: each
   attempt downloads a 1–2 MB Google search page, and the suggestion card
   already warms the likely pick (a row pre-warm existed briefly and was
-  removed as not worth the data). Only *definitive* failures (a
+  removed as not worth the data). The card warm-up is additionally
+  network-aware: on cellular or in Low Data Mode the speculative fetch is
+  skipped (`allowsExpensiveNetworkAccess`), and only an explicit tap
+  spends the data. Only *definitive* failures (a
   data-bearing results page with nothing near the pin, or an ambiguous
   tie) are negatively cached per session, keyed by search name — so a
   later-localized name earns a fresh attempt. Transient failures (network

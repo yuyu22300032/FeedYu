@@ -73,6 +73,25 @@ final class RestaurantStoreMergeTests: XCTestCase {
         XCTAssertTrue(store.restaurants[0].isHidden)
     }
 
+    func testNegativeMarkersAreClearedByTheirSuccesses() {
+        let store = makeStore()
+        var place = Restaurant(name: "Cooldowns")
+        place.latitude = 25; place.longitude = 121
+        store.apply([place], sourceID: "scrape")
+        let id = store.restaurants[0].id
+
+        store.setUberEatsNotFound(id: id)
+        XCTAssertNotNil(store.restaurants[0].uberEatsNotFoundAt)
+        store.setUberEatsURL(id: id, url: URL(string: "https://www.ubereats.com/store-browse-uuid/x")!)
+        XCTAssertNil(store.restaurants[0].uberEatsNotFoundAt, "a verified store link ends the cooldown")
+
+        store.setMapsNoMatch(id: id, searchName: "Cooldowns")
+        XCTAssertEqual(store.restaurants[0].mapsNoMatchName, "Cooldowns")
+        store.setGoogleMapsURL(id: id, url: URL(string: "https://maps.google.com/?cid=1")!)
+        XCTAssertNil(store.restaurants[0].mapsNoMatchAt, "a resolved cid ends the cooldown")
+        XCTAssertNil(store.restaurants[0].mapsNoMatchName)
+    }
+
     func testResolvedCidUpgradesStoredSearchURLButNeverExactOne() {
         let store = makeStore()
         var place = Restaurant(name: "Everywhere")

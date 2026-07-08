@@ -22,6 +22,18 @@ final class PlaceInfoFetcher: ObservableObject {
     /// the place earns one fresh attempt with the better query.
     private var attemptedCidSearchNames: [UUID: String] = [:]
 
+    /// A *definitive* no-match also persists in the store and isn't retried
+    /// for this long (each retry is a 1–2 MB search page). Places do gain
+    /// Google listings and coordinates get fixed — cooldown, not verdict.
+    static let noMatchCooldownSeconds: TimeInterval = 30 * 24 * 3600
+
+    nonisolated static func isInNoMatchCooldown(_ restaurant: Restaurant, searchName: String,
+                                                now: Date = Date()) -> Bool {
+        guard restaurant.mapsNoMatchName == searchName,
+              let at = restaurant.mapsNoMatchAt else { return false }
+        return now.timeIntervalSince(at) < noMatchCooldownSeconds
+    }
+
     /// The stored exact place link, or one resolved (and persisted) right
     /// now. Stored *search* URLs (Takeout list CSVs export those) don't
     /// count — they get upgraded to a cid like URL-less places do.
@@ -30,22 +42,29 @@ final class PlaceInfoFetcher: ObservableObject {
     /// hiding resolution behind the info guard gave it one shot, ever — a
     /// single failed attempt left the place on search-URL opens for good.
     /// One resolution attempt per place per session per search name.
-    func resolvedMapsURL(for restaurant: Restaurant, store: RestaurantStore) async -> URL? {
+    /// `allowsExpensiveNetwork: false` = speculative warm-up etiquette:
+    /// skip the 1–2 MB fetch on cellular / Low Data Mode (counts as a
+    /// transient failure, so an explicit tap still resolves there).
+    func resolvedMapsURL(for restaurant: Restaurant, store: RestaurantStore,
+                         allowsExpensiveNetwork: Bool = true) async -> URL? {
         if let stored = restaurant.googleMapsURL, GoogleMapsOpener.isExactPlaceURL(stored) {
             return stored
         }
         let searchName = restaurant.googleSearchName
         guard let coordinate = restaurant.coordinate,
-              attemptedCidSearchNames[restaurant.id] != searchName else { return nil }
+              attemptedCidSearchNames[restaurant.id] != searchName,
+              !Self.isInNoMatchCooldown(restaurant, searchName: searchName) else { return nil }
         attemptedCidSearchNames[restaurant.id] = searchName
         // Local-market name first (matches Google's own listing), then the
         // dataset romanization — the pin-proximity match rejects impostors.
-        let first = await GooglePlaceResolver.resolveCid(name: searchName, coordinate: coordinate)
+        let first = await GooglePlaceResolver.resolveCid(name: searchName, coordinate: coordinate,
+                                                         allowsExpensiveNetwork: allowsExpensiveNetwork)
         var cid: String?
         var transient = first == .unavailable
         if case .resolved(let value) = first { cid = value }
         if cid == nil, searchName != restaurant.name {
-            let second = await GooglePlaceResolver.resolveCid(name: restaurant.name, coordinate: coordinate)
+            let second = await GooglePlaceResolver.resolveCid(name: restaurant.name, coordinate: coordinate,
+                                                              allowsExpensiveNetwork: allowsExpensiveNetwork)
             if case .resolved(let value) = second { cid = value }
             transient = transient || second == .unavailable
         }
@@ -57,6 +76,11 @@ final class PlaceInfoFetcher: ObservableObject {
                 // attempt — the card warm-up fails, then the user's tap
                 // deserves a real retry.
                 attemptedCidSearchNames.removeValue(forKey: restaurant.id)
+            } else {
+                // Definitive no-match: persist with a cooldown so future
+                // sessions don't re-spend the search until it expires (or
+                // the localizer changes the search name).
+                store.setMapsNoMatch(id: restaurant.id, searchName: searchName)
             }
             return nil
         }
@@ -93,7 +117,10 @@ final class PlaceInfoFetcher: ObservableObject {
         // upgrades slow search-URL opens to instant ?cid= links AND gives
         // the og: fetch below a real place page to read. A stored search
         // URL still serves the og: fetch when resolution comes up empty.
-        let mapsURL = await resolvedMapsURL(for: restaurant, store: store) ?? restaurant.googleMapsURL
+        // Card display is speculative, so Wi-Fi/unmetered only — on
+        // cellular the user's tap (full network access) resolves instead.
+        let mapsURL = await resolvedMapsURL(for: restaurant, store: store,
+                                            allowsExpensiveNetwork: false) ?? restaurant.googleMapsURL
 
         let existing = PlaceInfo(summary: restaurant.summary, imageURL: restaurant.imageURL)
         guard existing.summary == nil || existing.imageURL == nil else { return existing }

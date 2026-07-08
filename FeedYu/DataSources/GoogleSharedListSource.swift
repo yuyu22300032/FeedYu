@@ -5,7 +5,8 @@ struct SharedListConfig: Codable, Identifiable, Hashable {
     var urlString: String
     var kind: ListKind = .wantToGo
     var label = ""
-    var isEnabled = true
+    var isEnabled = true             // feeds the Tonight tab
+    var isEnabledForUberEats = true  // feeds the Uber Eats tab (independent)
 
     var sourceID: String { "sharedList-\(id.uuidString)" }
 
@@ -13,9 +14,11 @@ struct SharedListConfig: Codable, Identifiable, Hashable {
         self.urlString = urlString
     }
 
-    // Custom decoding: configs persisted before isEnabled existed must keep
-    // decoding (a synthesized decoder would fail on the missing key and
-    // silently drop every saved list).
+    // Custom decoding: configs persisted before isEnabled /
+    // isEnabledForUberEats existed must keep decoding (a synthesized
+    // decoder would fail on the missing key and silently drop every saved
+    // list). A missing Uber flag inherits the Tonight toggle — that was
+    // the old single-toggle behavior.
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
@@ -23,6 +26,7 @@ struct SharedListConfig: Codable, Identifiable, Hashable {
         kind = try container.decodeIfPresent(ListKind.self, forKey: .kind) ?? .wantToGo
         label = try container.decodeIfPresent(String.self, forKey: .label) ?? ""
         isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? true
+        isEnabledForUberEats = try container.decodeIfPresent(Bool.self, forKey: .isEnabledForUberEats) ?? isEnabled
     }
 }
 

@@ -15,6 +15,10 @@ struct MichelinView: View {
     @State private var selectedAwards: Set<MichelinAward> = [.selected, .bibGourmand]
     @State private var includeFormer = false
     @StateObject private var localizer = MichelinNameLocalizer()
+    /// See TonightView.searchIsSlow — after 1 s the loading card takes
+    /// over from a stale suggestion so a long search doesn't read as a
+    /// frozen app.
+    @State private var searchIsSlow = false
 
     private var michelinInRange: [(restaurant: Restaurant, km: Double)] {
         guard let origin = locationProvider.location else { return [] }
@@ -90,7 +94,7 @@ struct MichelinView: View {
 
             if engine.isSearching || engine.current != nil || engine.statusMessage != nil {
                 Section {
-                    if let suggestion = engine.current {
+                    if let suggestion = engine.current, !(engine.isSearching && searchIsSlow) {
                         // "Suggest a restaurant" above re-rolls; no separate
                         // change-restaurant button needed. Clear row: the
                         // card brings its own white box, same as Tonight.
@@ -98,11 +102,9 @@ struct MichelinView: View {
                             .listRowInsets(EdgeInsets())
                             .listRowBackground(Color.clear)
                     } else if engine.isSearching {
-                        HStack {
-                            Spacer()
-                            ProgressView("Checking drive times…")
-                            Spacer()
-                        }
+                        LoadingCard(message: "Checking drive times…")
+                            .listRowInsets(EdgeInsets())
+                            .listRowBackground(Color.clear)
                     }
                     if let message = engine.statusMessage {
                         Text(message)
@@ -128,6 +130,16 @@ struct MichelinView: View {
             await localizer.fill(restaurants: michelinInRange.map(\.restaurant),
                                  nameLanguage: settings.michelinNameLanguage,
                                  store: store)
+        }
+        .onChange(of: engine.isSearching) { _, searching in
+            if searching {
+                Task {
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
+                    if engine.isSearching { searchIsSlow = true }
+                }
+            } else {
+                searchIsSlow = false
+            }
         }
         // First visit: roll a suggestion as if the button were pressed.
         // current != nil guards tab returns (the engine outlives switches).

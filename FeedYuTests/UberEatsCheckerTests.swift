@@ -86,6 +86,18 @@ final class UberEatsCheckerTests: XCTestCase {
                        "https://www.ubereats.com/search?q=%E9%BC%8E%E6%B3%B0%E8%B1%90%20%E4%BF%A1%E7%BE%A9%E5%BA%97")
     }
 
+    func testNotFoundCooldownGate() {
+        var r = Restaurant(name: "X")
+        XCTAssertFalse(UberEatsChecker.isInNotFoundCooldown(r), "never checked → not in cooldown")
+        r.uberEatsNotFoundAt = Date(timeIntervalSinceNow: -3 * 24 * 3600)
+        XCTAssertTrue(UberEatsChecker.isInNotFoundCooldown(r), "3 days old → still cooling down")
+        r.uberEatsNotFoundAt = Date(timeIntervalSinceNow: -8 * 24 * 3600)
+        XCTAssertFalse(UberEatsChecker.isInNotFoundCooldown(r), "8 days old → re-check allowed")
+        r.uberEatsNotFoundAt = Date(timeIntervalSinceNow: -3600)
+        r.uberEatsURL = URL(string: "https://www.ubereats.com/store-browse-uuid/x")
+        XCTAssertFalse(UberEatsChecker.isInNotFoundCooldown(r), "a stored store link always wins")
+    }
+
     func testSimilarityScores() {
         // Identical and containment (branch/city qualifiers on the slug).
         XCTAssertEqual(UberEatsChecker.similarity("mcdonalds", "mcdonalds"), 1)

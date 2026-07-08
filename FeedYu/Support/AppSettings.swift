@@ -7,7 +7,8 @@ struct ImportedListConfig: Codable, Identifiable, Hashable {
     var sourceID: String
     var label: String
     var kind: ListKind = .custom
-    var isEnabled = true
+    var isEnabled = true             // feeds the Tonight tab
+    var isEnabledForUberEats = true  // feeds the Uber Eats tab (independent)
 
     var id: String { sourceID }
 
@@ -16,14 +17,18 @@ struct ImportedListConfig: Codable, Identifiable, Hashable {
         self.label = label
         self.kind = kind
         self.isEnabled = isEnabled
+        self.isEnabledForUberEats = isEnabled
     }
 
+    // Missing keys keep decoding (see SharedListConfig); a missing Uber
+    // flag inherits the Tonight toggle — the old single-toggle behavior.
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         sourceID = try container.decode(String.self, forKey: .sourceID)
         label = try container.decodeIfPresent(String.self, forKey: .label) ?? ""
         kind = try container.decodeIfPresent(ListKind.self, forKey: .kind) ?? .custom
         isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? true
+        isEnabledForUberEats = try container.decodeIfPresent(Bool.self, forKey: .isEnabledForUberEats) ?? isEnabled
     }
 }
 
@@ -152,10 +157,13 @@ final class AppSettings: ObservableObject {
     var listCount: Int { sharedLists.count + importedLists.count }
     var canAddList: Bool { listCount < Self.maxLists }
 
-    /// Source IDs whose places should feed the Tonight suggestions.
-    var enabledListSourceIDs: Set<String> {
-        var ids = Set(sharedLists.filter(\.isEnabled).map(\.sourceID))
-        ids.formUnion(importedLists.filter(\.isEnabled).map(\.sourceID))
+    /// Source IDs whose places should feed a suggestion tab. Tonight and
+    /// Uber Eats have independent per-list toggles.
+    func enabledListSourceIDs(forUberEats uberEats: Bool) -> Set<String> {
+        var ids = Set(sharedLists.filter { uberEats ? $0.isEnabledForUberEats : $0.isEnabled }
+            .map(\.sourceID))
+        ids.formUnion(importedLists.filter { uberEats ? $0.isEnabledForUberEats : $0.isEnabled }
+            .map(\.sourceID))
         return ids
     }
 

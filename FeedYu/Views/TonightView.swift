@@ -12,12 +12,17 @@ struct TonightView: View {
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var locationProvider: LocationProvider
     @StateObject private var engine = SuggestionEngine()
+    /// After 1 s of searching, the loading card takes over even from a
+    /// still-visible previous suggestion — a long exhaustive Uber check
+    /// behind a stale card reads as a frozen app.
+    @State private var searchIsSlow = false
 
     /// The user's own saved places (not the whole Michelin dataset), drawn
-    /// only from lists that are currently enabled in Settings. Membership is
-    /// tracked by which sources have stamped the place (lastSeenInSourceAt).
+    /// only from lists enabled in Settings *for this tab* (Tonight and Uber
+    /// Eats toggle independently). Membership is tracked by which sources
+    /// have stamped the place (lastSeenInSourceAt).
     private var candidates: [Restaurant] {
-        let enabledSourceIDs = settings.enabledListSourceIDs
+        let enabledSourceIDs = settings.enabledListSourceIDs(forUberEats: uberEatsMode)
         return store.restaurants.filter { restaurant in
             guard !restaurant.isHidden, restaurant.coordinate != nil else { return false }
             if restaurant.addedManually { return true }
@@ -64,7 +69,7 @@ struct TonightView: View {
                     // thing on the page, like the Michelin tab's filters.
                     TravelBudgetPanel(distanceOnly: uberEatsMode)
                         .padding(.top, 4)
-                    if let suggestion = engine.current {
+                    if let suggestion = engine.current, !(engine.isSearching && searchIsSlow) {
                         RestaurantCard(suggestion: suggestion, showUberEatsButton: uberEatsMode)
                             .contextMenu {
                                 Button(role: .destructive) {
@@ -74,8 +79,11 @@ struct TonightView: View {
                                 }
                             }
                     } else if engine.isSearching {
-                        ProgressView("Checking drive times…")
-                            .padding(.top, 80)
+                        // Illustrated placeholder, not a bare spinner — Uber
+                        // checks especially run for seconds and a blank page
+                        // (or a stale card) reads as a freeze.
+                        LoadingCard(message: uberEatsMode ? "Checking Uber Eats availability…"
+                                                          : "Checking drive times…")
                     }
                     if let message = engine.statusMessage {
                         Text(message)
@@ -113,6 +121,16 @@ struct TonightView: View {
                 Task { await refresh() }
             }
         }
+        .onChange(of: engine.isSearching) { _, searching in
+            if searching {
+                Task {
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
+                    if engine.isSearching { searchIsSlow = true }
+                }
+            } else {
+                searchIsSlow = false
+            }
+        }
     }
 
     /// Delivery only cares how far away the kitchen is — the Uber Eats tab
@@ -131,11 +149,28 @@ struct TonightView: View {
         guard let origin = locationProvider.location else { return }
         // WebView-rendered availability checks are slow (seconds each) —
         // give up sooner than the ETA-check budget would.
-        engine.maxETAChecksPerRefresh = uberEatsMode ? 6 : 12
+        // Uber tab: distance mode never calls MapKit, so the check budget
+        // only gated availability checks — and a capped budget made the tab
+        // claim "no results" while orderable places sat later in the queue.
+        // Search exhaustively instead: with notFound persisted for a week
+        // and skipped for free, each place costs a slow check at most once
+        // per week, and the search stops at the first orderable hit.
+        engine.maxETAChecksPerRefresh = uberEatsMode ? Int.max : 12
+        // Fresh verified "not on Uber Eats" places are skipped for free —
+        // NOT via availabilityCheck, which counts against the 6-check
+        // budget (a neighborhood of them used to exhaust it and show "no
+        // results" while orderable places sat further down the queue).
+        engine.quickReject = uberEatsMode ? { UberEatsChecker.isInNotFoundCooldown($0) } : nil
         engine.availabilityCheck = uberEatsMode ? { [weak store] restaurant in
             let result = await UberEatsChecker.shared.availability(for: restaurant, near: origin)
             if case .available(let storeURL) = result, let storeURL {
                 store?.setUberEatsURL(id: restaurant.id, url: storeURL)
+            } else if result == .notFound {
+                // Verified absence: persist so the next week of sessions
+                // skips the slow WebView check. `unknown` (bot wall) is
+                // deliberately NOT persisted — it says nothing about the
+                // restaurant.
+                store?.setUberEatsNotFound(id: restaurant.id)
             }
             // unknown stays in: better a search-link button than an empty tab
             // when Uber's bot wall blocks the check.

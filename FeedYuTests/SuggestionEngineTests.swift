@@ -151,6 +151,44 @@ final class SuggestionEngineTests: XCTestCase {
         XCTAssertTrue(checked.contains("NotOnUber") || checked == ["OnUber"])
     }
 
+    func testUncappedBudgetChecksEveryPlaceInOneRefresh() async {
+        // Uber tab config: distance mode + Int.max budget = keep checking
+        // until something is orderable or the whole pool was checked — no
+        // more "no new places in range, press again" mid-queue give-ups.
+        let engine = SuggestionEngine()
+        engine.etaProvider = { _, _, _ in XCTFail("distance mode must not request routes"); return 0 }
+        engine.maxETAChecksPerRefresh = Int.max
+        var checkedCount = 0
+        engine.availabilityCheck = { checkedCount += 1; return $0.name == "OnUber" }
+        var candidates = (0..<20).map { place("No\($0)", latOffset: Double($0) * 0.0001) }
+        // ~444 m: alone in the outermost distance ring (rings are 500/3 m),
+        // so the shuffled queue is guaranteed to reach it last.
+        candidates.append(place("OnUber", latOffset: 0.004))
+        await engine.refreshSuggestion(candidates: candidates, origin: origin,
+                                       budget: TravelBudget(mode: .distance, value: 500))
+        XCTAssertEqual(engine.current?.restaurant.name, "OnUber",
+                       "a single refresh reaches the orderable place at the end of the queue")
+        XCTAssertEqual(checkedCount, 21, "everything before it was checked, then it stopped")
+    }
+
+    func testQuickRejectIsFreeAndDoesNotExhaustBudget() async {
+        let engine = SuggestionEngine()
+        engine.etaProvider = { _, _, _ in XCTFail("distance mode must not request routes"); return 0 }
+        engine.maxETAChecksPerRefresh = 2
+        var checked: [String] = []
+        engine.availabilityCheck = { checked.append($0.name); return true }
+        engine.quickReject = { $0.name.hasPrefix("No") }
+        // Eight known-notFound places nearer than the orderable one: counted
+        // against the 2-check budget these exhausted it and the tab showed
+        // "no results" (the real bug); quick-rejection must be free.
+        var candidates = (0..<8).map { place("No\($0)", latOffset: Double($0) * 0.0001) }
+        candidates.append(place("OnUber", latOffset: 0.002))
+        await engine.refreshSuggestion(candidates: candidates, origin: origin,
+                                       budget: TravelBudget(mode: .distance, value: 500))
+        XCTAssertEqual(engine.current?.restaurant.name, "OnUber")
+        XCTAssertEqual(checked, ["OnUber"], "quick-rejected places never reach the counted check")
+    }
+
     func testModeSwitchInvalidatesSessionAndETACache() async {
         let engine = SuggestionEngine()
         var etaCalls = 0

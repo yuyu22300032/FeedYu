@@ -86,6 +86,9 @@ struct Restaurant: Codable, Identifiable, Hashable {
     var summary: String?
     var imageURL: URL?           // cover photo, lazily scraped (Optional — store back-compat)
     var uberEatsURL: URL?        // exact store page, captured by the availability check
+    var uberEatsNotFoundAt: Date?    // last VERIFIED "not on Uber Eats" (cooldown gate)
+    var mapsNoMatchAt: Date?         // last definitive cid-resolution no-match…
+    var mapsNoMatchName: String?     // …and the search name it failed under
     var isHidden = false
     var addedManually = false
     var lastSeenInSourceAt: [String: Date] = [:]
@@ -177,6 +180,11 @@ struct Restaurant: Codable, Identifiable, Hashable {
         if summary == nil { summary = incoming.summary }
         if imageURL == nil { imageURL = incoming.imageURL }
         if uberEatsURL == nil { uberEatsURL = incoming.uberEatsURL }
+        if uberEatsNotFoundAt == nil { uberEatsNotFoundAt = incoming.uberEatsNotFoundAt }
+        if mapsNoMatchAt == nil {
+            mapsNoMatchAt = incoming.mapsNoMatchAt
+            mapsNoMatchName = incoming.mapsNoMatchName
+        }
         if coordinate == nil, incoming.coordinate != nil {
             latitude = incoming.latitude
             longitude = incoming.longitude

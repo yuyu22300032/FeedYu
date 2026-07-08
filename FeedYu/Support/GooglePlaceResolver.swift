@@ -32,7 +32,8 @@ enum GooglePlaceResolver {
         case unavailable
     }
 
-    static func resolveCid(name: String, coordinate: CLLocationCoordinate2D) async -> Resolution {
+    static func resolveCid(name: String, coordinate: CLLocationCoordinate2D,
+                           allowsExpensiveNetwork: Bool = true) async -> Resolution {
         let encoded = name.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? name
         let anchor = String(format: "%.6f,%.6f", coordinate.latitude, coordinate.longitude)
         guard let url = URL(string: "https://www.google.com/maps/search/\(encoded)/@\(anchor),17z") else {
@@ -40,6 +41,12 @@ enum GooglePlaceResolver {
         }
         var request = URLRequest(url: url)
         request.timeoutInterval = 20
+        // Each attempt downloads a 1–2 MB search page. Speculative callers
+        // (card-display warm-up) pass false so the fetch never runs on
+        // cellular or in Low Data Mode — it fails as .unavailable
+        // (transient, uncached), and an explicit tap (true) still resolves.
+        request.allowsExpensiveNetworkAccess = allowsExpensiveNetwork
+        request.allowsConstrainedNetworkAccess = allowsExpensiveNetwork
         // google.com/maps serves the data-bearing page to desktop UAs.
         request.setValue(GoogleSharedListSource.desktopUserAgent, forHTTPHeaderField: "User-Agent")
         request.setValue(GoogleSharedListSource.acceptLanguage, forHTTPHeaderField: "Accept-Language")

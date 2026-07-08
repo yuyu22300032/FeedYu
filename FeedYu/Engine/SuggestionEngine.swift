@@ -35,6 +35,13 @@ final class SuggestionEngine: ObservableObject {
     /// the per-refresh check budget — implementations should cache.
     var availabilityCheck: ((Restaurant) async -> Bool)?
 
+    /// Optional free, synchronous rejection (Uber Eats tab: places with a
+    /// fresh verified "not on Uber Eats"). Unlike availabilityCheck, NOT
+    /// counted against the check budget — without this, a neighborhood of
+    /// known-unorderable places exhausts the budget and the tab shows "no
+    /// results" even though an orderable place sits later in the queue.
+    var quickReject: ((Restaurant) -> Bool)?
+
     private var queue: [Restaurant] = []
     private var shownIDs: Set<UUID> = []
     private var sessionOrigin: CLLocation?
@@ -95,6 +102,7 @@ final class SuggestionEngine: ObservableObject {
         while !queue.isEmpty {
             let candidate = queue.removeFirst()
             guard let coordinate = candidate.coordinate else { continue }
+            if let quickReject, quickReject(candidate) { continue }
 
             // Distance mode: the pool is already exactly within the radius —
             // no route lookup, but the availability filter still applies.
