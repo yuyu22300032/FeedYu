@@ -134,17 +134,56 @@ grep -oE 'entitylist/getlist\?[^"]*' page.html   # → fetch under /maps/preview
 # Michelin guide page needs a MOBILE Safari UA (desktop gets HTTP 202)
 ```
 
-## Release / App Store path (future)
+## Shipping to the App Store
 
-- MIT license: no obstacle. Needed: paid Apple Developer account, App Store
-  Connect listing, privacy label (everything is on-device; location is used
-  but not collected).
-- The scraping features (`GoogleSharedListSource`, `MichelinNameLocalizer`)
-  are ToS-gray for mass distribution — the clean public-release path is the
-  Google Places API (per-user API keys or a backend) for lists + open hours.
-  The `RestaurantDataSource` protocol was designed so this is an add-a-source
-  change, not a rewrite.
-- App icon, launch screen polish, and onboarding are still template-default.
+Metadata (descriptions en/zh-Hant/ja, keywords, privacy-label answers,
+reviewer notes) is paste-ready in [APPSTORE.md](APPSTORE.md). The developer
+holds written permission from Google and Uber for the page usage — attach
+those emails if App Review raises guideline 5.2.2.
+
+One-time setup (browser/GUI, can't be scripted):
+
+1. **Xcode → Settings → Accounts** — after enrolling, reopen the Apple ID
+   account so the paid team appears; then put its Team ID in `project.yml`
+   (both targets' `DEVELOPMENT_TEAM`) and `xcodegen generate`. The old
+   `84336L2H62` is the free personal team — it cannot distribute.
+2. **GitHub repo → Settings → Pages** — deploy from branch `main`, folder
+   `/docs`. This publishes the privacy policy
+   (https://yuyu22300032.github.io/FeedYu/privacy.html) and the guide.
+3. **appstoreconnect.apple.com → My Apps → "+"** — New App: iOS, name
+   FeedYu, bundle `com.yuyu.FeedYu` (register the ID when prompted),
+   SKU `feedyu-ios`. Fill the listing from APPSTORE.md; upload the
+   screenshots from the capture recipe below.
+
+Per release:
+
+4. Bump `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` in `project.yml`,
+   `xcodegen generate`, run the test suite.
+5. Xcode: destination "Any iOS Device" → Product → **Archive** →
+   Distribute App → App Store Connect (creates the Distribution cert on
+   first run).
+6. App Store Connect: pick the build, TestFlight first (external-link beta
+   needs a short review), then Submit for Review with the notes from
+   APPSTORE.md.
+
+### Screenshot capture (any tab, scripted)
+
+`-initialTab michelin|ubereats|settings` opens the app on that tab —
+the simulator can't tap the tab bar, this launch argument is the hook.
+Seed the simulator with a device store + prefs for real-looking data
+(container-surgery recipes above; prefs must go through
+`simctl spawn <device> defaults import com.yuyu.FeedYu <plist>` — copying
+the plist file directly is silently clobbered by cfprefsd). Capture on an
+iPhone 17 Pro Max class simulator (1320×2868 = the required 6.9" size)
+with `simctl io <device> screenshot`. Keep screenshots out of git — they
+show personal lists.
+
+### Longer-term release notes
+
+- The scraping features are ToS-gray for *mass* distribution even with
+  written permission — if scale ever matters, the clean path is the Google
+  Places API; `RestaurantDataSource` was designed so that's an
+  add-a-source change, not a rewrite.
 
 ## Enhancement backlog (known gaps, in rough priority)
 

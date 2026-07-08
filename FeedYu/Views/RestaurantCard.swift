@@ -22,7 +22,12 @@ struct RestaurantCard: View {
         let url = fetchedInfo?.imageURL ?? restaurant.imageURL
         return url.flatMap { PlaceInfoFetcher.isGenericImage($0) ? nil : $0 }
     }
-    private var summaryText: String? { fetchedInfo?.summary ?? restaurant.summary }
+    private var summaryText: String? {
+        // Filter here too: Google's boilerplate line may have been persisted
+        // by fetches done before the isBoilerplateSummary guard existed.
+        let text = fetchedInfo?.summary ?? restaurant.summary
+        return text.flatMap { PlaceInfoFetcher.isBoilerplateSummary($0) ? nil : $0 }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {

@@ -46,7 +46,19 @@ struct RootView: View {
             }
         }
     }
-    @State private var selectedTab: Tab = .tonight
+    /// Launch-argument override for automation (App Store screenshots,
+    /// future UI tests): `-initialTab michelin|ubereats|settings`. The
+    /// simulator can't tap the tab bar from the CLI, so this is the only
+    /// scriptable way onto the other tabs.
+    private static var initialTab: Tab {
+        switch UserDefaults.standard.string(forKey: "initialTab")?.lowercased() {
+        case "michelin": return .michelin
+        case "ubereats": return .uberEats
+        case "settings": return .settings
+        default: return .tonight
+        }
+    }
+    @State private var selectedTab: Tab = RootView.initialTab
 
     var body: some View {
         // Page-style TabView + custom bar: the page style is what makes

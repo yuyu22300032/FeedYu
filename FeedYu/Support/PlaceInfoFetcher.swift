@@ -175,10 +175,18 @@ final class PlaceInfoFetcher: ObservableObject {
         // sits in og:description; the plain meta description is boilerplate.
         let candidates = ["og:description", "twitter:description", "description"]
             .compactMap { metaContent(in: html, keys: [$0]) }
+            .filter { !isBoilerplateSummary($0) }
         if let best = candidates.max(by: { $0.count < $1.count }), !best.isEmpty {
             info.summary = String(best.prefix(500))
         }
         return info
+    }
+
+    /// Google's generic marketing line ("Find local businesses, view maps
+    /// and get driving directions in Google Maps.") is served as the
+    /// description for place pages it won't describe — worse than nothing.
+    nonisolated static func isBoilerplateSummary(_ text: String) -> Bool {
+        text.hasPrefix("Find local businesses, view maps")
     }
 
     /// Google serves stock artwork as og:image for places with no photos —

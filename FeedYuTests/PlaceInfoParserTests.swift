@@ -18,6 +18,18 @@ final class PlaceInfoParserTests: XCTestCase {
                        "Chef Lin's tasting menu leans on coastal produce & charcoal — a calm, seasonal room.")
     }
 
+    func testRejectsGoogleBoilerplateDescription() {
+        // Google serves its marketing line as og:description for place
+        // pages it won't describe — must read as "no description".
+        let html = """
+        <meta property="og:description" content="Find local businesses, view maps and get driving directions in Google Maps.">
+        """
+        XCTAssertNil(PlaceInfoFetcher.parseInfo(fromHTML: html).summary)
+        XCTAssertTrue(PlaceInfoFetcher.isBoilerplateSummary(
+            "Find local businesses, view maps and get driving directions in Google Maps."))
+        XCTAssertFalse(PlaceInfoFetcher.isBoilerplateSummary("A cozy izakaya near the station."))
+    }
+
     func testReversedAttributeOrderAndSingleQuotes() {
         let html = """
         <meta content='https://example.com/p.png' property='og:image'>
