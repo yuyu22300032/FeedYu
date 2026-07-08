@@ -122,14 +122,12 @@ struct MichelinView: View {
         .contentMargins(.top, 8, for: .scrollContent)
         .task(id: localizationTaskKey) {
             // Fill local-language names for what's on screen, nearest first.
-            let inRange = michelinInRange.map(\.restaurant)
-            await localizer.fill(restaurants: inRange,
+            // (No Maps-link pre-warm for rows: each resolution downloads a
+            // 1–2 MB search page, and the suggestion card already warms the
+            // likely pick — rows resolve on tap instead, saving data.)
+            await localizer.fill(restaurants: michelinInRange.map(\.restaurant),
                                  nameLanguage: settings.michelinNameLanguage,
                                  store: store)
-            // Then warm exact Maps links for the nearest rows — after the
-            // localizer on purpose, so resolution searches with the local
-            // name. Internal guards make re-runs no-ops (gotcha #7).
-            await PlaceInfoFetcher.shared.prefetchMapsURLs(for: inRange, store: store)
         }
         // First visit: roll a suggestion as if the button were pressed.
         // current != nil guards tab returns (the engine outlives switches).

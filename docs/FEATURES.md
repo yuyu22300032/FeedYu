@@ -215,16 +215,17 @@ narrowest sensible scope:
   matches by pin proximity (nearest within 150 m) and refuses when two
   different places are nearly equally close — a persisted wrong cid would
   silently open the wrong restaurant forever, while the search fallback is
-  visible and self-correcting. The Michelin tab also pre-warms links for
-  the nearest in-range rows in the background (≤12 per visit, 1.5 s apart,
-  after name localization so searches use the local name) — throttled
-  because aggressive queries earn google.com's "unusual traffic" wall.
-  Only *definitive* failures (a data-bearing results page with nothing
-  near the pin, or an ambiguous tie) are negatively cached per session,
-  keyed by search name — so a later-localized name earns a fresh attempt.
-  Transient failures (network errors, or the data-less JS shell page
-  Google sometimes serves depending on client fingerprint) are not cached:
-  the card-display warm-up, the tap, and the next prefetch each retry. Fallback is a name search anchored at
+  visible and self-correcting. Resolution is user-paced by design — card
+  display and taps only, no background pre-warm over list rows: each
+  attempt downloads a 1–2 MB Google search page, and the suggestion card
+  already warms the likely pick (a row pre-warm existed briefly and was
+  removed as not worth the data). Only *definitive* failures (a
+  data-bearing results page with nothing near the pin, or an ambiguous
+  tie) are negatively cached per session, keyed by search name — so a
+  later-localized name earns a fresh attempt. Transient failures (network
+  errors, or the data-less JS shell page Google sometimes serves depending
+  on client fingerprint) are not cached: the card-display warm-up and each
+  tap retry. Fallback is a name search anchored at
   the place's own coordinates (`/maps/search/<name>/@lat,lng,17z`), using
   the cached local-market name when the localizer has one — Google often
   can't match the dataset's romanization near the anchor and dumps the
