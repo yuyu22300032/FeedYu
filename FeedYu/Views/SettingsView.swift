@@ -137,23 +137,36 @@ struct SettingsView: View {
         }
     }
 
-    /// Tonight / Uber Eats enablement, one compact line per tab. Two plain
-    /// Toggles in the same row work (unlike Button+Picker — gotcha #2:
-    /// switches have their own hit targets).
+    /// Tonight / Uber Eats enablement as two side-by-side toggle chips —
+    /// same pattern as the Michelin price/award filters. (Two switch
+    /// Toggles stacked in one Form row overlapped their hit areas/layout;
+    /// plain-button chips render reliably inside List rows here.)
     private func tabToggles(tonight: Binding<Bool>, uberEats: Binding<Bool>) -> some View {
-        VStack(spacing: 4) {
-            Toggle(isOn: tonight) {
-                Label("Tonight", systemImage: "fork.knife")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            Toggle(isOn: uberEats) {
-                Label("Uber Eats", systemImage: "takeoutbag.and.cup.and.straw")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
+        HStack(spacing: 8) {
+            tabChip(String(localized: "Tonight"), systemImage: "fork.knife", isOn: tonight)
+            tabChip(String(localized: "Uber Eats"), systemImage: "takeoutbag.and.cup.and.straw", isOn: uberEats)
         }
-        .controlSize(.mini)
+    }
+
+    private func tabChip(_ label: String, systemImage: String, isOn: Binding<Bool>) -> some View {
+        Button {
+            isOn.wrappedValue.toggle()
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: isOn.wrappedValue ? "checkmark" : systemImage)
+                    .font(.caption2.weight(.bold))
+                Text(label)
+            }
+            .font(.caption.weight(.semibold))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 6)
+            .background(isOn.wrappedValue ? Color.accentColor.opacity(0.18) : Color.gray.opacity(0.12),
+                        in: RoundedRectangle(cornerRadius: 8))
+            .foregroundStyle(isOn.wrappedValue ? Color.accentColor : Color.secondary)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(isOn.wrappedValue ? [.isSelected] : [])
     }
 
     private func sharedListRow(_ config: Binding<SharedListConfig>) -> some View {
