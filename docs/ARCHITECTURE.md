@@ -186,7 +186,13 @@ Michelin fields, never clear anything, never touch `isHidden`.
   throttles; `MKError.loadingThrottled` is caught, the candidate is requeued,
   and the user is told to wait a minute.
 - ETA cache: 10 min TTL, keyed by restaurant id + mode + origin bucketed to
-  a ~500 m grid. Max 12 ETA checks per refresh.
+  a ~500 m grid. Max 12 ETA checks per refresh on walk/drive; the Uber tab
+  sets the cap to Int.max (distance mode makes no route calls, so the cap
+  only made it quit mid-queue) and relies on `quickReject` + persisted
+  notFound cooldowns to keep exhaustive scans cheap. A drained queue wraps
+  the rotation once in-place instead of ending with "press again".
+- `quickReject` (optional injectable): free synchronous skip, NOT counted
+  against the check budget (Uber tab: places in notFound cooldown).
 - `availabilityCheck` (optional injectable): post-budget filter used by the
   Uber Eats tab (`TonightView(uberEatsMode: true)` — same candidates and
   engine as Tonight, but ALWAYS on the distance budget:

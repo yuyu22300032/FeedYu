@@ -47,6 +47,8 @@ Michelin dataset is *not* in this pool — only the user's saved places.
 **Suggestion flow:** the page auto-suggests when data and location are ready;
 "Not feeling it — another" pops the next candidate. No place repeats until
 everything in range has been shown once, then the rotation reshuffles.
+Searches running longer than 1 s swap in an illustrated loading card (all
+three suggestion tabs) so a slow check never reads as a frozen app.
 
 **The card** shows a cover photo (tapping it opens the place in **Google
 Maps** — that's the "check reviews, hours, live traffic" flow; there's no
@@ -105,8 +107,9 @@ search for the name — the tab degrades, it never goes empty.
 - **Language** — English / 繁體中文 / 日本語 (restart to apply). Names scraped
   from Google lists follow the device language; re-sync after switching.
 - **Your lists (n/20)** — every list (shared Google Maps links and Takeout
-  imports) with: an **enable toggle** (off = excluded from Tonight/Uber
-  suggestions without deleting anything — for trying out a friend's list),
+  imports) with: **two per-tab toggle chips** (Tonight / Uber Eats — each
+  tab draws from its own set of enabled lists; off = excluded without
+  deleting anything, for trying out a friend's list),
   a place count, **rename** (pencil), **remove** (trash + confirmation;
   deletes the list's places *except* those on another list, added manually,
   or on the Michelin guide), and per-list sync status/"Sync now".
@@ -173,12 +176,17 @@ checked with `MKDirections.calculateETA` (Apple Maps: `.automobile` with
 API key). Pass = ETA ≤ budget. Distance mode does **zero** route lookups —
 the grid query already was the exact answer. ETA calls are never batched
 (MapKit throttles); a throttle error requeues the candidate and tells the
-user to wait a minute. At most 12 route checks per refresh (6 on the Uber
-tab, whose layer-3 checks are slower).
+user to wait a minute. At most 12 route checks per refresh. The Uber tab
+is **uncapped** instead: it runs on the distance budget (zero route
+calls), so a cap only made it give up mid-queue — a refresh there keeps
+checking until something is orderable or the whole pool was checked, with
+fresh not-found places skipped for free (engine `quickReject`).
 
 **No-repeat.** Shown places are excluded until the in-range pool is
 exhausted, then the pool reshuffles (avoiding an immediate repeat of the
-current card).
+current card). A refresh whose queue drains without a hit wraps the
+rotation once *in-place* — it never ends with "press again" when
+something acceptable exists.
 
 ## Lazy loading & caching
 
@@ -191,7 +199,7 @@ narrowest sensible scope:
 | In-range pool | once per engine session | lives for the session (origin/budget/candidate change rebuilds) |
 | Cover photo + description | first time a place's card is shown | persisted to the store (fill-only — never overwrites source data); failures retried once per app run |
 | Michelin local-script names | per Michelin-tab visit, visible rows first | persisted forever; ≤40 fetches/visit, 0.4 s apart; failures negatively cached per session |
-| Uber Eats availability | per candidate, Uber tab only | verified store URL persisted to the store (next suggestion skips the check); a *verified* not-found persists with a **1-week cooldown** and is skipped for free (not counted against the per-refresh check budget — counted, a neighborhood of known-absent places exhausted it and the tab showed "no results"); `unknown` (bot wall) is never persisted |
+| Uber Eats availability | per candidate, Uber tab only | verified store URL persisted to the store (next suggestion skips the check); a *verified* not-found persists with a **1-week cooldown** and is skipped for free via `quickReject`; `unknown` (bot wall) is never persisted |
 | Maps cid resolution no-match | per card display / tap | definitive no-match persists with a **30-day cooldown**, keyed by search name (a newly localized name retries sooner); transient failures never persist |
 | Michelin dataset | bundled CSV instantly; GitHub refresh weekly | downloaded copy cached on disk (`michelin-cache.csv`); offline falls back silently |
 | Google list sync | on add, on demand, and weekly per enabled list | merged into the store; a failed sync keeps the previous data |
