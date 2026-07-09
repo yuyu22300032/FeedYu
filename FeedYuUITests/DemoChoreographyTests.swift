@@ -10,8 +10,27 @@ import XCTest
 /// best-effort: a missing element skips its beat instead of failing the
 /// take mid-recording.
 final class DemoChoreographyTests: XCTestCase {
+    /// Storefront language for the take: `TEST_RUNNER_DEMO_LANGUAGE=en|ja`
+    /// on the xcodebuild invocation (defaults to the seeded prefs' zh-Hant).
+    /// The taps below query by LOCALIZED label, so language and labels
+    /// must travel together.
+    private var language: String {
+        ProcessInfo.processInfo.environment["DEMO_LANGUAGE"] ?? "zh-Hant"
+    }
+
+    private var labels: (drive: String, michelin: String, another: String, suggest: String) {
+        switch language {
+        case "en": return ("Drive", "Michelin", "another", "Suggest a restaurant")
+        case "ja": return ("車", "ミシュラン", "別のお店", "レストランを提案")
+        default: return ("開車", "米其林", "換一間", "隨機推薦")
+        }
+    }
+
     func testDemoChoreography() throws {
         let app = XCUIApplication()
+        if language != "zh-Hant" {
+            app.launchArguments += ["-AppleLanguages", "(\(language))"]
+        }
         app.launch()
 
         // Scene 1 — Tonight: a pick from your own lists, then push the
@@ -24,17 +43,17 @@ final class DemoChoreographyTests: XCTestCase {
         sleep(5)
 
         // Scene 2 — drive mode in current traffic + "not feeling it".
-        tap("開車", in: app)
+        tap(labels.drive, in: app)
         sleep(3)
-        tapButtonContaining("換一間", in: app)
+        tapButtonContaining(labels.another, in: app)
         sleep(5)
 
         // Scene 3 — Michelin: filters, a roll, a peek at the in-range list.
-        tap("米其林", in: app)
+        tap(labels.michelin, in: app)
         sleep(2)
         tapButtonContaining("⭐️", in: app)
         sleep(1)
-        tapButtonContaining("隨機推薦", in: app)
+        tapButtonContaining(labels.suggest, in: app)
         sleep(5)
         app.swipeUp()
         sleep(2)
