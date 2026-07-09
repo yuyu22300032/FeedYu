@@ -23,11 +23,13 @@ struct TravelBudgetPanel: View {
     var body: some View {
         VStack(spacing: 14) {
             if !distanceOnly {
-                // Equal thirds no matter the locale or Dynamic Type size:
-                // a label whose intrinsic width exceeds its third (long
-                // translations, large text) used to silently widen that one
-                // button; minWidth 0 + scale-to-fit text keeps all three
-                // buttons the same size — as large as the widest needs.
+                // One size for all three buttons. Width: flexible equal
+                // thirds (minWidth 0 + scale-to-fit text, so long
+                // translations or large Dynamic Type can't widen one).
+                // Height: the SF Symbols differ in natural height (the
+                // walking figure is tall, the ruler squat), so each icon
+                // gets a fixed-height slot — otherwise each background
+                // wrapped its own icon and Walk stood taller than the rest.
                 HStack(spacing: 8) {
                     ForEach(TravelMode.allCases) { mode in
                         let isOn = settings.travelMode == mode
@@ -37,6 +39,7 @@ struct TravelBudgetPanel: View {
                             VStack(spacing: 4) {
                                 Image(systemName: mode.systemImage)
                                     .font(.body.weight(.medium))
+                                    .frame(height: 24)
                                 Text(mode.label)
                                     .font(.caption.weight(.semibold))
                                     .lineLimit(1)
