@@ -192,7 +192,8 @@ final class PlaceInfoFetcher: ObservableObject {
         text.hasPrefix("Find local businesses, view maps")       // en
             || text.contains("尋找本地商家")                        // zh-Hant
             || text.contains("查找本地商家")                        // zh-Hans
-            || text.contains("地元のお店やスポットを検索")            // ja
+            || text.contains("地元のお店やスポットを検索")            // ja (guessed variant)
+            || text.contains("乗換案内、路線図、ドライブルート")       // ja (observed live 2026-07-09)
     }
 
     /// Google serves stock artwork as og:image for places with no photos —

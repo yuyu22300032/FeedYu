@@ -177,19 +177,29 @@ it: `simctl io recordVideo` around `xcodebuild test-without-building
 BEFORE trimming — simulator recordings are variable-frame-rate and
 static tails collapse otherwise; Homebrew ffmpeg lacks drawtext, so
 captions are AppKit-rendered PNGs overlaid with `overlay=…:enable=`).
-Target 886×1920, 15–30 s, with a (silent) stereo audio track.
+Per-storefront language: `TEST_RUNNER_DEMO_LANGUAGE=en|ja` on the
+xcodebuild invocation (the choreography taps by localized label, so the
+env var switches both the app language and the tap targets). Narration:
+`say -v Meijia|Samantha|Kyoko`. Target 886×1920, 15–30 s, with a stereo
+audio track.
 
 ### Screenshot capture (any tab, scripted)
 
 `-initialTab michelin|ubereats|settings` opens the app on that tab —
 the simulator can't tap the tab bar, this launch argument is the hook.
+Add `-AppleLanguages "(en)"` / `"(ja)"` for per-storefront languages.
 Seed the simulator with a device store + prefs for real-looking data
 (container-surgery recipes above; prefs must go through
 `simctl spawn <device> defaults import com.yuyu.FeedYu <plist>` — copying
-the plist file directly is silently clobbered by cfprefsd). Capture on an
-iPhone 17 Pro Max class simulator (1320×2868 = the required 6.9" size)
-with `simctl io <device> screenshot`. Keep screenshots out of git — they
-show personal lists.
+the plist file directly is silently clobbered by cfprefsd, and edits the
+app must see at next cold launch need the SIMULATOR SHUT DOWN first,
+then edit the container's `Library/Preferences/com.yuyu.FeedYu.plist`).
+**Sanitize `sharedListConfigs` URLs before shooting Settings** — shared
+Google list links are private (anyone holding one can open the list);
+replace `urlString` values with `https://maps.app.goo.gl/example`.
+Capture on an iPhone 17 Pro Max class simulator (1320×2868 = the
+required 6.9" size) with `simctl io <device> screenshot`. Keep
+screenshots out of git — they show personal lists.
 
 ### Longer-term release notes
 
