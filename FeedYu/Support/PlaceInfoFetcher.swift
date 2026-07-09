@@ -185,8 +185,14 @@ final class PlaceInfoFetcher: ObservableObject {
     /// Google's generic marketing line ("Find local businesses, view maps
     /// and get driving directions in Google Maps.") is served as the
     /// description for place pages it won't describe — worse than nothing.
+    /// The line is LOCALIZED (Accept-Language follows the device), so match
+    /// the variants of every language the app ships; each fragment is
+    /// distinctive enough not to appear in a real restaurant description.
     nonisolated static func isBoilerplateSummary(_ text: String) -> Bool {
-        text.hasPrefix("Find local businesses, view maps")
+        text.hasPrefix("Find local businesses, view maps")       // en
+            || text.contains("尋找本地商家")                        // zh-Hant
+            || text.contains("查找本地商家")                        // zh-Hans
+            || text.contains("地元のお店やスポットを検索")            // ja
     }
 
     /// Google serves stock artwork as og:image for places with no photos —

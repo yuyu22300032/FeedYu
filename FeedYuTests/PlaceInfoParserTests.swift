@@ -27,7 +27,14 @@ final class PlaceInfoParserTests: XCTestCase {
         XCTAssertNil(PlaceInfoFetcher.parseInfo(fromHTML: html).summary)
         XCTAssertTrue(PlaceInfoFetcher.isBoilerplateSummary(
             "Find local businesses, view maps and get driving directions in Google Maps."))
+        // The line is localized per Accept-Language — the shipped languages
+        // must all be caught (zh variant observed live on-device 2026-07-09).
+        XCTAssertTrue(PlaceInfoFetcher.isBoilerplateSummary(
+            "利用「Google 地圖」尋找本地商家、檢視地圖或規劃行車路線。"))
+        XCTAssertTrue(PlaceInfoFetcher.isBoilerplateSummary(
+            "Google マップで地元のお店やスポットを検索したり、地図を表示したり、ルート案内を利用したりできます。"))
         XCTAssertFalse(PlaceInfoFetcher.isBoilerplateSummary("A cozy izakaya near the station."))
+        XCTAssertFalse(PlaceInfoFetcher.isBoilerplateSummary("地元の常連に愛される老舗うなぎ店。"))
     }
 
     func testReversedAttributeOrderAndSingleQuotes() {
