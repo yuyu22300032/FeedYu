@@ -163,18 +163,29 @@ struct TonightView: View {
         engine.quickReject = uberEatsMode ? { UberEatsChecker.isInNotFoundCooldown($0) } : nil
         engine.availabilityCheck = uberEatsMode ? { [weak store] restaurant in
             let result = await UberEatsChecker.shared.availability(for: restaurant, near: origin)
-            if case .available(let storeURL) = result, let storeURL {
-                store?.setUberEatsURL(id: restaurant.id, url: storeURL)
-            } else if result == .notFound {
+            switch result {
+            case .available(let storeURL):
+                if let storeURL { store?.setUberEatsURL(id: restaurant.id, url: storeURL) }
+                return true
+            case .closedNow(let storeURL, _):
+                // Exists but not accepting orders right now — keep the URL
+                // (existence is durable), skip the suggestion (tapping
+                // through to Uber's "closed" page is the exact annoyance
+                // this avoids). No notFound cooldown: it reopens today.
+                if let storeURL { store?.setUberEatsURL(id: restaurant.id, url: storeURL) }
+                return false
+            case .notFound:
                 // Verified absence: persist so the next week of sessions
                 // skips the slow WebView check. `unknown` (bot wall) is
                 // deliberately NOT persisted — it says nothing about the
                 // restaurant.
                 store?.setUberEatsNotFound(id: restaurant.id)
+                return false
+            case .unknown:
+                // Stays in: better a search-link button than an empty tab
+                // when Uber's bot wall blocks the check.
+                return true
             }
-            // unknown stays in: better a search-link button than an empty tab
-            // when Uber's bot wall blocks the check.
-            return result != .notFound
         } : nil
         await engine.refreshSuggestion(candidates: candidates,
                                        origin: origin,

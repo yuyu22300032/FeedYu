@@ -18,6 +18,7 @@ struct SettingsView: View {
     /// Rename-list alert state: the sourceID being renamed + draft text.
     @State private var renamingSourceID: String?
     @State private var renameText = ""
+    @State private var showOnboarding = false
 
     /// Remove-list confirmation state.
     @State private var removalSourceID: String?
@@ -32,6 +33,10 @@ struct SettingsView: View {
                 takeoutSection
                 michelinSection
                 restaurantsSection
+                helpSection
+            }
+            .sheet(isPresented: $showOnboarding) {
+                OnboardingView()
             }
             .alert("Rename list", isPresented: Binding(
                 get: { renamingSourceID != nil },
@@ -410,6 +415,17 @@ struct SettingsView: View {
     }
 
     // MARK: - Restaurants management
+
+    private var helpSection: some View {
+        Section {
+            Button {
+                showOnboarding = true
+            } label: {
+                Label("How to use FeedYu", systemImage: "questionmark.circle")
+            }
+            .buttonStyle(.borderless)
+        }
+    }
 
     private var restaurantsSection: some View {
         Section("Your restaurants") {

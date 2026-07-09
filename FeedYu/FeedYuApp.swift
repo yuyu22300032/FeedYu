@@ -22,6 +22,7 @@ struct RootView: View {
     @EnvironmentObject private var locationProvider: LocationProvider
     @Environment(\.scenePhase) private var scenePhase
     @State private var shareInboxMessage: String?
+    @State private var showOnboarding = false
 
     private enum Tab: Int, CaseIterable, Identifiable {
         case tonight, michelin, uberEats, settings
@@ -74,7 +75,17 @@ struct RootView: View {
             .tabViewStyle(.page(indexDisplayMode: .never))
             tabBar
         }
-        .task { await bootstrap() }
+        .task {
+            if !settings.hasSeenOnboarding {
+                showOnboarding = true
+            }
+            await bootstrap()
+        }
+        .sheet(isPresented: $showOnboarding, onDismiss: {
+            settings.hasSeenOnboarding = true
+        }) {
+            OnboardingView()
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 drainShareInbox()

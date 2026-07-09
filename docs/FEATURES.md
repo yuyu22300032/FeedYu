@@ -98,9 +98,18 @@ independent Tonight and Uber Eats switches), with two differences:
 The card keeps the photo→Google-Maps behavior (reviews/info) and adds a
 green **Order on Uber Eats** button that deep-links into the Uber Eats app,
 directly on the verified store page ready to order
-(`/store-browse-uuid/<uuid>?diningMode=DELIVERY`). If verification was
-inconclusive (offline, bot wall), the button falls back to an Uber Eats
-search for the name — the tab degrades, it never goes empty.
+(`/store-browse-uuid/<uuid>?diningMode=DELIVERY`). Stores that exist but
+are **closed right now** (Uber's "accepts orders during open hours") are
+skipped, not suggested — detected via getStoreV1's
+`orderForLaterInfo.nextOpenTime` (see the MAINTENANCE playbook; `isOpen`
+is a lie). If verification was inconclusive (offline, bot wall), the
+button falls back to an Uber Eats search for the name — the tab degrades,
+it never goes empty.
+
+**First launch** (any tab): a three-page onboarding sheet — what the app
+does, how to share a Google Maps list into it (with an Open Google Maps
+button), and the three essentials. Re-openable via Settings → "How to
+use FeedYu"; the `hasSeenOnboarding` flag lives in UserDefaults.
 
 ## Settings page
 

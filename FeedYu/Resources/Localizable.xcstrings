@@ -353,6 +353,22 @@
         }
       }
     },
+    "Bring your Google Maps lists" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google マップのリストを取り込む"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯入你的 Google 地圖清單"
+          }
+        }
+      }
+    },
     "Bundled michelin.csv is missing." : {
       "localizations" : {
         "ja" : {
@@ -413,6 +429,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在查詢車程時間…"
+          }
+        }
+      }
+    },
+    "Continue" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "次へ"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "繼續"
           }
         }
       }
@@ -657,6 +689,22 @@
         }
       }
     },
+    "FeedYu imports it the next time it opens" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "次に FeedYu を開くと自動で取り込まれます"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下次打開 FeedYu 時會自動匯入"
+          }
+        }
+      }
+    },
     "Finding your location…" : {
       "localizations" : {
         "ja" : {
@@ -701,6 +749,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已離榜（%@）"
+          }
+        }
+      }
+    },
+    "Get started" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "はじめる"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開始使用"
           }
         }
       }
@@ -817,6 +881,38 @@
         }
       }
     },
+    "How it works" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使い方"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用方式"
+          }
+        }
+      }
+    },
+    "How to use FeedYu" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FeedYu の使い方"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "如何使用 FeedYu"
+          }
+        }
+      }
+    },
     "Import Saved Places.json (Starred)" : {
       "localizations" : {
         "ja" : {
@@ -893,6 +989,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在匯入 %@…"
+          }
+        }
+      }
+    },
+    "In Google Maps, open Saved and pick a list" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google マップで「保存済み」を開き、リストを選ぶ"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 Google 地圖開啟「已儲存」，選一個清單"
           }
         }
       }
@@ -1185,6 +1297,22 @@
         }
       }
     },
+    "No lists yet? The Michelin tab works instantly" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リストがなくても、ミシュランタブはすぐ使えます"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "還沒有清單？米其林分頁馬上就能用"
+          }
+        }
+      }
+    },
     "No location" : {
       "localizations" : {
         "ja" : {
@@ -1329,6 +1457,22 @@
         }
       }
     },
+    "Not feeling the pick? Tap for another" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ピンとこなければワンタップで次へ"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不想吃這家？一鍵換一間"
+          }
+        }
+      }
+    },
     "Nothing new within %@ so far — refresh to keep looking." : {
       "localizations" : {
         "ja" : {
@@ -1389,6 +1533,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "米其林上榜年份：%@"
+          }
+        }
+      }
+    },
+    "Open Google Maps" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Google マップを開く"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打開 Google 地圖"
           }
         }
       }
@@ -1745,6 +1905,22 @@
         }
       }
     },
+    "Set how far you'll go — walk, drive, or distance" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "徒歩・車・距離で「どこまで行けるか」を設定"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定你願意跑多遠——步行、開車或距離"
+          }
+        }
+      }
+    },
     "Settings" : {
       "localizations" : {
         "ja" : {
@@ -1953,6 +2129,22 @@
         }
       }
     },
+    "Tap Share and choose FeedYu" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「共有」から FeedYu を選ぶ"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點「分享」並選擇 FeedYu"
+          }
+        }
+      }
+    },
     "Tonight" : {
       "localizations" : {
         "ja" : {
@@ -1965,6 +2157,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "今晚"
+          }
+        }
+      }
+    },
+    "Tonight's pick — from your own saved restaurants, close enough to actually go." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "あなたが保存したお店の中から、今夜ほんとうに行ける一軒を。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從你自己收藏的餐廳裡，挑出今晚真的到得了的那一家。"
           }
         }
       }
@@ -2032,6 +2240,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "想去"
+          }
+        }
+      }
+    },
+    "Welcome to FeedYu" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FeedYu へようこそ"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歡迎使用 FeedYu"
           }
         }
       }
