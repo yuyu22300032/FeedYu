@@ -33,6 +33,8 @@ final class PlaceInfoParserTests: XCTestCase {
             "利用「Google 地圖」尋找本地商家、檢視地圖或規劃行車路線。"))
         XCTAssertTrue(PlaceInfoFetcher.isBoilerplateSummary(
             "Google マップで地元のお店やスポットを検索したり、地図を表示したり、ルート案内を利用したりできます。"))
+        XCTAssertTrue(PlaceInfoFetcher.isBoilerplateSummary(
+            "Google マップで地図を検索。乗換案内、路線図、ドライブルート、ストリートビューも。見やすい地図でお店やサービス、地域の情報を検索できます。"))
         XCTAssertFalse(PlaceInfoFetcher.isBoilerplateSummary("A cozy izakaya near the station."))
         XCTAssertFalse(PlaceInfoFetcher.isBoilerplateSummary("地元の常連に愛される老舗うなぎ店。"))
     }
