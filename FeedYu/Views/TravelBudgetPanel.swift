@@ -23,6 +23,11 @@ struct TravelBudgetPanel: View {
     var body: some View {
         VStack(spacing: 14) {
             if !distanceOnly {
+                // Equal thirds no matter the locale or Dynamic Type size:
+                // a label whose intrinsic width exceeds its third (long
+                // translations, large text) used to silently widen that one
+                // button; minWidth 0 + scale-to-fit text keeps all three
+                // buttons the same size — as large as the widest needs.
                 HStack(spacing: 8) {
                     ForEach(TravelMode.allCases) { mode in
                         let isOn = settings.travelMode == mode
@@ -34,14 +39,17 @@ struct TravelBudgetPanel: View {
                                     .font(.body.weight(.medium))
                                 Text(mode.label)
                                     .font(.caption.weight(.semibold))
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.75)
                             }
-                            .frame(maxWidth: .infinity)
+                            .frame(minWidth: 0, maxWidth: .infinity)
                             .padding(.vertical, 8)
                             .background(isOn ? Color.accentColor.opacity(0.18) : Color.gray.opacity(0.12),
                                         in: RoundedRectangle(cornerRadius: 10))
                             .foregroundStyle(isOn ? Color.accentColor : Color.primary)
                         }
                         .buttonStyle(.plain)
+                        .frame(minWidth: 0, maxWidth: .infinity)
                     }
                 }
             }
