@@ -34,6 +34,7 @@
 		6FB539D7051158D54A26BE32 /* FeedYuShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 9013BBD3A3C8E4EEF4F509CA /* FeedYuShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		710C08AB5272DF2C5891B6D4 /* PlaceInfoFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70FE8D89BA1EDBC49B840F51 /* PlaceInfoFetcher.swift */; };
 		797218FF1579686DF1DD8261 /* sharedlist.html in Resources */ = {isa = PBXBuildFile; fileRef = 09A301BC00F62F51D7D38F27 /* sharedlist.html */; };
+		7A2B1D9268AED7E2FBB99AD9 /* DemoChoreographyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BCE6435F0D4131416635FD9 /* DemoChoreographyTests.swift */; };
 		8101CD8AC130040B8E116BAD /* listpage-snippet.html in Resources */ = {isa = PBXBuildFile; fileRef = 9E460EA21E57BF64877848CF /* listpage-snippet.html */; };
 		882129A2BBD747841C3DFA76 /* GoogleMapsOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86B4F9280933BB1481377E91 /* GoogleMapsOpener.swift */; };
 		9381B7AA377E5C4F3FBC58B5 /* MichelinDataSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACDF96AEA6F672396F0978F /* MichelinDataSourceTests.swift */; };
@@ -70,6 +71,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 3B8A03B5C09FD04854FF27CC;
 			remoteInfo = FeedYuShare;
+		};
+		81D98955AAA232693518153C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4ECC933B718667BC5BA7E5AC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5C2986D7E5576DA5E5422A5C;
+			remoteInfo = FeedYu;
 		};
 		882E91E959DE4555E3E81330 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -117,11 +125,13 @@
 		49448308B6F9C79BDA95FC45 /* TravelBudgetPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelBudgetPanel.swift; sourceTree = "<group>"; };
 		4B33BB285D942D95E724120F /* ListConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListConfigTests.swift; sourceTree = "<group>"; };
 		4F5F48B846712A0332E6CF99 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		5BCE6435F0D4131416635FD9 /* DemoChoreographyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoChoreographyTests.swift; sourceTree = "<group>"; };
 		5E27C083663865EE9599BA70 /* GooglePlaceResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GooglePlaceResolverTests.swift; sourceTree = "<group>"; };
 		5E40014594BE6D3A13690A00 /* getlist-response.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "getlist-response.txt"; sourceTree = "<group>"; };
 		674E0CB6863B06B44D081B1F /* MichelinDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MichelinDataSource.swift; sourceTree = "<group>"; };
 		6F3B26041EB3C319D8A14BC2 /* FeedYuShare.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FeedYuShare.entitlements; sourceTree = "<group>"; };
 		70FE8D89BA1EDBC49B840F51 /* PlaceInfoFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceInfoFetcher.swift; sourceTree = "<group>"; };
+		73060B842ED065CF6FA1A85C /* FeedYuUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FeedYuUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		77DAF0A5144600E21C0FD5F3 /* TravelBudget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TravelBudget.swift; sourceTree = "<group>"; };
 		7B19191B684F5A7115F8C2DE /* UberEatsChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UberEatsChecker.swift; sourceTree = "<group>"; };
 		7F1D491751B526F5A7C6D90C /* GoogleMapsOpenerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleMapsOpenerTests.swift; sourceTree = "<group>"; };
@@ -157,6 +167,14 @@
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		21689EE7681BD3B6CB49EA77 /* FeedYuUITests */ = {
+			isa = PBXGroup;
+			children = (
+				5BCE6435F0D4131416635FD9 /* DemoChoreographyTests.swift */,
+			);
+			path = FeedYuUITests;
+			sourceTree = "<group>";
+		};
 		3AE8F63BF35F8AEC1C2366F1 /* Store */ = {
 			isa = PBXGroup;
 			children = (
@@ -200,6 +218,7 @@
 				D678E8A22314D4DE091C4048 /* FeedYu.app */,
 				9013BBD3A3C8E4EEF4F509CA /* FeedYuShare.appex */,
 				3AB19E04C4D27D4B71BE11A0 /* FeedYuTests.xctest */,
+				73060B842ED065CF6FA1A85C /* FeedYuUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -210,6 +229,7 @@
 				5610213A6962B4244BE8AD8F /* FeedYu */,
 				A8938D632E042AC74232017F /* FeedYuShare */,
 				86D78D28E1BD8BCAD4FA27F5 /* FeedYuTests */,
+				21689EE7681BD3B6CB49EA77 /* FeedYuUITests */,
 				5754FB443FA4F36CE566E13F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -378,6 +398,24 @@
 			productReference = D678E8A22314D4DE091C4048 /* FeedYu.app */;
 			productType = "com.apple.product-type.application";
 		};
+		D2500A65E917F75C23EE177E /* FeedYuUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1867339A80F21B111CB30C3 /* Build configuration list for PBXNativeTarget "FeedYuUITests" */;
+			buildPhases = (
+				F880BA204B5CB82D97D6969C /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				EA94F88490EA6137E04E0349 /* PBXTargetDependency */,
+			);
+			name = FeedYuUITests;
+			packageProductDependencies = (
+			);
+			productName = FeedYuUITests;
+			productReference = 73060B842ED065CF6FA1A85C /* FeedYuUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -394,6 +432,9 @@
 					5C2986D7E5576DA5E5422A5C = {
 						DevelopmentTeam = 84336L2H62;
 						ProvisioningStyle = Automatic;
+					};
+					D2500A65E917F75C23EE177E = {
+						TestTargetID = 5C2986D7E5576DA5E5422A5C;
 					};
 				};
 			};
@@ -416,6 +457,7 @@
 				5C2986D7E5576DA5E5422A5C /* FeedYu */,
 				3B8A03B5C09FD04854FF27CC /* FeedYuShare */,
 				0366DAE361FF6C0D989E52AE /* FeedYuTests */,
+				D2500A65E917F75C23EE177E /* FeedYuUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -519,6 +561,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F880BA204B5CB82D97D6969C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7A2B1D9268AED7E2FBB99AD9 /* DemoChoreographyTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -532,9 +582,48 @@
 			target = 3B8A03B5C09FD04854FF27CC /* FeedYuShare */;
 			targetProxy = 5B8B65E1008455868B206C19 /* PBXContainerItemProxy */;
 		};
+		EA94F88490EA6137E04E0349 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5C2986D7E5576DA5E5422A5C /* FeedYu */;
+			targetProxy = 81D98955AAA232693518153C /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		07D5B403E323ECC424AA389C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.yuyu.FeedYuUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = FeedYu;
+			};
+			name = Debug;
+		};
+		0B679292C120F53FE1C86686 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.yuyu.FeedYuUITests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = FeedYu;
+			};
+			name = Release;
+		};
 		1CDA29B9BE73DA7D2DDD1534 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -778,6 +867,15 @@
 			buildConfigurations = (
 				5567DE1336E24EE6E7FE3006 /* Debug */,
 				83C50DF567C61A25090721FF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A1867339A80F21B111CB30C3 /* Build configuration list for PBXNativeTarget "FeedYuUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				07D5B403E323ECC424AA389C /* Debug */,
+				0B679292C120F53FE1C86686 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

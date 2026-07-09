@@ -83,6 +83,18 @@ targets:
     dependencies:
       - target: FeedYu
 
+  FeedYuUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - FeedYuUITests
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: FeedYu
+    dependencies:
+      - target: FeedYu
+
 schemes:
   FeedYu:
     build:
@@ -95,3 +107,15 @@ schemes:
       config: Debug
       targets:
         - FeedYuTests
+
+  # Demo choreography for filming the App Preview (own scheme so the
+  # everyday test command never runs it).
+  FeedYuDemo:
+    build:
+      targets:
+        FeedYu: all
+        FeedYuUITests: [test]
+    test:
+      config: Debug
+      targets:
+        - FeedYuUITests

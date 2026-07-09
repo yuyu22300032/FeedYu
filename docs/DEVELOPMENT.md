@@ -166,6 +166,19 @@ Per release:
    needs a short review), then Submit for Review with the notes from
    APPSTORE.md.
 
+### App Preview video (scripted, real footage)
+
+App Store previews must be real screen captures (guideline: no marketing
+animations). The `FeedYuDemo` scheme runs
+`FeedYuUITests/DemoChoreographyTests` — a scripted walkthrough (slider
+drag, mode switch, re-roll, tab taps) with sleeps as scene timing. Film
+it: `simctl io recordVideo` around `xcodebuild test-without-building
+-scheme FeedYuDemo`, then cut/caption with ffmpeg (normalize `fps=30`
+BEFORE trimming — simulator recordings are variable-frame-rate and
+static tails collapse otherwise; Homebrew ffmpeg lacks drawtext, so
+captions are AppKit-rendered PNGs overlaid with `overlay=…:enable=`).
+Target 886×1920, 15–30 s, with a (silent) stereo audio track.
+
 ### Screenshot capture (any tab, scripted)
 
 `-initialTab michelin|ubereats|settings` opens the app on that tab —
