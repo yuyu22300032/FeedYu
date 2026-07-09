@@ -24,7 +24,11 @@ MIT licensed.
   recipes, data pipeline, fixture policy, backlog.
 - `PLAN.md` — original spec (historical; uses the old DinePick name).
 
-Notes for agents: `AGENTS.md` is a symlink to this file — edit this one.
+Notes for agents: `main` is PR-only (branch ruleset) — push a feature
+branch and open a PR; the auto-approve workflow
+(`.github/workflows/auto-approve.yml`) satisfies the required review for
+the owner's PRs, so enable auto-merge and it lands itself.
+`AGENTS.md` is a symlink to this file — edit this one.
 `.claude/skills/` has executable recipes: `deploy-device` (build + install
 on a connected iPhone, with known failure modes) and `verify` (how to prove
 a change works beyond the unit suite).
