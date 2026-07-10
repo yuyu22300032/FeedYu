@@ -226,7 +226,7 @@ narrowest sensible scope:
 | Michelin local-script names | per Michelin-tab visit, visible rows first | persisted forever; ≤40 fetches/visit, 0.4 s apart; failures negatively cached per session |
 | Uber Eats availability | per candidate, Uber tab only | verified store URL persisted to the store (next suggestion skips the check); a *verified* not-found persists with a **1-week cooldown** and is skipped for free via `quickReject`; `unknown` (bot wall) is never persisted |
 | Maps cid resolution no-match | per card display / tap | definitive no-match persists with a **30-day cooldown**, keyed by search name (a newly localized name retries sooner); transient failures never persist |
-| Michelin dataset | bundled CSV instantly; GitHub refresh weekly | downloaded copy cached on disk (`michelin-cache.csv`); offline falls back silently |
+| Michelin dataset | bundled CSV instantly; GitHub refresh weekly (checked at launch and on foreground return) | downloaded copy cached on disk (`michelin-cache.csv`); offline falls back silently |
 | Google list sync | on add, on demand, and weekly per enabled list | merged into the store; a failed sync keeps the previous data; a *successful* sync also removes places deleted from the list upstream (skipped as a safety guard when the parse returns less than half the previous count — a format drift must not mass-delete) |
 | The store itself | — | single JSON file, saved with a 0.8 s debounce off-main; loads off-main at launch |
 | Uber bot-wall clearance | first Uber check of a session | WKWebView default cookie store, persists across launches |
