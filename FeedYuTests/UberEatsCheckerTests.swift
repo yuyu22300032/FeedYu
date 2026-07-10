@@ -110,7 +110,7 @@ final class UberEatsCheckerTests: XCTestCase {
         // available goes stale after the TTL (a store open at noon may be
         // closed when the user returns to the tab).
         XCTAssertTrue(UberEatsChecker.isFresh(.available(url), checkedAt: now.addingTimeInterval(-60), now: now))
-        XCTAssertFalse(UberEatsChecker.isFresh(.available(url), checkedAt: now.addingTimeInterval(-31 * 60), now: now))
+        XCTAssertFalse(UberEatsChecker.isFresh(.available(url), checkedAt: now.addingTimeInterval(-11 * 60), now: now))
         // closedNow expires exactly at reopen time.
         XCTAssertTrue(UberEatsChecker.isFresh(.closedNow(url, reopens: now.addingTimeInterval(600)),
                                               checkedAt: now.addingTimeInterval(-3600), now: now))

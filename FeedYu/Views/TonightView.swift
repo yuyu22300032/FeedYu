@@ -11,6 +11,7 @@ struct TonightView: View {
     @EnvironmentObject private var store: RestaurantStore
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var locationProvider: LocationProvider
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var engine = SuggestionEngine()
     /// After 1 s of searching, the loading card takes over even from a
     /// still-visible previous suggestion — a long exhaustive Uber check
@@ -131,21 +132,9 @@ struct TonightView: View {
                 searchIsSlow = false
             }
         }
-        .onAppear {
-            // Swiping back to the Uber tab hours later: the current
-            // suggestion was open-checked when it was ROLLED, and may have
-            // closed since. The checker's open-state cache is TTL'd, so
-            // this is free when fresh; if the store has since closed,
-            // re-roll silently.
-            guard uberEatsMode, engine.current != nil, !engine.isSearching else { return }
-            Task {
-                guard let current = engine.current else { return }
-                let result = await UberEatsChecker.shared.availability(
-                    for: current.restaurant, near: locationProvider.location)
-                if case .closedNow = result, !engine.isSearching, engine.current?.id == current.id {
-                    await refresh()
-                }
-            }
+        .onAppear { revalidate() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { revalidate() }
         }
     }
 
@@ -161,8 +150,30 @@ struct TonightView: View {
         "\(candidates.count)-\(locationProvider.location != nil)"
     }
 
+    /// Tab appearance / foreground return: re-check the current card
+    /// against the travel budget in current traffic and (Uber) open hours
+    /// — stores open while you browse Michelin and decide not to go out.
+    /// Cheap when caches are fresh; the card survives whenever it still
+    /// fits, so suggestions stay stable across casual tab switches.
+    private func revalidate() {
+        guard engine.current != nil, !engine.isSearching,
+              let origin = locationProvider.location else { return }
+        configureEngine(origin: origin)
+        Task {
+            await engine.revalidateCurrent(candidates: candidates, origin: origin,
+                                           budget: effectiveBudget)
+        }
+    }
+
     private func refresh() async {
         guard let origin = locationProvider.location else { return }
+        configureEngine(origin: origin)
+        await engine.refreshSuggestion(candidates: candidates,
+                                       origin: origin,
+                                       budget: effectiveBudget)
+    }
+
+    private func configureEngine(origin: CLLocation) {
         // WebView-rendered availability checks are slow (seconds each) —
         // give up sooner than the ETA-check budget would.
         // Uber tab: distance mode never calls MapKit, so the check budget
@@ -203,9 +214,6 @@ struct TonightView: View {
                 return true
             }
         } : nil
-        await engine.refreshSuggestion(candidates: candidates,
-                                       origin: origin,
-                                       budget: effectiveBudget)
     }
 
     @ViewBuilder

@@ -54,10 +54,10 @@ final class UberEatsChecker: ObservableObject {
 
     /// Session cache keyed by normalized name. notFound/unknown last the
     /// session (existence rarely changes); `.available` expires after
-    /// `openStateTTL` (a store open at noon may be closed by the time the
-    /// user returns to the tab); `.closedNow` self-expires at reopen time.
+    /// `openStateTTL` (10 min — cheap to recheck, and a store open at noon may
+    /// be closed when the user returns); `.closedNow` self-expires at reopen.
     private var cache: [String: (result: Availability, at: Date)] = [:]
-    nonisolated static let openStateTTL: TimeInterval = 30 * 60
+    nonisolated static let openStateTTL: TimeInterval = 10 * 60
 
     /// Pure freshness rule (testable): is a cached verdict still valid?
     nonisolated static func isFresh(_ result: Availability, checkedAt: Date, now: Date = Date()) -> Bool {

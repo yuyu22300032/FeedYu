@@ -197,6 +197,15 @@ current card). A refresh whose queue drains without a hit wraps the
 rotation once *in-place* — it never ends with "press again" when
 something acceptable exists.
 
+**Revalidation on return.** Suggestions stay stable across tab switches,
+but the *constraints* are re-checked whenever a suggestion tab appears or
+the app returns to foreground: travel time against current traffic,
+distance against the (possibly moved) origin, and Uber open-hours (a
+store may have opened while you browsed Michelin — or closed). A pick
+that still fits survives, with its traffic minutes refreshed in place; a
+pick that no longer fits is silently replaced. Cheap when caches are
+fresh (ETA cache 10 min; Uber open-state verdicts 10 min).
+
 ## Lazy loading & caching
 
 Everything below is fetched only when first needed, and cached at the

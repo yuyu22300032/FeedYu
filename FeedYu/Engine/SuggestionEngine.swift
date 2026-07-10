@@ -56,7 +56,7 @@ final class SuggestionEngine: ObservableObject {
         let date: Date
     }
     private var etaCache: [String: CachedETA] = [:]
-    private let etaCacheTTL: TimeInterval = 600
+    var etaCacheTTL: TimeInterval = 600 // var: tests shrink it to force re-queries
 
     func reset() {
         current = nil
@@ -149,6 +149,50 @@ final class SuggestionEngine: ObservableObject {
             statusMessage = String(localized: "Nothing reachable within \(budget.label) right now.")
         } else if statusMessage == nil {
             statusMessage = String(localized: "Nothing new within \(budget.label) so far — refresh to keep looking.")
+        }
+    }
+
+    /// Re-check the CURRENT suggestion against a possibly changed world —
+    /// traffic, moved origin, availability (Uber open hours) — keeping the
+    /// card when it still fits (suggestions stay stable across tab
+    /// switches) and silently rolling a replacement when it doesn't.
+    /// Cheap when caches are fresh; call on tab appearance and on
+    /// foreground return. A still-valid drive/walk pick gets its traffic
+    /// minutes refreshed in place.
+    func revalidateCurrent(candidates: [Restaurant], origin: CLLocation, budget: TravelBudget) async {
+        guard let suggestion = current, !isSearching,
+              let coordinate = suggestion.restaurant.coordinate else { return }
+
+        if let quickReject, quickReject(suggestion.restaurant) {
+            await refreshSuggestion(candidates: candidates, origin: origin, budget: budget)
+            return
+        }
+
+        if budget.needsETACheck {
+            guard let eta = try? await cachedETA(id: suggestion.restaurant.id, from: origin,
+                                                 to: coordinate, mode: budget.mode) else { return }
+            // The user may have rolled while we awaited — never fight them.
+            guard current?.id == suggestion.id, !isSearching else { return }
+            if eta > budget.maxTravelSeconds {
+                await refreshSuggestion(candidates: candidates, origin: origin, budget: budget)
+                return
+            }
+            if let availabilityCheck, await !availabilityCheck(suggestion.restaurant) {
+                guard current?.id == suggestion.id, !isSearching else { return }
+                await refreshSuggestion(candidates: candidates, origin: origin, budget: budget)
+                return
+            }
+            guard current?.id == suggestion.id else { return }
+            accept(suggestion.restaurant, etaSeconds: eta, origin: origin, mode: budget.mode)
+        } else {
+            if (suggestion.restaurant.distance(from: origin) ?? .infinity) > budget.radiusMeters {
+                await refreshSuggestion(candidates: candidates, origin: origin, budget: budget)
+                return
+            }
+            if let availabilityCheck, await !availabilityCheck(suggestion.restaurant) {
+                guard current?.id == suggestion.id, !isSearching else { return }
+                await refreshSuggestion(candidates: candidates, origin: origin, budget: budget)
+            }
         }
     }
 
