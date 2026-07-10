@@ -27,13 +27,13 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                helpSection
                 languageSection
                 listsSection
                 addListSection
                 takeoutSection
                 michelinSection
                 restaurantsSection
-                helpSection
             }
             .sheet(isPresented: $showOnboarding) {
                 OnboardingView()

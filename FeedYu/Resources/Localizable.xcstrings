@@ -433,6 +433,22 @@
         }
       }
     },
+    "Choose Share list, then FeedYu" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「リストを共有」→ FeedYu を選ぶ"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選「分享清單」，再選 FeedYu"
+          }
+        }
+      }
+    },
     "Continue" : {
       "localizations" : {
         "ja" : {
@@ -701,6 +717,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "下次打開 FeedYu 時會自動匯入"
+          }
+        }
+      }
+    },
+    "Find your list and tap its ⋯ button" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リストを見つけて右の「…」をタップ"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "找到你的清單，點右邊的「⋯」"
           }
         }
       }
@@ -993,18 +1025,18 @@
         }
       }
     },
-    "In Google Maps, open Saved and pick a list" : {
+    "In Google Maps, tap You at the bottom" : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Google マップで「保存済み」を開き、リストを選ぶ"
+            "value" : "Google マップで下部の「あなた」をタップ"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "在 Google 地圖開啟「已儲存」，選一個清單"
+            "value" : "在 Google 地圖點底部的「你」"
           }
         }
       }
@@ -2125,22 +2157,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "重新啟動 App 後生效。Google 清單中的餐廳名稱會跟隨此語言——變更後請按「立即同步」重新取得。"
-          }
-        }
-      }
-    },
-    "Tap Share and choose FeedYu" : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「共有」から FeedYu を選ぶ"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "點「分享」並選擇 FeedYu"
           }
         }
       }
