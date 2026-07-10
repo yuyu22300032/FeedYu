@@ -26,6 +26,14 @@ final class DemoChoreographyTests: XCTestCase {
         }
     }
 
+    private var guideLabels: (next: String, start: String) {
+        switch language {
+        case "en": return ("Continue", "Get started")
+        case "ja": return ("次へ", "はじめる")
+        default: return ("繼續", "開始使用")
+        }
+    }
+
     func testDemoChoreography() throws {
         let app = XCUIApplication()
         if language != "zh-Hant" {
@@ -61,6 +69,39 @@ final class DemoChoreographyTests: XCTestCase {
         // Scene 4 — Uber Eats: verified orderable, straight to the store.
         tap("Uber Eats", in: app)
         sleep(7)
+    }
+
+    /// Second preview take: "setup is easy" — the first-launch guide's two
+    /// import pages (own list, friend's list) acted out by their vignettes,
+    /// a beat on the budget page, then dismissal onto Tonight for the
+    /// payoff pick. `-hasSeenOnboarding NO` (argument domain) forces the
+    /// sheet; `-onboardingPage 1` opens it straight on the import page.
+    /// Film with `-only-testing:FeedYuUITests/DemoChoreographyTests/testSetupChoreography`.
+    func testSetupChoreography() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-hasSeenOnboarding", "NO", "-onboardingPage", "1"]
+        if language != "zh-Hant" {
+            app.launchArguments += ["-AppleLanguages", "(\(language))"]
+        }
+        app.launch()
+
+        // Scene 1 — "Bring your Google Maps lists": let the share-flow
+        // vignette play past a full loop (~7 s) so the edit can pick a
+        // clean one.
+        sleep(16)
+
+        // Scene 2 — "Import a friend's list": same, full vignette loop.
+        tap(guideLabels.next, in: app)
+        sleep(16)
+
+        // Scene 3 — budget modes, a short beat.
+        tap(guideLabels.next, in: app)
+        sleep(6)
+
+        // Scene 4 — done: onto Tonight with a real pick from the seeded
+        // store.
+        tap(guideLabels.start, in: app)
+        sleep(10)
     }
 
     private func tap(_ label: String, in app: XCUIApplication) {

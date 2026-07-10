@@ -170,18 +170,33 @@ Per release:
 
 App Store previews must be real screen captures (guideline: no marketing
 animations). The `FeedYuDemo` scheme runs
-`FeedYuUITests/DemoChoreographyTests` — a scripted walkthrough (slider
-drag, mode switch, re-roll, tab taps) with sleeps as scene timing. Film
-it: `simctl io recordVideo` around `xcodebuild test-without-building
--scheme FeedYuDemo`, then cut/caption with ffmpeg (normalize `fps=30`
-BEFORE trimming — simulator recordings are variable-frame-rate and
-static tails collapse otherwise; Homebrew ffmpeg lacks drawtext, so
-captions are AppKit-rendered PNGs overlaid with `overlay=…:enable=`).
+`FeedYuUITests/DemoChoreographyTests` — scripted walkthroughs with
+sleeps as scene timing: `testDemoChoreography` (feature tour) and
+`testSetupChoreography` (the onboarding guide's import pages → Tonight
+payoff; select one with `-only-testing:`). Film it: `simctl io
+recordVideo` around `xcodebuild test-without-building -scheme
+FeedYuDemo`. Homebrew ffmpeg lacks drawtext, so captions are
+AppKit-rendered PNGs overlaid with `overlay=…:enable=`.
 Per-storefront language: `TEST_RUNNER_DEMO_LANGUAGE=en|ja` on the
 xcodebuild invocation (the choreography taps by localized label, so the
 env var switches both the app language and the tap targets). Narration:
 `say -v Meijia|Samantha|Kyoko`. Target 886×1920, 15–30 s, with a stereo
 audio track.
+
+**Do NOT trim/concat the raw .mov with ffmpeg filters.** Simulator
+recordings are variable-frame-rate with an edit list that ffmpeg's
+decode path mis-reads: `fps=30` (and `-r 30 -fps_mode cfr`) drifts
+several seconds off the player timeline mid-file and compresses
+low-motion stretches ~3× (v1.0 saw the tail-only symptom; v1.1 hit it
+mid-video — scene trims landed on the wrong screens and played fast).
+`-ss` input seeking and AVFoundation agree with what QuickTime plays;
+the filter timeline does not. The working pipeline: map scene
+boundaries with `-ss <t>` frame extractions, then export exact 30 fps
+frames through AVFoundation (`scripts/extract_preview_frames.swift` —
+AVAssetImageGenerator, toleranceBefore=∞/after=0, 1/30-s steps, one PNG
+sequence spanning all scene windows), and hand ffmpeg the image
+sequence (`-framerate 30 -i f-%05d.png`) for scaling, caption overlays,
+and the narration mix.
 
 ### Screenshot capture (any tab, scripted)
 

@@ -158,6 +158,14 @@ tab with order button, 5. Settings lists. Real store data makes better
 screenshots than seeded fixtures — capture from a device backup seeded
 simulator, and keep screenshots out of git (they contain personal lists).
 
+App Previews (up to 3 per localization, 15–30 s): v1.1 adds a second
+"easy setup" preview per language
+(`~/Desktop/FeedYu-AppStore/preview/FeedYu-Setup{,-en,-ja}.mp4`, 24.3 s)
+filmed from the onboarding guide's import pages — the
+`testSetupChoreography` take plus the AVFoundation frame-extraction
+pipeline (see DEVELOPMENT.md "App Preview video"). Upload order per
+locale: feature tour first, setup second.
+
 ## Submission answers of record (v1.0, submitted 2026-07-09)
 
 Answers given in App Store Connect that future versions inherit or repeat:
