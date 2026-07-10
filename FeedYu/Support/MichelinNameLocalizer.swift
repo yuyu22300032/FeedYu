@@ -18,19 +18,40 @@ final class MichelinNameLocalizer: ObservableObject {
     ]
 
     private var failedKeys: Set<String> = []
-    private var isRunning = false
+    private var activeTask: Task<Void, Never>?
     private let maxFetchesPerRun = 40
 
     /// Fill missing localized names for the given (already prioritized)
-    /// restaurants. Call freely; overlapping calls are ignored.
+    /// restaurants. Call freely: a newer call cancels the run in progress
+    /// and takes over once it winds down — the caller is `.task(id:)`, so
+    /// a re-fire means the priorities changed and the old list is stale.
     func fill(restaurants: [Restaurant], nameLanguage: String, store: RestaurantStore) async {
-        guard nameLanguage != "en", !isRunning else { return }
-        isRunning = true
-        defer { isRunning = false }
+        guard nameLanguage != "en" else { return }
+        activeTask?.cancel()
+        let previous = activeTask
+        let task = Task {
+            await previous?.value
+            await self.run(restaurants: restaurants, nameLanguage: nameLanguage, store: store)
+        }
+        activeTask = task
+        // The run must outrank the caller's structured cancellation only in
+        // bookkeeping — actual cancellation is forwarded so a cancelled
+        // .task(id:) stops the fetches immediately.
+        await withTaskCancellationHandler {
+            await task.value
+        } onCancel: {
+            task.cancel()
+        }
+    }
 
+    private func run(restaurants: [Restaurant], nameLanguage: String, store: RestaurantStore) async {
         var fetched = 0
         for restaurant in restaurants {
-            guard fetched < maxFetchesPerRun else { break }
+            // A cancelled run must stop, not spin through the rest of the
+            // list — every post-cancel fetch fails instantly, and recording
+            // those as failures used to poison the negative cache for the
+            // whole session.
+            guard !Task.isCancelled, fetched < maxFetchesPerRun else { break }
             guard let editionKey = restaurant.editionKey(preference: nameLanguage),
                   restaurant.localizedNames?[editionKey] == nil,
                   let guideURL = restaurant.michelinURL,
@@ -41,7 +62,7 @@ final class MichelinNameLocalizer: ObservableObject {
             fetched += 1
             if let name = await Self.fetchName(from: editionURL) {
                 store.setLocalizedName(id: restaurant.id, editionKey: editionKey, name: name)
-            } else {
+            } else if !Task.isCancelled {
                 failedKeys.insert(cacheKey)
             }
             try? await Task.sleep(nanoseconds: 400_000_000)

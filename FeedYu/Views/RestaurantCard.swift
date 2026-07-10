@@ -202,7 +202,7 @@ struct RestaurantCard: View {
     }
 
     private var liveRestaurant: Restaurant {
-        store.restaurants.first(where: { $0.id == restaurant.id }) ?? restaurant
+        store.restaurant(withID: restaurant.id) ?? restaurant
     }
 
     private var liveUberEatsURL: URL? {

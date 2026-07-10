@@ -21,16 +21,32 @@ struct MichelinView: View {
     /// frozen app.
     @State private var searchIsSlow = false
 
+    /// Memoized: a body evaluation reads this many times (directly, via
+    /// suggestionCandidates, the task keys, the section header), and each
+    /// uncached compute is a distance scan + sort over the whole ~20k-row
+    /// store — per render, on the main thread. The cache box is a plain
+    /// reference in @State so it survives re-renders without triggering any.
+    private final class InRangeCache {
+        var key: String?
+        var value: [(restaurant: Restaurant, km: Double)] = []
+    }
+    @State private var inRangeCache = InRangeCache()
+
     private var michelinInRange: [(restaurant: Restaurant, km: Double)] {
         guard let origin = locationProvider.location else { return [] }
         let radiusMeters = settings.michelinBudget.travelBudget.radiusMeters
-        return store.restaurants.compactMap { restaurant in
+        let key = "\(store.version)|\(origin.coordinate.latitude)|\(origin.coordinate.longitude)|\(radiusMeters)|\(includeFormer)"
+        if inRangeCache.key == key { return inRangeCache.value }
+        let result: [(restaurant: Restaurant, km: Double)] = store.restaurants.compactMap { restaurant in
             guard restaurant.michelinAward != nil, !restaurant.isHidden,
                   includeFormer || restaurant.michelinFormer != true,
                   let distance = restaurant.distance(from: origin), distance <= radiusMeters else { return nil }
             return (restaurant, distance / 1000)
         }
         .sorted { $0.km < $1.km }
+        inRangeCache.key = key
+        inRangeCache.value = result
+        return result
     }
 
     private var suggestionCandidates: [Restaurant] {
@@ -86,10 +102,15 @@ struct MichelinView: View {
                 .buttonStyle(.borderedProminent)
                 .disabled(engine.isSearching || suggestionCandidates.isEmpty)
             } footer: {
+                // Empty-state explanation only. No "N matching places in
+                // range" count: the radius is a best-case straight-line
+                // estimate, and a count reads as "N suggestible" — edge
+                // places then fail the real route check and the tab looks
+                // broken ("2 match, nothing suggested"). The empty case is
+                // safe to state: nothing within the generous bound really
+                // does mean nothing reachable.
                 if suggestionCandidates.isEmpty {
                     Text("No Michelin places match the filters within \(settings.michelinBudget.travelBudget.label).")
-                } else {
-                    Text("\(suggestionCandidates.count) matching places in range.")
                 }
             }
 
@@ -115,7 +136,10 @@ struct MichelinView: View {
                 }
             }
 
-            Section("Within \(settings.michelinBudget.travelBudget.label) (\(michelinInRange.count))") {
+            // prefilterLabel, not label: rows are straight-line-filtered, not
+            // route-verified — "Within 15 min walk" here contradicted the
+            // suggester whenever the real route exceeded the budget.
+            Section("Within \(settings.michelinBudget.travelBudget.prefilterLabel) (\(michelinInRange.count))") {
                 ForEach(michelinInRange, id: \.restaurant.id) { entry in
                     row(for: entry.restaurant, km: entry.km)
                 }
@@ -123,6 +147,10 @@ struct MichelinView: View {
         }
         // Pull the first section up flush with the top, like the other tabs.
         .contentMargins(.top, 8, for: .scrollContent)
+        // Match the Tonight/Uber pages' 12 pt stack spacing — the default
+        // grouped-List section gap reads as a hole now that the budget
+        // section usually has no footer.
+        .listSectionSpacing(12)
         .task(id: localizationTaskKey) {
             // Fill local-language names for what's on screen, nearest first.
             // (No Maps-link pre-warm for rows: each resolution downloads a

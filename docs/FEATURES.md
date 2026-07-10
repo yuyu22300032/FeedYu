@@ -82,7 +82,11 @@ plus a browsable nearby list.
   membership), and is replaced if not.
 - Below, every Michelin place inside the straight-line radius, nearest
   first, with award, price, cuisine, and distance; tap opens Google Maps,
-  long-press hides.
+  long-press hides. In walk/drive mode the section header says
+  "Within <x> km straight line", NOT the time budget — rows are only
+  prefiltered, and a row the route check rejects (mountain roads) would
+  contradict a "Within 15 min walk" header while the suggester says
+  nothing is reachable.
 - Restaurant names display in the language picked in Settings ("local
   language" by default): local-script names are fetched lazily from the
   restaurant's own country's guide edition and cached forever.
@@ -178,7 +182,11 @@ then exact-filters by distance. Longitude spans widen with latitude, so it
 stays correct far from the equator. The prefilter radius is exact in
 distance mode; for walk/drive it's a generous straight-line bound
 (`min × 85 m` walking, `min × 1.3 km` driving) whose only job is to spare
-hopeless candidates from ETA calls.
+hopeless candidates from ETA calls. Best-case by design, so UI must never
+surface a count of in-radius places as a promise ("N matching in range") —
+edge places fail the real route check and the tab looks broken. Stating
+the EMPTY case is safe: nothing within the generous bound really does
+mean nothing reachable.
 
 **Session semantics.** A session = (origin, budget, candidate set). The grid
 query runs **once per session**, not per refresh; refreshes just pop the
