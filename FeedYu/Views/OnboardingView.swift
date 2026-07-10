@@ -261,6 +261,10 @@ private struct MiniShareSheet: View {
     /// · 3 = share sheet + FeedYu pulse.
     @State private var phase = 3
     @State private var pulse = false
+    /// The FeedYu tap ring waits for the sheet's rise to settle — pulsing
+    /// while the icon is still moving reads as a mistimed tap. (true at
+    /// rest so the Reduce Motion static frame shows it.)
+    @State private var ringArmed = true
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -286,14 +290,18 @@ private struct MiniShareSheet: View {
         .task {
             guard !reduceMotion else { return } // static: sheet up, no loop
             while !Task.isCancelled {
+                ringArmed = false
                 await step(to: 0, holdMilliseconds: 1400) // home, tap You
                 await step(to: 1, holdMilliseconds: 1500) // lists, tap ⋯
                 await step(to: 2, holdMilliseconds: 1400) // menu, tap Share
                 guard !Task.isCancelled else { return }
                 pulse = false
                 withAnimation(.spring(duration: 0.45)) { phase = 3 }
-                withAnimation(.easeOut(duration: 1.2).delay(0.3)) { pulse = true }
-                try? await Task.sleep(for: .milliseconds(2500))
+                try? await Task.sleep(for: .milliseconds(550)) // sheet settles
+                guard !Task.isCancelled else { return }
+                ringArmed = true
+                withAnimation(.easeOut(duration: 1.2)) { pulse = true }
+                try? await Task.sleep(for: .milliseconds(1950))
                 guard !Task.isCancelled else { return }
             }
         }
@@ -398,7 +406,7 @@ private struct MiniShareSheet: View {
 
     // Phase 3 — the system share sheet with FeedYu as the pick.
     private var shareSheet: some View {
-        SystemShareSheetMock(ringVisible: phase == 3, pulse: pulse)
+        SystemShareSheetMock(ringVisible: ringArmed, pulse: pulse)
     }
 }
 
@@ -458,6 +466,9 @@ private struct MiniFriendShare: View {
     /// 3 = share sheet + FeedYu pulse.
     @State private var phase = 3
     @State private var pulse = false
+    /// Same as MiniShareSheet: the FeedYu tap ring waits for the sheet's
+    /// rise to settle before pulsing.
+    @State private var ringArmed = true
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -469,7 +480,7 @@ private struct MiniFriendShare: View {
                     .padding(.top, 62)
                     .padding(.leading, 16)
             }
-            SystemShareSheetMock(ringVisible: phase == 3, pulse: pulse)
+            SystemShareSheetMock(ringVisible: ringArmed, pulse: pulse)
                 .offset(y: phase == 3 ? 0 : 130)
         }
         .frame(width: 210, height: 170)
@@ -479,6 +490,7 @@ private struct MiniFriendShare: View {
         .task {
             guard !reduceMotion else { return } // static: sheet up, no loop
             while !Task.isCancelled {
+                ringArmed = false
                 pulse = false
                 withAnimation(.easeInOut(duration: 0.3)) { phase = 0 }
                 try? await Task.sleep(for: .milliseconds(1200))
@@ -494,8 +506,11 @@ private struct MiniFriendShare: View {
                 guard !Task.isCancelled else { return }
                 pulse = false
                 withAnimation(.spring(duration: 0.45)) { phase = 3 }
-                withAnimation(.easeOut(duration: 1.2).delay(0.3)) { pulse = true }
-                try? await Task.sleep(for: .milliseconds(2500))
+                try? await Task.sleep(for: .milliseconds(550)) // sheet settles
+                guard !Task.isCancelled else { return }
+                ringArmed = true
+                withAnimation(.easeOut(duration: 1.2)) { pulse = true }
+                try? await Task.sleep(for: .milliseconds(1950))
                 guard !Task.isCancelled else { return }
             }
         }
