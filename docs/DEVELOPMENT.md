@@ -207,6 +207,9 @@ and the narration mix.
 `-initialTab michelin|ubereats|settings` opens the app on that tab —
 the simulator can't tap the tab bar, this launch argument is the hook.
 Add `-AppleLanguages "(en)"` / `"(ja)"` for per-storefront languages.
+For the onboarding guide: `-hasSeenOnboarding NO` (argument domain)
+forces the sheet regardless of stored state, and `-onboardingPage 0-3`
+opens it on that page (automation can't swipe between pages).
 Seed the simulator with a device store + prefs for real-looking data
 (container-surgery recipes above; prefs must go through
 `simctl spawn <device> defaults import com.yuyu.FeedYu <plist>` — copying

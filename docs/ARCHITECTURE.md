@@ -42,7 +42,8 @@ FeedYu/
 │                          load store → drain share inbox → request location
 │                          → sync Michelin → weekly list sync (enabled
 │                          shared lists re-sync when lastSuccess > 7 days;
-│                          also re-checked whenever the app foregrounds)
+│                          foreground returns re-check lists AND re-sync
+│                          Michelin when its weekly clock is stale)
 ├── Models/Restaurant.swift        Restaurant + ListKind + MichelinAward
 ├── Models/TravelBudget.swift      TravelMode + TravelBudget (radius/presets)
 ├── DataSources/

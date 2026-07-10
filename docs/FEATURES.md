@@ -113,13 +113,18 @@ is a lie). If verification was inconclusive (offline, bot wall), the
 button falls back to an Uber Eats search for the name — the tab degrades,
 it never goes empty.
 
-**First launch** (any tab): a three-page onboarding sheet — what the app
-does, how to share a Google Maps list into it (with an Open Google Maps
-button), and the three essentials. Re-openable via Settings → "How to
-use FeedYu"; the `hasSeenOnboarding` flag lives in UserDefaults.
+**First launch** (any tab): a four-page onboarding sheet with animated
+vignettes — what the app does (tap the photo → the exact Maps place
+page), importing your own Google Maps list step-by-step (with an Open
+Google Maps button), importing a friend's shared list (hold the link in
+a chat → share to FeedYu), and the budget modes. Re-openable via
+Settings → "How to use FeedYu" (top of the page); the
+`hasSeenOnboarding` flag lives in UserDefaults.
 
 ## Settings page
 
+- **How to use FeedYu** — re-opens the onboarding guide (kept first so
+  new users can always find it; the whole row is tappable).
 - **Language** — English / 繁體中文 / 日本語 (restart to apply). Names scraped
   from Google lists follow the device language; re-sync after switching.
 - **Your lists (n/20)** — every list (shared Google Maps links and Takeout
