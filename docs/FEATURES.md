@@ -98,9 +98,18 @@ independent Tonight and Uber Eats switches), with two differences:
 The card keeps the photo→Google-Maps behavior (reviews/info) and adds a
 green **Order on Uber Eats** button that deep-links into the Uber Eats app,
 directly on the verified store page ready to order
-(`/store-browse-uuid/<uuid>?diningMode=DELIVERY`). If verification was
-inconclusive (offline, bot wall), the button falls back to an Uber Eats
-search for the name — the tab degrades, it never goes empty.
+(`/store-browse-uuid/<uuid>?diningMode=DELIVERY`). Stores that exist but
+are **closed right now** (Uber's "accepts orders during open hours") are
+skipped, not suggested — detected via getStoreV1's
+`orderForLaterInfo.nextOpenTime` (see the MAINTENANCE playbook; `isOpen`
+is a lie). If verification was inconclusive (offline, bot wall), the
+button falls back to an Uber Eats search for the name — the tab degrades,
+it never goes empty.
+
+**First launch** (any tab): a three-page onboarding sheet — what the app
+does, how to share a Google Maps list into it (with an Open Google Maps
+button), and the three essentials. Re-openable via Settings → "How to
+use FeedYu"; the `hasSeenOnboarding` flag lives in UserDefaults.
 
 ## Settings page
 
@@ -187,6 +196,15 @@ exhausted, then the pool reshuffles (avoiding an immediate repeat of the
 current card). A refresh whose queue drains without a hit wraps the
 rotation once *in-place* — it never ends with "press again" when
 something acceptable exists.
+
+**Revalidation on return.** Suggestions stay stable across tab switches,
+but the *constraints* are re-checked whenever a suggestion tab appears or
+the app returns to foreground: travel time against current traffic,
+distance against the (possibly moved) origin, and Uber open-hours (a
+store may have opened while you browsed Michelin — or closed). A pick
+that still fits survives, with its traffic minutes refreshed in place; a
+pick that no longer fits is silently replaced. Cheap when caches are
+fresh (ETA cache 10 min; Uber open-state verdicts 10 min).
 
 ## Lazy loading & caching
 

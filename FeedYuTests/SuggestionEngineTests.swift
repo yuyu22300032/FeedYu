@@ -209,6 +209,62 @@ final class SuggestionEngineTests: XCTestCase {
         XCTAssertEqual(checked, ["OnUber"], "quick-rejected places never reach the counted check")
     }
 
+    // MARK: - Revalidation on tab return
+
+    func testRevalidateKeepsFittingPickAndRefreshesTraffic() async {
+        let engine = SuggestionEngine()
+        engine.etaCacheTTL = 0 // force a fresh route query on revalidation
+        var etaMinutes = 20.0
+        engine.etaProvider = { _, _, _ in etaMinutes * 60 }
+        let only = place("Only", latOffset: 0.001)
+        await engine.refreshSuggestion(candidates: [only], origin: origin, budget: drive(30))
+        XCTAssertEqual(engine.current?.etaMinutes, 20)
+
+        etaMinutes = 25 // traffic worsened, still within budget
+        await engine.revalidateCurrent(candidates: [only], origin: origin, budget: drive(30))
+        XCTAssertEqual(engine.current?.restaurant.name, "Only", "still fits — card survives")
+        XCTAssertEqual(engine.current?.etaMinutes, 25, "traffic label refreshed in place")
+    }
+
+    func testRevalidateRollsReplacementWhenOverBudget() async {
+        let engine = SuggestionEngine()
+        engine.etaCacheTTL = 0
+        var slowNames: Set<String> = []
+        engine.etaProvider = { _, destination, _ in
+            // "Far" flag by latitude: candidates keyed by their offsets.
+            slowNames.contains(String(format: "%.4f", destination.latitude)) ? 90 * 60 : 15 * 60
+        }
+        let a = place("A", latOffset: 0.001)
+        let b = place("B", latOffset: 0.002)
+        await engine.refreshSuggestion(candidates: [a, b], origin: origin, budget: drive(30))
+        guard let first = engine.current?.restaurant else { return XCTFail("no pick") }
+
+        // The chosen one's route degrades past the budget.
+        slowNames = [String(format: "%.4f", first.latitude!)]
+        await engine.revalidateCurrent(candidates: [a, b], origin: origin, budget: drive(30))
+        XCTAssertNotNil(engine.current)
+        XCTAssertNotEqual(engine.current?.restaurant.name, first.name,
+                          "over-budget pick replaced silently")
+    }
+
+    func testRevalidateRollsWhenAvailabilityFlips() async {
+        let engine = SuggestionEngine()
+        engine.etaProvider = { _, _, _ in XCTFail("distance mode"); return 0 }
+        var orderable: Set<String> = ["A", "B"]
+        engine.availabilityCheck = { orderable.contains($0.name) }
+        let a = place("A", latOffset: 0.001)
+        let b = place("B", latOffset: 0.002)
+        await engine.refreshSuggestion(candidates: [a, b], origin: origin,
+                                       budget: TravelBudget(mode: .distance, value: 500))
+        guard let first = engine.current?.restaurant else { return XCTFail("no pick") }
+
+        orderable.remove(first.name) // the store closed while browsing elsewhere
+        await engine.revalidateCurrent(candidates: [a, b], origin: origin,
+                                       budget: TravelBudget(mode: .distance, value: 500))
+        XCTAssertNotEqual(engine.current?.restaurant.name, first.name,
+                          "closed store replaced on revalidation")
+    }
+
     func testModeSwitchInvalidatesSessionAndETACache() async {
         let engine = SuggestionEngine()
         var etaCalls = 0

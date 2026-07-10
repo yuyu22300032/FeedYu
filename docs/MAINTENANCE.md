@@ -187,6 +187,16 @@ The checker (`UberEatsChecker`) matched no store within 100 m + name
 similarity ≥ 0.5. Same trade-off as the cid resolver: no link beats a wrong
 link. Format canaries live in its fixture tests.
 
+### "Uber Eats suggested a store that's closed right now"
+
+The open-now filter reads getStoreV1's `orderForLaterInfo.nextOpenTime`:
+a FUTURE value = closed now (accepts scheduled orders only — Uber's
+"closed right now" page); open stores report their most recent opening
+time (past). **`isOpen` and `isOrderable` are NOT open-now flags** — both
+were `true` for verifiably closed stores (checked live 2026-07-10).
+Closed results cache per session and self-expire at the reopen time; the
+store URL still persists (existence is durable, closedness isn't).
+
 ### "Uber Eats tab says no results, but refreshing finds one"
 
 Historical bug, fixed with three mechanisms — don't regress them:

@@ -42,6 +42,7 @@ final class AppSettings: ObservableObject {
     private static let importedListsKey = "importedListConfigs"
     private static let languageChoiceKey = "languageChoice"
     private static let michelinNameLanguageKey = "michelinNameLanguage"
+    private static let hasSeenOnboardingKey = "hasSeenOnboarding"
 
     /// Hard cap on user lists (shared links + Takeout imports combined).
     static let maxLists = 20
@@ -63,6 +64,12 @@ final class AppSettings: ObservableObject {
     /// restaurant names in. Local = the restaurant's own country's edition.
     @Published var michelinNameLanguage: String {
         didSet { UserDefaults.standard.set(michelinNameLanguage, forKey: Self.michelinNameLanguageKey) }
+    }
+
+    /// First-launch onboarding: false until the walkthrough is dismissed
+    /// once. Settings can re-show the sheet regardless.
+    @Published var hasSeenOnboarding: Bool {
+        didSet { UserDefaults.standard.set(hasSeenOnboarding, forKey: Self.hasSeenOnboardingKey) }
     }
 
     /// The choice that was active when this process started; differing from
@@ -126,6 +133,7 @@ final class AppSettings: ObservableObject {
         languageChoice = storedChoice
         languageChoiceAtLaunch = storedChoice
         michelinNameLanguage = UserDefaults.standard.string(forKey: Self.michelinNameLanguageKey) ?? "local"
+        hasSeenOnboarding = UserDefaults.standard.bool(forKey: Self.hasSeenOnboardingKey)
         let storedBudget = UserDefaults.standard.integer(forKey: Self.budgetKey)
         driveBudgetMinutes = (15...90).contains(storedBudget) ? storedBudget : 60
         let storedMode = UserDefaults.standard.string(forKey: Self.travelModeKey) ?? ""

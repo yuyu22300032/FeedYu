@@ -7,6 +7,7 @@ struct MichelinView: View {
     @EnvironmentObject private var store: RestaurantStore
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var locationProvider: LocationProvider
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var engine = SuggestionEngine()
     @Environment(\.openURL) private var openURL
 
@@ -141,6 +142,10 @@ struct MichelinView: View {
                 searchIsSlow = false
             }
         }
+        .onAppear { revalidate() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { revalidate() }
+        }
         // First visit: roll a suggestion as if the button were pressed.
         // current != nil guards tab returns (the engine outlives switches).
         .task(id: autoSuggestKey) {
@@ -257,5 +262,18 @@ struct MichelinView: View {
         await engine.refreshSuggestion(candidates: suggestionCandidates,
                                        origin: origin,
                                        budget: settings.travelBudget)
+    }
+
+    /// Tab appearance / foreground return: the current card's drive time
+    /// was computed when it was rolled — re-verify it against current
+    /// traffic, silently rolling a replacement if it fell out of budget.
+    private func revalidate() {
+        guard engine.current != nil, !engine.isSearching,
+              let origin = locationProvider.location else { return }
+        Task {
+            await engine.revalidateCurrent(candidates: suggestionCandidates,
+                                           origin: origin,
+                                           budget: settings.travelBudget)
+        }
     }
 }

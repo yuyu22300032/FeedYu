@@ -11,6 +11,7 @@ struct TonightView: View {
     @EnvironmentObject private var store: RestaurantStore
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var locationProvider: LocationProvider
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var engine = SuggestionEngine()
     /// After 1 s of searching, the loading card takes over even from a
     /// still-visible previous suggestion — a long exhaustive Uber check
@@ -131,6 +132,10 @@ struct TonightView: View {
                 searchIsSlow = false
             }
         }
+        .onAppear { revalidate() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { revalidate() }
+        }
     }
 
     /// Delivery only cares how far away the kitchen is — the Uber Eats tab
@@ -145,8 +150,30 @@ struct TonightView: View {
         "\(candidates.count)-\(locationProvider.location != nil)"
     }
 
+    /// Tab appearance / foreground return: re-check the current card
+    /// against the travel budget in current traffic and (Uber) open hours
+    /// — stores open while you browse Michelin and decide not to go out.
+    /// Cheap when caches are fresh; the card survives whenever it still
+    /// fits, so suggestions stay stable across casual tab switches.
+    private func revalidate() {
+        guard engine.current != nil, !engine.isSearching,
+              let origin = locationProvider.location else { return }
+        configureEngine(origin: origin)
+        Task {
+            await engine.revalidateCurrent(candidates: candidates, origin: origin,
+                                           budget: effectiveBudget)
+        }
+    }
+
     private func refresh() async {
         guard let origin = locationProvider.location else { return }
+        configureEngine(origin: origin)
+        await engine.refreshSuggestion(candidates: candidates,
+                                       origin: origin,
+                                       budget: effectiveBudget)
+    }
+
+    private func configureEngine(origin: CLLocation) {
         // WebView-rendered availability checks are slow (seconds each) —
         // give up sooner than the ETA-check budget would.
         // Uber tab: distance mode never calls MapKit, so the check budget
@@ -163,22 +190,30 @@ struct TonightView: View {
         engine.quickReject = uberEatsMode ? { UberEatsChecker.isInNotFoundCooldown($0) } : nil
         engine.availabilityCheck = uberEatsMode ? { [weak store] restaurant in
             let result = await UberEatsChecker.shared.availability(for: restaurant, near: origin)
-            if case .available(let storeURL) = result, let storeURL {
-                store?.setUberEatsURL(id: restaurant.id, url: storeURL)
-            } else if result == .notFound {
+            switch result {
+            case .available(let storeURL):
+                if let storeURL { store?.setUberEatsURL(id: restaurant.id, url: storeURL) }
+                return true
+            case .closedNow(let storeURL, _):
+                // Exists but not accepting orders right now — keep the URL
+                // (existence is durable), skip the suggestion (tapping
+                // through to Uber's "closed" page is the exact annoyance
+                // this avoids). No notFound cooldown: it reopens today.
+                if let storeURL { store?.setUberEatsURL(id: restaurant.id, url: storeURL) }
+                return false
+            case .notFound:
                 // Verified absence: persist so the next week of sessions
                 // skips the slow WebView check. `unknown` (bot wall) is
                 // deliberately NOT persisted — it says nothing about the
                 // restaurant.
                 store?.setUberEatsNotFound(id: restaurant.id)
+                return false
+            case .unknown:
+                // Stays in: better a search-link button than an empty tab
+                // when Uber's bot wall blocks the check.
+                return true
             }
-            // unknown stays in: better a search-link button than an empty tab
-            // when Uber's bot wall blocks the check.
-            return result != .notFound
         } : nil
-        await engine.refreshSuggestion(candidates: candidates,
-                                       origin: origin,
-                                       budget: effectiveBudget)
     }
 
     @ViewBuilder

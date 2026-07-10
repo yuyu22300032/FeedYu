@@ -27,6 +27,10 @@ final class UberEatsChecker: ObservableObject {
 
     enum Availability: Equatable {
         case available(URL?)
+        /// Verified to exist, but not accepting orders right now (Uber
+        /// would show "closed, accepts orders during open hours").
+        /// `reopens` = Uber's nextOpenTime, used to expire the cache.
+        case closedNow(URL?, reopens: Date?)
         case notFound
         case unknown
     }
@@ -48,20 +52,58 @@ final class UberEatsChecker: ObservableObject {
         return now.timeIntervalSince(checkedAt) < notFoundCooldownSeconds
     }
 
-    /// Session cache keyed by normalized name (availability changes rarely
-    /// within a session; notFound persists via the store cooldown above).
-    private var cache: [String: Availability] = [:]
+    /// Session cache keyed by normalized name. notFound/unknown last the
+    /// session (existence rarely changes); `.available` expires after
+    /// `openStateTTL` (10 min — cheap to recheck, and a store open at noon may
+    /// be closed when the user returns); `.closedNow` self-expires at reopen.
+    private var cache: [String: (result: Availability, at: Date)] = [:]
+    nonisolated static let openStateTTL: TimeInterval = 10 * 60
+
+    /// Pure freshness rule (testable): is a cached verdict still valid?
+    nonisolated static func isFresh(_ result: Availability, checkedAt: Date, now: Date = Date()) -> Bool {
+        switch result {
+        case .available: return now.timeIntervalSince(checkedAt) < openStateTTL
+        case .closedNow(_, let reopens): return now < (reopens ?? .distantFuture)
+        case .notFound, .unknown: return true
+        }
+    }
 
     func availability(for restaurant: Restaurant, near origin: CLLocation?) async -> Availability {
-        if let url = restaurant.uberEatsURL { return .available(url) }
-        if Self.isInNotFoundCooldown(restaurant) { return .notFound }
         let key = restaurant.normalizedName
-        if let cached = cache[key] { return cached }
+        if let cached = cache[key] {
+            if Self.isFresh(cached.result, checkedAt: cached.at) { return cached.result }
+            cache[key] = nil // stale open-state — recheck below
+        }
+        if let url = restaurant.uberEatsURL {
+            // Known store: only the open-now question remains. A closed
+            // store keeps its URL (existence is durable) but is skipped
+            // until it reopens — tapping through to Uber's "closed right
+            // now" page is the exact annoyance this avoids.
+            let region = (Locale.current.region?.identifier ?? "US").lowercased()
+            if let uuid = Self.storeUUID(fromStoreURL: url),
+               let reopens = await Self.fetchNextOpenTime(storeUuid: uuid, region: region),
+               reopens > Date() {
+                let result = Availability.closedNow(url, reopens: reopens)
+                cache[key] = (result, Date())
+                return result
+            }
+            return .available(url)
+        }
+        if Self.isInNotFoundCooldown(restaurant) { return .notFound }
         let result = await Self.fetchAvailability(name: restaurant.name,
                                                   coordinate: restaurant.coordinate,
                                                   origin: origin)
-        cache[key] = result
+        cache[key] = (result, Date())
         return result
+    }
+
+    /// The raw uuid tail of a /store-browse-uuid/<uuid> deep link (the only
+    /// form this app persists).
+    nonisolated static func storeUUID(fromStoreURL url: URL) -> String? {
+        let parts = url.pathComponents
+        guard let index = parts.firstIndex(of: "store-browse-uuid"),
+              index + 1 < parts.count else { return nil }
+        return parts[index + 1]
     }
 
     /// Universal link fallback: opens the Uber Eats app's search when
@@ -148,6 +190,12 @@ final class UberEatsChecker: ObservableObject {
                 debugLog("candidate '\(entry.candidate.slug)': \(Int(distance)) m away (feed geo), score \(String(format: "%.2f", entry.score))")
                 if distance <= matchRadiusMeters, entry.score >= 0.5 {
                     debugLog("verified '\(name)' → \(entry.candidate.url.path)")
+                    if let uuid = entry.candidate.uuid,
+                       let reopens = await fetchNextOpenTime(storeUuid: uuid, region: region),
+                       reopens > Date() {
+                        debugLog("'\(name)' is closed until \(reopens)")
+                        return .closedNow(entry.candidate.url, reopens: reopens)
+                    }
                     return .available(entry.candidate.url)
                 }
             } else {
@@ -156,7 +204,48 @@ final class UberEatsChecker: ObservableObject {
         }
 
         // Pass 2: geo via the getStoreV1 API (fast JSON, no page render).
-        let storeScript = """
+        var verifiedAny = false
+        for entry in unlocated.prefix(maxStorePageFetches) {
+            guard let uuid = entry.candidate.uuid,
+                  let storeBody = await fetchStoreBody(storeUuid: uuid, region: region) else {
+                debugLog("store lookup failed for '\(entry.candidate.slug)'")
+                continue
+            }
+            verifiedAny = true
+            let store = parseStorePage(fromHTML: storeBody)
+            let score = max(entry.score,
+                            store.name.map { similarity(target, Restaurant.normalize($0)) } ?? 0)
+            if let storeLocation = store.location, let coordinate {
+                let distance = storeLocation.distance(from: CLLocation(latitude: coordinate.latitude,
+                                                                       longitude: coordinate.longitude))
+                debugLog("store '\(entry.candidate.slug)': \(Int(distance)) m away (getStoreV1), score \(String(format: "%.2f", score))")
+                if distance <= matchRadiusMeters, score >= 0.5 {
+                    debugLog("verified '\(name)' → \(entry.candidate.url.path)")
+                    if let reopens = parseNextOpenTime(fromStoreJSON: storeBody), reopens > Date() {
+                        debugLog("'\(name)' is closed until \(reopens)")
+                        return .closedNow(entry.candidate.url, reopens: reopens)
+                    }
+                    return .available(entry.candidate.url)
+                }
+            } else if score >= 0.85 {
+                // No geo anywhere → only a near-certain name match passes.
+                if let reopens = parseNextOpenTime(fromStoreJSON: storeBody), reopens > Date() {
+                    return .closedNow(entry.candidate.url, reopens: reopens)
+                }
+                return .available(entry.candidate.url)
+            }
+        }
+        if unlocated.isEmpty || verifiedAny {
+            debugLog("'\(name)': not found")
+            return .notFound
+        }
+        debugLog("'\(name)': unverifiable (store lookups failed)")
+        return .unknown
+    }
+
+    /// getStoreV1 JSON via a same-origin fetch (same transport as search).
+    static func fetchStoreBody(storeUuid: String, region: String) async -> String? {
+        let script = """
         try {
             const res = await fetch("/api/getStoreV1?localeCode=" + region, {
                 method: "POST",
@@ -169,40 +258,33 @@ final class UberEatsChecker: ObservableObject {
             return "0|" + String(e);
         }
         """
-        var verifiedAny = false
-        for entry in unlocated.prefix(maxStorePageFetches) {
-            guard let uuid = entry.candidate.uuid,
-                  let storeResponse = await WebPageFetcher.shared.callJS(storeScript, arguments: [
-                      "uuid": uuid, "region": region,
-                  ], onHost: host),
-                  storeResponse.hasPrefix("200|") else {
-                debugLog("store lookup failed for '\(entry.candidate.slug)'")
-                continue
-            }
-            verifiedAny = true
-            let storeBody = String(storeResponse.dropFirst(4))
-            let store = parseStorePage(fromHTML: storeBody)
-            let score = max(entry.score,
-                            store.name.map { similarity(target, Restaurant.normalize($0)) } ?? 0)
-            if let storeLocation = store.location, let coordinate {
-                let distance = storeLocation.distance(from: CLLocation(latitude: coordinate.latitude,
-                                                                       longitude: coordinate.longitude))
-                debugLog("store '\(entry.candidate.slug)': \(Int(distance)) m away (getStoreV1), score \(String(format: "%.2f", score))")
-                if distance <= matchRadiusMeters, score >= 0.5 {
-                    debugLog("verified '\(name)' → \(entry.candidate.url.path)")
-                    return .available(entry.candidate.url)
-                }
-            } else if score >= 0.85 {
-                // No geo anywhere → only a near-certain name match passes.
-                return .available(entry.candidate.url)
-            }
-        }
-        if unlocated.isEmpty || verifiedAny {
-            debugLog("'\(name)': not found")
-            return .notFound
-        }
-        debugLog("'\(name)': unverifiable (store lookups failed)")
-        return .unknown
+        let host = URL(string: "https://www.ubereats.com/")!
+        guard let response = await WebPageFetcher.shared.callJS(script, arguments: [
+            "uuid": storeUuid, "region": region,
+        ], onHost: host), response.hasPrefix("200|") else { return nil }
+        return String(response.dropFirst(4))
+    }
+
+    /// The store's next opening moment, per getStoreV1's
+    /// orderForLaterInfo.nextOpenTime. Semantics verified live 2026-07-10:
+    /// a FUTURE value means "closed right now, accepts scheduled orders"
+    /// (Uber's exact in-app message); an open store reports its most
+    /// recent opening time (past). `isOpen`/`isOrderable` are NOT open-now
+    /// flags — they were true for verifiably closed stores.
+    static func fetchNextOpenTime(storeUuid: String, region: String) async -> Date? {
+        guard let body = await fetchStoreBody(storeUuid: storeUuid, region: region) else { return nil }
+        return parseNextOpenTime(fromStoreJSON: body)
+    }
+
+    nonisolated static func parseNextOpenTime(fromStoreJSON json: String) -> Date? {
+        guard let range = json.range(of: #""nextOpenTime"\s*:\s*"([^"]+)""#,
+                                     options: .regularExpression) else { return nil }
+        let match = String(json[range])
+        guard let valueStart = match.range(of: #":"#)?.upperBound else { return nil }
+        let value = match[valueStart...].trimmingCharacters(in: CharacterSet(charactersIn: "\" "))
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter.date(from: value) ?? ISO8601DateFormatter().date(from: value)
     }
 
     /// uev2.loc payload scoping ubereats.com to the user's position

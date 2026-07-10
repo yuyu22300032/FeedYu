@@ -86,6 +86,48 @@ final class UberEatsCheckerTests: XCTestCase {
                        "https://www.ubereats.com/search?q=%E9%BC%8E%E6%B3%B0%E8%B1%90%20%E4%BF%A1%E7%BE%A9%E5%BA%97")
     }
 
+    // Synthetic getStoreV1 fragment mirroring the live orderForLaterInfo
+    // shape (semantics verified live 2026-07-10: future nextOpenTime =
+    // closed right now; open stores report their most recent opening).
+    func testParsesNextOpenTime() {
+        let closed = #"{"data":{"title":"X","orderForLaterInfo":{"nextOpenTime":"2030-01-01T03:00:00.000Z","isSchedulable":true}}}"#
+        let parsed = UberEatsChecker.parseNextOpenTime(fromStoreJSON: closed)
+        XCTAssertNotNil(parsed)
+        XCTAssertTrue(parsed! > Date(), "future nextOpenTime = closed now")
+
+        let open = #"{"data":{"title":"X","orderForLaterInfo":{"nextOpenTime":"2020-01-01T23:00:00.000Z"}}}"#
+        let past = UberEatsChecker.parseNextOpenTime(fromStoreJSON: open)
+        XCTAssertNotNil(past)
+        XCTAssertTrue(past! < Date(), "past nextOpenTime = open now")
+
+        XCTAssertNil(UberEatsChecker.parseNextOpenTime(fromStoreJSON: #"{"data":{"title":"X"}}"#))
+        XCTAssertNil(UberEatsChecker.parseNextOpenTime(fromStoreJSON: "<html>garbage</html>"))
+    }
+
+    func testCachedVerdictFreshness() {
+        let now = Date()
+        let url = URL(string: "https://www.ubereats.com/store-browse-uuid/x")
+        // available goes stale after the TTL (a store open at noon may be
+        // closed when the user returns to the tab).
+        XCTAssertTrue(UberEatsChecker.isFresh(.available(url), checkedAt: now.addingTimeInterval(-60), now: now))
+        XCTAssertFalse(UberEatsChecker.isFresh(.available(url), checkedAt: now.addingTimeInterval(-11 * 60), now: now))
+        // closedNow expires exactly at reopen time.
+        XCTAssertTrue(UberEatsChecker.isFresh(.closedNow(url, reopens: now.addingTimeInterval(600)),
+                                              checkedAt: now.addingTimeInterval(-3600), now: now))
+        XCTAssertFalse(UberEatsChecker.isFresh(.closedNow(url, reopens: now.addingTimeInterval(-1)),
+                                               checkedAt: now, now: now))
+        // Existence verdicts last the session.
+        XCTAssertTrue(UberEatsChecker.isFresh(.notFound, checkedAt: .distantPast, now: now))
+        XCTAssertTrue(UberEatsChecker.isFresh(.unknown, checkedAt: .distantPast, now: now))
+    }
+
+    func testStoreUUIDExtraction() {
+        XCTAssertEqual(
+            UberEatsChecker.storeUUID(fromStoreURL: URL(string: "https://www.ubereats.com/tw/store-browse-uuid/0f52222d-4b8e-49d0-ad7d-b9ae8b501ac1?diningMode=DELIVERY")!),
+            "0f52222d-4b8e-49d0-ad7d-b9ae8b501ac1")
+        XCTAssertNil(UberEatsChecker.storeUUID(fromStoreURL: URL(string: "https://www.ubereats.com/search?q=x")!))
+    }
+
     func testNotFoundCooldownGate() {
         var r = Restaurant(name: "X")
         XCTAssertFalse(UberEatsChecker.isInNotFoundCooldown(r), "never checked → not in cooldown")
