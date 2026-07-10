@@ -16,19 +16,20 @@ struct OnboardingView: View {
             TabView(selection: $page) {
                 welcome.tag(0)
                 importLists.tag(1)
-                howItWorks.tag(2)
+                importFriendList.tag(2)
+                howItWorks.tag(3)
             }
             .tabViewStyle(.page(indexDisplayMode: .always))
             .indexViewStyle(.page(backgroundDisplayMode: .always))
 
             Button {
-                if page < 2 {
+                if page < 3 {
                     withAnimation { page += 1 }
                 } else {
                     dismiss()
                 }
             } label: {
-                Text(page < 2 ? "Continue" : "Get started")
+                Text(page < 3 ? "Continue" : "Get started")
                     .font(.headline)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
@@ -72,6 +73,17 @@ struct OnboardingView: View {
             }
             .buttonStyle(.bordered)
             .padding(.top, 6)
+        }
+    }
+
+    private var importFriendList: some View {
+        pageLayout(vignette: { MiniFriendShare() },
+                   title: "Import a friend's list") {
+            VStack(alignment: .leading, spacing: 14) {
+                bullet("1.circle.fill", "A friend sends their list link in a chat")
+                bullet("2.circle.fill", "Press and hold the link")
+                bullet("3.circle.fill", "Share it to FeedYu — done")
+            }
         }
     }
 
@@ -249,6 +261,10 @@ private struct MiniShareSheet: View {
     /// · 3 = share sheet + FeedYu pulse.
     @State private var phase = 3
     @State private var pulse = false
+    /// The FeedYu tap ring waits for the sheet's rise to settle — pulsing
+    /// while the icon is still moving reads as a mistimed tap. (true at
+    /// rest so the Reduce Motion static frame shows it.)
+    @State private var ringArmed = true
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -274,14 +290,18 @@ private struct MiniShareSheet: View {
         .task {
             guard !reduceMotion else { return } // static: sheet up, no loop
             while !Task.isCancelled {
+                ringArmed = false
                 await step(to: 0, holdMilliseconds: 1400) // home, tap You
                 await step(to: 1, holdMilliseconds: 1500) // lists, tap ⋯
                 await step(to: 2, holdMilliseconds: 1400) // menu, tap Share
                 guard !Task.isCancelled else { return }
                 pulse = false
                 withAnimation(.spring(duration: 0.45)) { phase = 3 }
-                withAnimation(.easeOut(duration: 1.2).delay(0.3)) { pulse = true }
-                try? await Task.sleep(for: .milliseconds(2500))
+                try? await Task.sleep(for: .milliseconds(550)) // sheet settles
+                guard !Task.isCancelled else { return }
+                ringArmed = true
+                withAnimation(.easeOut(duration: 1.2)) { pulse = true }
+                try? await Task.sleep(for: .milliseconds(1950))
                 guard !Task.isCancelled else { return }
             }
         }
@@ -386,6 +406,17 @@ private struct MiniShareSheet: View {
 
     // Phase 3 — the system share sheet with FeedYu as the pick.
     private var shareSheet: some View {
+        SystemShareSheetMock(ringVisible: ringArmed, pulse: pulse)
+    }
+}
+
+/// The system share sheet in miniature, FeedYu pulsing as the pick —
+/// shared by the two import vignettes.
+private struct SystemShareSheetMock: View {
+    var ringVisible: Bool
+    var pulse: Bool
+
+    var body: some View {
         VStack(spacing: 8) {
             Capsule().fill(Color.secondary.opacity(0.4)).frame(width: 28, height: 4)
             HStack(spacing: 14) {
@@ -399,7 +430,7 @@ private struct MiniShareSheet: View {
                                 Image(systemName: "fork.knife")
                                     .font(.caption.bold())
                                     .foregroundStyle(.white)
-                                if phase == 3 {
+                                if ringVisible {
                                     Circle()
                                         .stroke(Color.accentColor.opacity(0.5), lineWidth: 2)
                                         .frame(width: 34, height: 34)
@@ -423,6 +454,130 @@ private struct MiniShareSheet: View {
         .background(Color(.secondarySystemGroupedBackground),
                     in: UnevenRoundedRectangle(topLeadingRadius: 14, topTrailingRadius: 14))
         .shadow(color: .black.opacity(0.15), radius: 10, y: -3)
+    }
+}
+
+/// The friend's-list flow acted out — a chat with a shared Maps link, a
+/// press-and-hold on it, the link menu with Share highlighted, then the
+/// share sheet with FeedYu. Loops; Reduce Motion shows the final frame.
+private struct MiniFriendShare: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// 0 = chat · 1 = holding the link · 2 = link menu (tap Share) ·
+    /// 3 = share sheet + FeedYu pulse.
+    @State private var phase = 3
+    @State private var pulse = false
+    /// Same as MiniShareSheet: the FeedYu tap ring waits for the sheet's
+    /// rise to settle before pulsing.
+    @State private var ringArmed = true
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            chat
+            if phase == 2 {
+                linkMenu
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 62)
+                    .padding(.leading, 16)
+            }
+            SystemShareSheetMock(ringVisible: ringArmed, pulse: pulse)
+                .offset(y: phase == 3 ? 0 : 130)
+        }
+        .frame(width: 210, height: 170)
+        .background(Color(.systemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.secondary.opacity(0.15)))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .task {
+            guard !reduceMotion else { return } // static: sheet up, no loop
+            while !Task.isCancelled {
+                ringArmed = false
+                pulse = false
+                withAnimation(.easeInOut(duration: 0.3)) { phase = 0 }
+                try? await Task.sleep(for: .milliseconds(1200))
+                guard !Task.isCancelled else { return }
+                phase = 1 // press-and-hold: slow, sustained ring
+                withAnimation(.easeInOut(duration: 1.0)) { pulse = true }
+                try? await Task.sleep(for: .milliseconds(1100))
+                guard !Task.isCancelled else { return }
+                pulse = false
+                withAnimation(.easeInOut(duration: 0.3)) { phase = 2 }
+                withAnimation(.easeOut(duration: 0.7).delay(0.4)) { pulse = true }
+                try? await Task.sleep(for: .milliseconds(1400))
+                guard !Task.isCancelled else { return }
+                pulse = false
+                withAnimation(.spring(duration: 0.45)) { phase = 3 }
+                try? await Task.sleep(for: .milliseconds(550)) // sheet settles
+                guard !Task.isCancelled else { return }
+                ringArmed = true
+                withAnimation(.easeOut(duration: 1.2)) { pulse = true }
+                try? await Task.sleep(for: .milliseconds(1950))
+                guard !Task.isCancelled else { return }
+            }
+        }
+    }
+
+    // The chat: an incoming bubble carrying the Maps list link.
+    private var chat: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // A plain incoming message.
+            Capsule()
+                .fill(Color.secondary.opacity(0.2))
+                .frame(width: 90, height: 16)
+            // The link bubble (press-and-hold target).
+            HStack(spacing: 5) {
+                Image(systemName: "link")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(Color.accentColor)
+                Capsule().fill(Color.accentColor.opacity(0.5)).frame(width: 74, height: 7)
+            }
+            .padding(.horizontal, 9)
+            .padding(.vertical, 7)
+            .background(Color.secondary.opacity(0.2), in: RoundedRectangle(cornerRadius: 10))
+            .overlay {
+                if phase == 1 {
+                    Circle()
+                        .stroke(Color.accentColor.opacity(0.6), lineWidth: 3)
+                        .frame(width: 26, height: 26)
+                        .scaleEffect(pulse ? 2.1 : 0.9)
+                        .opacity(pulse ? 0 : 1)
+                }
+            }
+            // The user's own reply, for chat flavor.
+            Capsule()
+                .fill(Color.accentColor.opacity(0.75))
+                .frame(width: 56, height: 16)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            Spacer()
+        }
+        .padding(12)
+    }
+
+    // Phase 2 — the long-press menu on a link, Share highlighted.
+    private var linkMenu: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: "doc.on.doc").font(.caption2).foregroundStyle(.secondary)
+                Capsule().fill(Color.secondary.opacity(0.3)).frame(width: 40, height: 6)
+            }
+            HStack(spacing: 6) {
+                Image(systemName: "square.and.arrow.up")
+                    .font(.caption2.bold())
+                    .foregroundStyle(Color.accentColor)
+                    .overlay {
+                        if phase == 2 {
+                            Circle()
+                                .stroke(Color.accentColor.opacity(0.6), lineWidth: 3)
+                                .frame(width: 22, height: 22)
+                                .scaleEffect(pulse ? 1.9 : 0.9)
+                                .opacity(pulse ? 0 : 1)
+                        }
+                    }
+                Capsule().fill(Color.accentColor.opacity(0.4)).frame(width: 50, height: 6)
+            }
+        }
+        .padding(10)
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 10))
+        .shadow(color: .black.opacity(0.2), radius: 8, y: 3)
     }
 }
 
