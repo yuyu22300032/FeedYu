@@ -146,6 +146,13 @@ struct MichelinView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { revalidate() }
         }
+        // Adjusting any constraint re-rolls immediately, same as Tonight —
+        // a card picked under the old budget/filters shouldn't linger.
+        // onChange (not .task(id:)): tab returns must not re-fire.
+        .onChange(of: settings.michelinBudget) { _, _ in resuggestOnConstraintChange() }
+        .onChange(of: selectedBands) { _, _ in resuggestOnConstraintChange() }
+        .onChange(of: selectedAwards) { _, _ in resuggestOnConstraintChange() }
+        .onChange(of: includeFormer) { _, _ in resuggestOnConstraintChange() }
         // First visit: roll a suggestion as if the button were pressed.
         // current != nil guards tab returns (the engine outlives switches).
         .task(id: autoSuggestKey) {
@@ -255,6 +262,12 @@ struct MichelinView: View {
                 Label("Hide", systemImage: "eye.slash")
             }
         }
+    }
+
+    private func resuggestOnConstraintChange() {
+        guard engine.current != nil, !engine.isSearching,
+              locationProvider.location != nil else { return }
+        Task { await suggest() }
     }
 
     private func suggest() async {

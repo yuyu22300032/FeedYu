@@ -75,7 +75,8 @@ plus a browsable nearby list.
   1–3 stars; defaults Selected + Bib).
 - **Suggest a restaurant** rolls a random match, shown on the same card as
   Tonight; the page auto-rolls on first visit. Re-pressing the button is the
-  "another one" action.
+  "another one" action. Adjusting any constraint — budget, price bands,
+  awards, current/former — re-rolls immediately, same as Tonight.
 - Below, every Michelin place inside the straight-line radius, nearest
   first, with award, price, cuisine, and distance; tap opens Google Maps,
   long-press hides.
