@@ -68,7 +68,7 @@ struct TonightView: View {
                 VStack(spacing: 12) {
                     // Scrolls with the content (not pinned); still the first
                     // thing on the page, like the Michelin tab's filters.
-                    TravelBudgetPanel(distanceOnly: uberEatsMode)
+                    TravelBudgetPanel(page: .tonight, distanceOnly: uberEatsMode)
                         .padding(.top, 4)
                     if let suggestion = engine.current, !(engine.isSearching && searchIsSlow) {
                         RestaurantCard(suggestion: suggestion, showUberEatsButton: uberEatsMode)
@@ -141,8 +141,8 @@ struct TonightView: View {
     /// Delivery only cares how far away the kitchen is — the Uber Eats tab
     /// always runs on the distance budget, whatever mode the other tabs use.
     private var effectiveBudget: TravelBudget {
-        uberEatsMode ? TravelBudget(mode: .distance, value: settings.distanceBudgetMeters)
-                     : settings.travelBudget
+        uberEatsMode ? TravelBudget(mode: .distance, value: settings.uberDistanceMeters)
+                     : settings.tonightBudget.travelBudget
     }
 
     /// Re-runs the auto-suggest when data/location first become available.

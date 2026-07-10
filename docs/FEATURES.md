@@ -38,7 +38,10 @@ Michelin dataset is *not* in this pool — only the user's saved places.
 
 - Three modes — **Distance** (straight line, 200 m–50 km), **Walk**
   (5–60 min), **Drive** (15–90 min). Each mode remembers its own value;
-  switching modes doesn't forget the others.
+  switching modes doesn’t forget the others. Tonight and Michelin keep
+  fully independent budgets (mode and values); the Uber tab has its own
+  delivery radius — adjusting one page never changes another, while the
+  return-to-tab revalidation keeps every page honest.
 - A slider snaps across the mode's presets; the **+ / −** buttons step one
   preset slot, exactly like nudging the slider.
 - Changing the budget while a card is showing immediately re-suggests under
@@ -87,8 +90,8 @@ engine as Tonight (lists toggle per tab: each list in Settings has
 independent Tonight and Uber Eats switches), with two differences:
 
 1. **Distance-only budget.** Delivery doesn't care about drive time; the
-   panel shows just the distance slider (its value is shared with the other
-   tabs' distance mode).
+   panel shows just the distance slider — the tab's own delivery radius,
+   independent of the other pages' budgets.
 2. **Orderability filter.** After a candidate passes the distance budget,
    the app verifies it actually exists on Uber Eats near you (see
    [Uber Eats integration](#uber-eats)). Not on the platform → the engine

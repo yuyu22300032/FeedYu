@@ -168,7 +168,9 @@ Michelin fields, never clear anything, never touch `isHidden`.
 
 - Budget = `TravelBudget` (mode + value): `.distance` (meters, straight-line,
   ZERO route lookups), `.walking` / `.driving` (minutes, route-verified).
-  Modes remember their own values (`AppSettings.travelBudget`); quick
+  Modes remember their own values, per page — Tonight and Michelin have
+  independent `AppSettings.PageBudget`s and the Uber tab its own radius
+  (`uberDistanceMeters`); quick
   selector on Tonight, fine steppers in Settings.
 - A "session" = (origin ± min(2 km, radius/2), budget, candidate-id set).
   Any change rebuilds the shuffled queue and clears the shown-set.

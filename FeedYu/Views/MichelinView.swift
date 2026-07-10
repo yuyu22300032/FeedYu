@@ -23,7 +23,7 @@ struct MichelinView: View {
 
     private var michelinInRange: [(restaurant: Restaurant, km: Double)] {
         guard let origin = locationProvider.location else { return [] }
-        let radiusMeters = settings.travelBudget.radiusMeters
+        let radiusMeters = settings.michelinBudget.travelBudget.radiusMeters
         return store.restaurants.compactMap { restaurant in
             guard restaurant.michelinAward != nil, !restaurant.isHidden,
                   includeFormer || restaurant.michelinFormer != true,
@@ -67,7 +67,7 @@ struct MichelinView: View {
         List {
             // One box: travel constraint + Michelin filters share a section.
             Section {
-                TravelBudgetPanel(boxed: false)
+                TravelBudgetPanel(page: .michelin, boxed: false)
                 Picker("Guide", selection: $includeFormer) {
                     Text("Current guide").tag(false)
                     Text("Include former").tag(true)
@@ -87,7 +87,7 @@ struct MichelinView: View {
                 .disabled(engine.isSearching || suggestionCandidates.isEmpty)
             } footer: {
                 if suggestionCandidates.isEmpty {
-                    Text("No Michelin places match the filters within \(settings.travelBudget.label).")
+                    Text("No Michelin places match the filters within \(settings.michelinBudget.travelBudget.label).")
                 } else {
                     Text("\(suggestionCandidates.count) matching places in range.")
                 }
@@ -115,7 +115,7 @@ struct MichelinView: View {
                 }
             }
 
-            Section("Within \(settings.travelBudget.label) (\(michelinInRange.count))") {
+            Section("Within \(settings.michelinBudget.travelBudget.label) (\(michelinInRange.count))") {
                 ForEach(michelinInRange, id: \.restaurant.id) { entry in
                     row(for: entry.restaurant, km: entry.km)
                 }
@@ -261,7 +261,7 @@ struct MichelinView: View {
         guard let origin = locationProvider.location else { return }
         await engine.refreshSuggestion(candidates: suggestionCandidates,
                                        origin: origin,
-                                       budget: settings.travelBudget)
+                                       budget: settings.michelinBudget.travelBudget)
     }
 
     /// Tab appearance / foreground return: the current card's drive time
@@ -273,7 +273,7 @@ struct MichelinView: View {
         Task {
             await engine.revalidateCurrent(candidates: suggestionCandidates,
                                            origin: origin,
-                                           budget: settings.travelBudget)
+                                           budget: settings.michelinBudget.travelBudget)
         }
     }
 }
