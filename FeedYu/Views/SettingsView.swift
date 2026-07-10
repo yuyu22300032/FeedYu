@@ -422,6 +422,10 @@ struct SettingsView: View {
                 showOnboarding = true
             } label: {
                 Label("How to use FeedYu", systemImage: "questionmark.circle")
+                    // Fill the row and make the whole box tappable, not
+                    // just the label's own text.
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.borderless)
         }
