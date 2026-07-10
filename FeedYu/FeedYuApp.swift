@@ -89,7 +89,10 @@ struct RootView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 drainShareInbox()
-                Task { await syncOutdatedLists() }
+                Task {
+                    await syncOutdatedLists()
+                    await syncMichelinIfStale()
+                }
             }
         }
         .alert("Shared lists", isPresented: Binding(
@@ -161,6 +164,21 @@ struct RootView: View {
         // Michelin first: bundled data means the Michelin tab works instantly.
         await store.sync(MichelinDataSource())
         await syncOutdatedLists()
+    }
+
+    /// Michelin's weekly refresh normally runs at launch, but an app that
+    /// lives in the background for weeks never re-launches — so foreground
+    /// returns re-check too. Gated on the source's own staleness clock:
+    /// syncing unconditionally would re-parse the full CSV every time the
+    /// user switches back to the app.
+    private func syncMichelinIfStale() async {
+        guard store.isLoaded else { return }
+        let isStale = MichelinDataSource.lastRemoteRefresh.map {
+            Date().timeIntervalSince($0) > MichelinDataSource.refreshInterval
+        } ?? true
+        if isStale {
+            await store.sync(MichelinDataSource())
+        }
     }
 
     /// Weekly re-sync: each enabled shared list refreshes when its last
