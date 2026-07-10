@@ -40,10 +40,14 @@ FeedYu/
 ├── FeedYuApp.swift        @main; page-style TabView + custom bottom bar
 │                          (swipe between tabs — see Gotchas); bootstrap() =
 │                          load store → drain share inbox → request location
-│                          → sync Michelin → weekly list sync (enabled
-│                          shared lists re-sync when lastSuccess > 7 days;
-│                          foreground returns re-check lists AND re-sync
-│                          Michelin when its weekly clock is stale)
+│                          → Michelin sync if stale → weekly list sync
+│                          (enabled shared lists re-sync when lastSuccess
+│                          > 7 days; foreground returns re-check lists,
+│                          re-sync Michelin when its weekly clock is
+│                          stale, and refresh location when the fix is
+│                          older than 30 min — launch and foreground use
+│                          the SAME staleness gates, so neither path
+│                          re-parses/re-fetches fresh data)
 ├── Models/Restaurant.swift        Restaurant + ListKind + MichelinAward
 ├── Models/TravelBudget.swift      TravelMode + TravelBudget (radius/presets)
 ├── DataSources/
@@ -146,8 +150,15 @@ Michelin fields, never clear anything, never touch `isHidden`.
 ## Store: `RestaurantStore` (@MainActor)
 
 - Persistence: single JSON file `Application Support/FeedYu/store.json`
-  (`Snapshot { restaurants, syncStatuses }`, ISO-8601 dates), saved with a
-  0.8 s debounce on a detached task. ~25k restaurants ≈ 15 MB; loads off-main.
+  (`Snapshot { restaurants, syncStatuses }`, ISO-8601 dates), saved on a
+  detached task with a 3 s debounce + 20 s deadline — mutation bursts (a
+  localizer fill run lands ~40 names seconds apart) coalesce into a few
+  multi-MB rewrites instead of one per mutation, while the deadline bounds
+  force-quit loss. ~25k restaurants ≈ 15 MB; loads off-main.
+- `version` (bumped in the `restaurants` didSet) keys the views' memoized
+  derived collections; `indexByID` (rebuilt there too) backs O(1)
+  `restaurant(withID:)` lookups — per-mutation O(n) rebuild traded for
+  eliminating per-render O(n) scans (see Gotcha #12).
 - `sync(_ source:)` wraps `fetch()` with status bookkeeping. Errors land in
   `SyncStatus.lastError`; the previous data stays.
 - **Dedupe/merge rules** (in `apply`, in priority order):
@@ -379,3 +390,18 @@ tests pass with an updated *synthetic* fixture.
     single failed attempt left it on (search-results-prone) search-URL
     opens permanently. Resolution now has its own per-session gate
     (`resolvedMapsURL`), and taps race it against a short timeout.
+12. **Computed view properties that scan the whole store must be
+    memoized.** A SwiftUI computed property is re-evaluated on EVERY
+    access, and a body reads helpers like `michelinInRange` several times
+    (task ids, section headers, footers) — with a ~20k-row store that was
+    100k+ distance computations per render, on the main thread, on every
+    `@Published` change. Pattern: cache in a reference-type box in
+    `@State`, keyed on `store.version` + the other inputs
+    (MichelinView.InRangeCache, TonightView.CandidatesCache).
+13. **`try? await Task.sleep` swallows cancellation inside loops.** The
+    localizer's fill loop kept iterating after its `.task(id:)` was
+    cancelled: each URLSession call failed instantly with
+    `CancellationError`, and recording those as failures poisoned the
+    session-long negative cache (names silently never localized). Loops
+    that persist failure verdicts must check `Task.isCancelled` before
+    both continuing and recording.

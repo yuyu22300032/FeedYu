@@ -14,11 +14,14 @@ starts at the top.
 
 On every launch (and whenever the app returns to the foreground) the app:
 
-1. loads the local store (all restaurant data lives on-device),
+1. loads the local store (all restaurant data lives on-device; launch only),
 2. drains the share-extension inbox (lists shared from Google Maps),
-3. requests location,
-4. syncs the Michelin dataset (bundled snapshot first, so the tab works
-   offline/instantly),
+3. requests location — one-shot fix at launch; foreground returns
+   re-request only when the last fix is **older than 30 minutes**,
+4. syncs the Michelin dataset when its weekly refresh clock is stale (or
+   the store has no Michelin rows) — a fresh dataset skips the CSV
+   re-parse entirely; first run uses the bundled snapshot so the tab
+   works offline/instantly,
 5. re-syncs any enabled Google list whose last successful sync is **older
    than 7 days** (manual "Sync now" in Settings is always available).
 
@@ -241,7 +244,7 @@ narrowest sensible scope:
 | Maps cid resolution no-match | per card display / tap | definitive no-match persists with a **30-day cooldown**, keyed by search name (a newly localized name retries sooner); transient failures never persist |
 | Michelin dataset | bundled CSV instantly; GitHub refresh weekly (checked at launch and on foreground return) | downloaded copy cached on disk (`michelin-cache.csv`); offline falls back silently |
 | Google list sync | on add, on demand, and weekly per enabled list | merged into the store; a failed sync keeps the previous data; a *successful* sync also removes places deleted from the list upstream (skipped as a safety guard when the parse returns less than half the previous count — a format drift must not mass-delete) |
-| The store itself | — | single JSON file, saved with a 0.8 s debounce off-main; loads off-main at launch |
+| The store itself | — | single JSON file, saved off-main with a 3 s debounce + 20 s deadline (bursts coalesce); loads off-main at launch |
 | Uber bot-wall clearance | first Uber check of a session | WKWebView default cookie store, persists across launches |
 
 ## External integrations
