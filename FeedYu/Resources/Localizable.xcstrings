@@ -193,6 +193,22 @@
         }
       }
     },
+    "A friend sends their list link in a chat" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "友達がチャットでリストのリンクを送ってくる"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "朋友在聊天室傳來清單連結"
+          }
+        }
+      }
+    },
     "Add" : {
       "localizations" : {
         "ja" : {
@@ -961,6 +977,22 @@
         }
       }
     },
+    "Import a friend's list" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "友達のリストを取り込む"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "匯入朋友分享的清單"
+          }
+        }
+      }
+    },
     "Import a list CSV (Want to go…)" : {
       "localizations" : {
         "ja" : {
@@ -1681,6 +1713,22 @@
         }
       }
     },
+    "Press and hold the link" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "リンクを長押し"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "長按那個連結"
+          }
+        }
+      }
+    },
     "Price bands — none selected means any price" : {
       "localizations" : {
         "ja" : {
@@ -1965,6 +2013,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "設定"
+          }
+        }
+      }
+    },
+    "Share it to FeedYu — done" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FeedYu に共有すれば完了"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分享給 FeedYu 就完成"
           }
         }
       }
