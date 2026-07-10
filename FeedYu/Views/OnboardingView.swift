@@ -1,10 +1,11 @@
 import SwiftUI
 
 /// First-launch walkthrough (and Settings → "How to use FeedYu"): what the
-/// app does, how to hand it a Google Maps list, and the three things worth
-/// knowing. Three pages, page-style TabView — same swipe language as the
-/// app itself. Each page opens with a drawn vignette (miniature UI, not
-/// screenshots: theme-aware, localization-free, license-free).
+/// app does, importing your own Google Maps list, importing a friend's
+/// shared list, and the three things worth knowing. Four pages,
+/// page-style TabView — same swipe language as the app itself. Each page
+/// opens with a drawn vignette (miniature UI, not screenshots:
+/// theme-aware, localization-free, license-free).
 struct OnboardingView: View {
     @Environment(\.dismiss) private var dismiss
     /// `-onboardingPage n` launch argument jumps straight to a page —
