@@ -167,7 +167,9 @@ be recovered with the container-surgery recipe once the decode is fixed.
 ### "Local-language names aren't appearing"
 
 `MichelinNameLocalizer` fetches ≤40 names per screen visit, 0.4 s apart,
-skipping past failures for the session. If *nothing* localizes: michelin.com
+skipping past failures for the session. (Cancelled runs — radius/filter
+changed mid-fill — stop promptly and do NOT count as failures; recording
+them used to poison the session cache, see ARCHITECTURE Gotcha #13.) If *nothing* localizes: michelin.com
 bot filter (needs the **mobile Safari UA** — test with curl and both UAs;
 desktop gets HTTP 202), or the guide-page `<title>` format changed
 (`parseTitleName`). Names cache permanently in the store once fetched.
