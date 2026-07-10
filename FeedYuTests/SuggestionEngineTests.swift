@@ -247,6 +247,23 @@ final class SuggestionEngineTests: XCTestCase {
                           "over-budget pick replaced silently")
     }
 
+    func testRevalidateSwitchesTravelLineWithTheMode() async {
+        // drive → distance: the surviving card must show "X km away", not
+        // the stale drive minutes.
+        let engine = SuggestionEngine()
+        engine.etaProvider = { _, _, _ in 20 * 60 }
+        let only = place("Only", latOffset: 0.001) // ~111 m
+        await engine.refreshSuggestion(candidates: [only], origin: origin, budget: drive(30))
+        XCTAssertEqual(engine.current?.travelMode, .driving)
+        XCTAssertEqual(engine.current?.etaMinutes, 20)
+
+        await engine.revalidateCurrent(candidates: [only], origin: origin,
+                                       budget: TravelBudget(mode: .distance, value: 500))
+        XCTAssertEqual(engine.current?.restaurant.name, "Only", "still fits — survives")
+        XCTAssertEqual(engine.current?.travelMode, .distance)
+        XCTAssertNil(engine.current?.etaMinutes, "distance mode shows km, not minutes")
+    }
+
     func testRevalidateReplacesWhenCurrentLeavesCandidateSet() async {
         // Filters are constraints: Michelin's price/award chips narrow the
         // candidate set — a current pick that fell out must be replaced,
