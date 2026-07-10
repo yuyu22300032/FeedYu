@@ -34,10 +34,15 @@ struct ImportedListConfig: Codable, Identifiable, Hashable {
 
 @MainActor
 final class AppSettings: ObservableObject {
+    // Legacy single-budget keys (pre per-page split) — still read at init
+    // so an upgrade seeds both pages with the user's existing settings.
     private static let budgetKey = "driveBudgetMinutes"
     private static let travelModeKey = "travelMode"
     private static let distanceBudgetKey = "distanceBudgetMeters"
     private static let walkBudgetKey = "walkBudgetMinutes"
+    private static let tonightBudgetKey = "tonightBudget"
+    private static let michelinBudgetKey = "michelinBudget"
+    private static let uberDistanceKey = "uberDistanceMeters"
     private static let sharedListsKey = "sharedListConfigs"
     private static let importedListsKey = "importedListConfigs"
     private static let languageChoiceKey = "languageChoice"
@@ -78,38 +83,70 @@ final class AppSettings: ObservableObject {
 
     var languageRestartNeeded: Bool { languageChoice != languageChoiceAtLaunch }
 
-    @Published var driveBudgetMinutes: Int {
-        didSet { UserDefaults.standard.set(driveBudgetMinutes, forKey: Self.budgetKey) }
-    }
-
-    @Published var travelMode: TravelMode {
-        didSet { UserDefaults.standard.set(travelMode.rawValue, forKey: Self.travelModeKey) }
-    }
-
-    @Published var distanceBudgetMeters: Int {
-        didSet { UserDefaults.standard.set(distanceBudgetMeters, forKey: Self.distanceBudgetKey) }
-    }
-
-    @Published var walkBudgetMinutes: Int {
-        didSet { UserDefaults.standard.set(walkBudgetMinutes, forKey: Self.walkBudgetKey) }
-    }
-
-    /// The active constraint: the current mode paired with that mode's own
+    /// A page's travel constraint: its own mode plus each mode's own
     /// remembered value (switching modes doesn't forget the others).
-    var travelBudget: TravelBudget {
-        switch travelMode {
-        case .distance: return TravelBudget(mode: .distance, value: distanceBudgetMeters)
-        case .walking: return TravelBudget(mode: .walking, value: walkBudgetMinutes)
-        case .driving: return TravelBudget(mode: .driving, value: driveBudgetMinutes)
+    struct PageBudget: Codable, Equatable {
+        var mode: TravelMode = .driving
+        var distanceMeters = 2000
+        var walkMinutes = 15
+        var driveMinutes = 60
+
+        var travelBudget: TravelBudget {
+            switch mode {
+            case .distance: return TravelBudget(mode: .distance, value: distanceMeters)
+            case .walking: return TravelBudget(mode: .walking, value: walkMinutes)
+            case .driving: return TravelBudget(mode: .driving, value: driveMinutes)
+            }
+        }
+
+        mutating func setValue(_ value: Int) {
+            switch mode {
+            case .distance: distanceMeters = value
+            case .walking: walkMinutes = value
+            case .driving: driveMinutes = value
+            }
         }
     }
 
-    func setTravelBudgetValue(_ value: Int) {
-        switch travelMode {
-        case .distance: distanceBudgetMeters = value
-        case .walking: walkBudgetMinutes = value
-        case .driving: driveBudgetMinutes = value
+    enum BudgetPage {
+        case tonight, michelin
+    }
+
+    /// Tonight and Michelin tune their constraints independently —
+    /// adjusting drive minutes on one no longer drags the other. The Uber
+    /// tab keeps its own delivery radius (`uberDistanceMeters`).
+    @Published var tonightBudget: PageBudget {
+        didSet { Self.saveBudget(tonightBudget, key: Self.tonightBudgetKey) }
+    }
+
+    @Published var michelinBudget: PageBudget {
+        didSet { Self.saveBudget(michelinBudget, key: Self.michelinBudgetKey) }
+    }
+
+    @Published var uberDistanceMeters: Int {
+        didSet { UserDefaults.standard.set(uberDistanceMeters, forKey: Self.uberDistanceKey) }
+    }
+
+    func pageBudget(_ page: BudgetPage) -> PageBudget {
+        page == .tonight ? tonightBudget : michelinBudget
+    }
+
+    func setPageBudget(_ budget: PageBudget, for page: BudgetPage) {
+        switch page {
+        case .tonight: tonightBudget = budget
+        case .michelin: michelinBudget = budget
         }
+    }
+
+    private static func saveBudget(_ budget: PageBudget, key: String) {
+        if let data = try? JSONEncoder().encode(budget) {
+            UserDefaults.standard.set(data, forKey: key)
+        }
+    }
+
+    private static func loadBudget(key: String) -> PageBudget? {
+        guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
+        return try? JSONDecoder().decode(PageBudget.self, from: data)
     }
 
     @Published var sharedLists: [SharedListConfig] {
@@ -134,14 +171,21 @@ final class AppSettings: ObservableObject {
         languageChoiceAtLaunch = storedChoice
         michelinNameLanguage = UserDefaults.standard.string(forKey: Self.michelinNameLanguageKey) ?? "local"
         hasSeenOnboarding = UserDefaults.standard.bool(forKey: Self.hasSeenOnboardingKey)
+        // Legacy single budget (validated) seeds both pages on upgrade.
         let storedBudget = UserDefaults.standard.integer(forKey: Self.budgetKey)
-        driveBudgetMinutes = (15...90).contains(storedBudget) ? storedBudget : 60
         let storedMode = UserDefaults.standard.string(forKey: Self.travelModeKey) ?? ""
-        travelMode = TravelMode(rawValue: storedMode) ?? .driving
         let storedDistance = UserDefaults.standard.integer(forKey: Self.distanceBudgetKey)
-        distanceBudgetMeters = TravelBudget.distanceRange.contains(storedDistance) ? storedDistance : 2000
         let storedWalk = UserDefaults.standard.integer(forKey: Self.walkBudgetKey)
-        walkBudgetMinutes = (5...120).contains(storedWalk) ? storedWalk : 15
+        let legacy = PageBudget(
+            mode: TravelMode(rawValue: storedMode) ?? .driving,
+            distanceMeters: TravelBudget.distanceRange.contains(storedDistance) ? storedDistance : 2000,
+            walkMinutes: (5...120).contains(storedWalk) ? storedWalk : 15,
+            driveMinutes: (15...90).contains(storedBudget) ? storedBudget : 60)
+        tonightBudget = Self.loadBudget(key: Self.tonightBudgetKey) ?? legacy
+        michelinBudget = Self.loadBudget(key: Self.michelinBudgetKey) ?? legacy
+        let storedUberDistance = UserDefaults.standard.integer(forKey: Self.uberDistanceKey)
+        uberDistanceMeters = TravelBudget.distanceRange.contains(storedUberDistance)
+            ? storedUberDistance : legacy.distanceMeters
         if let data = UserDefaults.standard.data(forKey: Self.sharedListsKey),
            let configs = try? JSONDecoder().decode([SharedListConfig].self, from: data) {
             sharedLists = configs

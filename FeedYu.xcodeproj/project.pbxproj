@@ -36,6 +36,7 @@
 		797218FF1579686DF1DD8261 /* sharedlist.html in Resources */ = {isa = PBXBuildFile; fileRef = 09A301BC00F62F51D7D38F27 /* sharedlist.html */; };
 		7A2B1D9268AED7E2FBB99AD9 /* DemoChoreographyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BCE6435F0D4131416635FD9 /* DemoChoreographyTests.swift */; };
 		8101CD8AC130040B8E116BAD /* listpage-snippet.html in Resources */ = {isa = PBXBuildFile; fileRef = 9E460EA21E57BF64877848CF /* listpage-snippet.html */; };
+		87025CBFECA995A6BB292B9F /* AppSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B0ABE2FE611E04DE76ABA45 /* AppSettingsTests.swift */; };
 		882129A2BBD747841C3DFA76 /* GoogleMapsOpener.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86B4F9280933BB1481377E91 /* GoogleMapsOpener.swift */; };
 		9381B7AA377E5C4F3FBC58B5 /* MichelinDataSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AACDF96AEA6F672396F0978F /* MichelinDataSourceTests.swift */; };
 		94D9C2B4C350E211C149CF82 /* CSVParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3CDBB494C753B3891660634 /* CSVParser.swift */; };
@@ -143,6 +144,7 @@
 		91CD30035E365D5CF1E2AAB8 /* RestaurantStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantStore.swift; sourceTree = "<group>"; };
 		93696CE048929DAD36825626 /* CSVParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVParserTests.swift; sourceTree = "<group>"; };
 		9695CC3F82931F479F40109C /* ListRemovalTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListRemovalTests.swift; sourceTree = "<group>"; };
+		9B0ABE2FE611E04DE76ABA45 /* AppSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettingsTests.swift; sourceTree = "<group>"; };
 		9E460EA21E57BF64877848CF /* listpage-snippet.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = "listpage-snippet.html"; sourceTree = "<group>"; };
 		9E5E5141F35324023597705E /* LoadingCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingCard.swift; sourceTree = "<group>"; };
 		9E863C1A658E83709ACF30F3 /* GoogleSharedListSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleSharedListSource.swift; sourceTree = "<group>"; };
@@ -254,6 +256,7 @@
 		86D78D28E1BD8BCAD4FA27F5 /* FeedYuTests */ = {
 			isa = PBXGroup;
 			children = (
+				9B0ABE2FE611E04DE76ABA45 /* AppSettingsTests.swift */,
 				93696CE048929DAD36825626 /* CSVParserTests.swift */,
 				373DC8B167718D9BA1CB186E /* GetlistParserTests.swift */,
 				7F1D491751B526F5A7C6D90C /* GoogleMapsOpenerTests.swift */,
@@ -503,6 +506,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				87025CBFECA995A6BB292B9F /* AppSettingsTests.swift in Sources */,
 				0DE46D7C8811C7D63EEE8882 /* CSVParserTests.swift in Sources */,
 				35AFBAB012AD52326BB3F532 /* GetlistParserTests.swift in Sources */,
 				C1F18CB2501E86F5A7B8DAC7 /* GoogleMapsOpenerTests.swift in Sources */,

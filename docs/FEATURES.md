@@ -38,11 +38,15 @@ Michelin dataset is *not* in this pool — only the user's saved places.
 
 - Three modes — **Distance** (straight line, 200 m–50 km), **Walk**
   (5–60 min), **Drive** (15–90 min). Each mode remembers its own value;
-  switching modes doesn't forget the others.
+  switching modes doesn’t forget the others. Tonight and Michelin keep
+  fully independent budgets (mode and values); the Uber tab has its own
+  delivery radius — adjusting one page never changes another, while the
+  return-to-tab revalidation keeps every page honest.
 - A slider snaps across the mode's presets; the **+ / −** buttons step one
   preset slot, exactly like nudging the slider.
-- Changing the budget while a card is showing immediately re-suggests under
-  the new constraint.
+- Changing the budget while a card is showing revalidates it immediately:
+  a pick that still fits the new constraint stays (traffic minutes
+  refreshed); one that doesn't is replaced.
 
 **Suggestion flow:** the page auto-suggests when data and location are ready;
 "Not feeling it — another" pops the next candidate. No place repeats until
@@ -72,7 +76,10 @@ plus a browsable nearby list.
   1–3 stars; defaults Selected + Bib).
 - **Suggest a restaurant** rolls a random match, shown on the same card as
   Tonight; the page auto-rolls on first visit. Re-pressing the button is the
-  "another one" action.
+  "another one" action. Adjusting any constraint — budget, price bands,
+  awards, current/former — revalidates immediately, same as Tonight: the
+  card stays if it still qualifies (filters count via candidate-set
+  membership), and is replaced if not.
 - Below, every Michelin place inside the straight-line radius, nearest
   first, with award, price, cuisine, and distance; tap opens Google Maps,
   long-press hides.
@@ -87,8 +94,8 @@ engine as Tonight (lists toggle per tab: each list in Settings has
 independent Tonight and Uber Eats switches), with two differences:
 
 1. **Distance-only budget.** Delivery doesn't care about drive time; the
-   panel shows just the distance slider (its value is shared with the other
-   tabs' distance mode).
+   panel shows just the distance slider — the tab's own delivery radius,
+   independent of the other pages' budgets.
 2. **Orderability filter.** After a candidate passes the distance budget,
    the app verifies it actually exists on Uber Eats near you (see
    [Uber Eats integration](#uber-eats)). Not on the platform → the engine

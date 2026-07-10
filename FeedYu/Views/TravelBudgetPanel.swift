@@ -5,19 +5,22 @@ import SwiftUI
 /// Finer-grained values live in Settings; the slider snaps to presets.
 struct TravelBudgetPanel: View {
     @EnvironmentObject private var settings: AppSettings
+    /// Which page's independent budget this panel edits (Tonight and
+    /// Michelin no longer share; ignored in distanceOnly/Uber mode).
+    var page: AppSettings.BudgetPage = .tonight
     /// false when embedded in a grouped List row — the row is the box there
     /// (the panel's own gray fill would vanish against the list background).
     var boxed = true
     /// Uber Eats tab: straight-line distance is all that matters for
-    /// delivery — no mode row, slider drives distanceBudgetMeters directly
-    /// (the other tabs' mode choice is untouched).
+    /// delivery — no mode row, slider drives the tab's own delivery radius
+    /// (uberDistanceMeters; no other page is touched).
     var distanceOnly = false
 
-    private var activeMode: TravelMode { distanceOnly ? .distance : settings.travelMode }
+    private var activeMode: TravelMode { distanceOnly ? .distance : settings.pageBudget(page).mode }
 
     private var activeBudget: TravelBudget {
-        distanceOnly ? TravelBudget(mode: .distance, value: settings.distanceBudgetMeters)
-                     : settings.travelBudget
+        distanceOnly ? TravelBudget(mode: .distance, value: settings.uberDistanceMeters)
+                     : settings.pageBudget(page).travelBudget
     }
 
     var body: some View {
@@ -32,9 +35,11 @@ struct TravelBudgetPanel: View {
                 // wrapped its own icon and Walk stood taller than the rest.
                 HStack(spacing: 8) {
                     ForEach(TravelMode.allCases) { mode in
-                        let isOn = settings.travelMode == mode
+                        let isOn = activeMode == mode
                         Button {
-                            settings.travelMode = mode
+                            var budget = settings.pageBudget(page)
+                            budget.mode = mode
+                            settings.setPageBudget(budget, for: page)
                         } label: {
                             VStack(spacing: 4) {
                                 Image(systemName: mode.systemImage)
@@ -109,9 +114,11 @@ struct TravelBudgetPanel: View {
             let presets = TravelBudget.presets(for: activeMode)
             let index = min(max(Int(position.rounded()), 0), presets.count - 1)
             if distanceOnly {
-                settings.distanceBudgetMeters = presets[index]
+                settings.uberDistanceMeters = presets[index]
             } else {
-                settings.setTravelBudgetValue(presets[index])
+                var budget = settings.pageBudget(page)
+                budget.setValue(presets[index])
+                settings.setPageBudget(budget, for: page)
             }
         }
     }
