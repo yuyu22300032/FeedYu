@@ -165,6 +165,11 @@ Per release:
 6. App Store Connect: pick the build, TestFlight first (external-link beta
    needs a short review), then Submit for Review with the notes from
    APPSTORE.md.
+7. Tag the commit the archive was built from:
+   `git tag -a vX.Y <sha> -m "vX.Y — App Store submission (date)"` and
+   `git push origin vX.Y` (v1.0 was tagged after the fact — the archive
+   commit had to be reconstructed from xcarchive timestamps; tag at
+   archive time instead).
 
 ### App Preview video (scripted, real footage)
 
