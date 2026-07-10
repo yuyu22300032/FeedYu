@@ -38,6 +38,23 @@ final class LocationProvider: NSObject, ObservableObject, CLLocationManagerDeleg
         manager.requestLocation()
     }
 
+    /// Foreground returns re-check location like they re-check Michelin data:
+    /// a one-shot fix from launch goes stale if the app lives in the
+    /// background while the user moves around. Gated on the fix's own
+    /// timestamp so tab-switching in and out of the app doesn't spam
+    /// CoreLocation.
+    static let staleInterval: TimeInterval = 30 * 60
+
+    func refreshIfStale() {
+        guard isAuthorized else { return }
+        let isStale = location.map {
+            Date().timeIntervalSince($0.timestamp) > Self.staleInterval
+        } ?? true
+        if isStale {
+            manager.requestLocation()
+        }
+    }
+
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         authorizationStatus = manager.authorizationStatus
         if isAuthorized {
