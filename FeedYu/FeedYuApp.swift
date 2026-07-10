@@ -162,8 +162,11 @@ struct RootView: View {
         // so their places keep feeding Tonight.
         settings.registerLegacyImports(from: store.restaurants)
         locationProvider.requestPermissionIfNeeded()
-        // Michelin first: bundled data means the Michelin tab works instantly.
-        await store.sync(MichelinDataSource())
+        // Michelin first so the Michelin tab fills before list scrapes run.
+        // Staleness-gated: with a fresh weekly refresh the merged data is
+        // already in store.json, and re-syncing anyway re-parsed two ~20k-row
+        // CSVs and re-merged them into the store on every cold launch.
+        await syncMichelinIfStale()
         await syncOutdatedLists()
     }
 
@@ -174,10 +177,14 @@ struct RootView: View {
     /// user switches back to the app.
     private func syncMichelinIfStale() async {
         guard store.isLoaded else { return }
+        // No Michelin rows despite a fresh refresh stamp = the store file
+        // and the UserDefaults clock diverged (store deleted, restore) —
+        // resync regardless of staleness or the tab stays empty for a week.
+        let hasMichelin = store.restaurants.contains { $0.michelinAward != nil }
         let isStale = MichelinDataSource.lastRemoteRefresh.map {
             Date().timeIntervalSince($0) > MichelinDataSource.refreshInterval
         } ?? true
-        if isStale {
+        if isStale || !hasMichelin {
             await store.sync(MichelinDataSource())
         }
     }

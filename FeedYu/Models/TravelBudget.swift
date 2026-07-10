@@ -34,7 +34,11 @@ struct TravelBudget: Equatable, Hashable {
 
     /// Straight-line prefilter radius. Exact for distance mode; generous
     /// (assumes a direct route) for walk/drive — the per-candidate route
-    /// check is what enforces the real budget.
+    /// check is what enforces the real budget. A best-case bound, so a
+    /// place at the edge usually FAILS the route check: fine for the
+    /// engine (one wasted ETA call) but never surface a count of in-radius
+    /// places as a promise in UI — it reads as "N suggestible" and the
+    /// suggester then delivers none.
     var radiusMeters: Double {
         switch mode {
         case .distance: return Double(value)
@@ -47,6 +51,20 @@ struct TravelBudget: Equatable, Hashable {
     var needsETACheck: Bool { mode != .distance }
 
     var maxTravelSeconds: TimeInterval { Double(value) * 60 }
+
+    /// What a straight-line-prefiltered list actually contains. Exact for
+    /// distance mode; for walk/drive the list is bounded by the generous
+    /// direct-route radius and NOT route-verified (only the suggester
+    /// verifies), so labeling it "within 15 min walk" overclaims — a place
+    /// 1.2 km away over a winding mountain road shows in the list yet is
+    /// correctly rejected by the real ETA check, which reads as a bug.
+    var prefilterLabel: String {
+        switch mode {
+        case .distance: return label
+        case .walking, .driving:
+            return String(localized: "\(Self.formatMeters(Int(radiusMeters))) straight line")
+        }
+    }
 
     /// "500 m" / "2 km" / "15 min walk" / "60 min drive"
     var label: String {

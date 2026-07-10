@@ -22,13 +22,26 @@ struct TonightView: View {
     /// only from lists enabled in Settings *for this tab* (Tonight and Uber
     /// Eats toggle independently). Membership is tracked by which sources
     /// have stamped the place (lastSeenInSourceAt).
+    /// Memoized like MichelinView.michelinInRange: read several times per
+    /// body evaluation, and each uncached compute scans the whole store.
+    private final class CandidatesCache {
+        var key: String?
+        var value: [Restaurant] = []
+    }
+    @State private var candidatesCache = CandidatesCache()
+
     private var candidates: [Restaurant] {
         let enabledSourceIDs = settings.enabledListSourceIDs(forUberEats: uberEatsMode)
-        return store.restaurants.filter { restaurant in
+        let key = "\(store.version)|\(enabledSourceIDs.sorted().joined(separator: ","))"
+        if candidatesCache.key == key { return candidatesCache.value }
+        let result = store.restaurants.filter { restaurant in
             guard !restaurant.isHidden, restaurant.coordinate != nil else { return false }
             if restaurant.addedManually { return true }
             return restaurant.lastSeenInSourceAt.keys.contains { enabledSourceIDs.contains($0) }
         }
+        candidatesCache.key = key
+        candidatesCache.value = result
+        return result
     }
 
     var body: some View {

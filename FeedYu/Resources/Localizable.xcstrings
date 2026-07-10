@@ -33,6 +33,22 @@
         }
       }
     },
+    "%@ straight line" : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "直線距離 %@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "直線距離 %@"
+          }
+        }
+      }
+    },
     "%lld hidden" : {
       "localizations" : {
         "ja" : {
@@ -45,22 +61,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已隱藏 %lld 間"
-          }
-        }
-      }
-    },
-    "%lld matching places in range." : {
-      "localizations" : {
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "範囲内に %lld 件が該当。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "範圍內有 %lld 間符合條件。"
           }
         }
       }

@@ -12,14 +12,34 @@ import WebKit
 final class WebPageFetcher: NSObject {
     static let shared = WebPageFetcher()
 
-    private lazy var webView: WKWebView = {
+    /// Created on demand, torn down after `idleTeardownSeconds` without a
+    /// call — an idle webview pins a whole WebKit content process in memory
+    /// for the rest of the session. Bot-clearance cookies live in the
+    /// default (persistent) website data store, so a rebuilt webview only
+    /// re-pays the host page load, not the challenge.
+    private var webViewStorage: WKWebView?
+    private var teardownTask: Task<Void, Never>?
+    static let idleTeardownSeconds: TimeInterval = 180
+
+    private var webView: WKWebView {
+        if let webViewStorage { return webViewStorage }
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .default() // persist bot-clearance cookies
         let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844),
                                 configuration: configuration)
         webView.customUserAgent = MichelinNameLocalizer.mobileUserAgent
+        webViewStorage = webView
         return webView
-    }()
+    }
+
+    private func scheduleTeardown() {
+        teardownTask?.cancel()
+        teardownTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(Self.idleTeardownSeconds * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            self?.webViewStorage = nil
+        }
+    }
 
     private var isBusy = false
 
@@ -30,7 +50,11 @@ final class WebPageFetcher: NSObject {
     func callJS(_ script: String, arguments: [String: Any], onHost hostPage: URL) async -> String? {
         guard !isBusy else { return nil }
         isBusy = true
-        defer { isBusy = false }
+        teardownTask?.cancel()
+        defer {
+            isBusy = false
+            scheduleTeardown()
+        }
 
         if webView.url?.host != hostPage.host {
             webView.load(URLRequest(url: hostPage, timeoutInterval: 15))

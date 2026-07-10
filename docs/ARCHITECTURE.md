@@ -177,7 +177,10 @@ Michelin fields, never clear anything, never touch `isHidden`.
   Any change rebuilds the shuffled queue and clears the shown-set.
 - Straight-line prefilter radius: exact `value` m for distance mode;
   `min × 85 m` walking; `min × 1.3 km` driving — generous, only exists to
-  avoid pointless ETA calls. Computed ONCE per session via a `SpatialGrid`
+  avoid pointless ETA calls. Best-case bound: never surface an in-radius
+  COUNT in UI as if it meant "suggestible" (see TravelBudget.radiusMeters);
+  Michelin's walk/drive list header says "straight line" for the same
+  reason. Computed ONCE per session via a `SpatialGrid`
   query (layered lat/lng cells, ~5.5/22/88 km), not per refresh.
 - Queue order: shuffled within thirds-of-radius distance rings, nearest ring
   first — try the user's own "city" before neighboring ones so early ETA

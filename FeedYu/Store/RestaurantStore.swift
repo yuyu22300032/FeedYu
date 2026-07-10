@@ -4,12 +4,26 @@ import Foundation
 /// sync failures never block the app — it keeps serving the last good data.
 @MainActor
 final class RestaurantStore: ObservableObject {
-    @Published private(set) var restaurants: [Restaurant] = []
+    @Published private(set) var restaurants: [Restaurant] = [] {
+        didSet {
+            version &+= 1
+            var index: [UUID: Int] = Dictionary(minimumCapacity: restaurants.count)
+            for (i, r) in restaurants.enumerated() { index[r.id] = i }
+            indexByID = index
+        }
+    }
     @Published private(set) var syncStatuses: [String: SyncStatus] = [:]
     @Published private(set) var syncingSourceIDs: Set<String> = []
     @Published private(set) var isLoaded = false
 
+    /// Bumped on every restaurants mutation — views key their memoized
+    /// derived collections on it instead of comparing 20k-row arrays.
+    private(set) var version = 0
+    private var indexByID: [UUID: Int] = [:]
+
     private var saveTask: Task<Void, Never>?
+    /// Hard cap for the current save-coalescing burst (see scheduleSave).
+    private var saveDeadline: Date?
 
     struct Snapshot: Codable {
         var restaurants: [Restaurant]
@@ -40,18 +54,33 @@ final class RestaurantStore: ObservableObject {
         }
     }
 
+    /// Debounce with a deadline: each mutation restarts a 3 s timer (one
+    /// multi-MB store rewrite per burst, not one per mutation — a localizer
+    /// fill run lands ~40 names seconds apart), but a burst can't starve the
+    /// disk past 20 s, bounding what a force-quit mid-burst could lose.
     private func scheduleSave() {
         saveTask?.cancel()
         let snapshot = Snapshot(restaurants: restaurants, syncStatuses: syncStatuses)
+        let now = Date()
+        let deadline = saveDeadline ?? now.addingTimeInterval(20)
+        saveDeadline = deadline
+        let delay = max(0, min(now.addingTimeInterval(3), deadline).timeIntervalSince(now))
         saveTask = Task.detached(priority: .utility) {
-            try? await Task.sleep(nanoseconds: 800_000_000)
+            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             guard !Task.isCancelled else { return }
+            await MainActor.run { self.saveDeadline = nil }
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
             if let data = try? encoder.encode(snapshot) {
                 try? data.write(to: RestaurantStore.storeFileURL, options: .atomic)
             }
         }
+    }
+
+    /// O(1) row lookup — views re-read live rows on every render, and a
+    /// linear scan over a 20k-row store per render was the cost.
+    func restaurant(withID id: UUID) -> Restaurant? {
+        indexByID[id].map { restaurants[$0] }
     }
 
     // MARK: - Sync
@@ -171,7 +200,7 @@ final class RestaurantStore: ObservableObject {
     }
 
     func setHidden(_ hidden: Bool, id: UUID) {
-        guard let index = restaurants.firstIndex(where: { $0.id == id }) else { return }
+        guard let index = indexByID[id] else { return }
         restaurants[index].isHidden = hidden
         scheduleSave()
     }
@@ -190,7 +219,7 @@ final class RestaurantStore: ObservableObject {
     /// Fill-only (never overwrites existing data) — scraped info must not
     /// clobber anything a source or the user already provided.
     func setPlaceInfo(id: UUID, summary: String?, imageURL: URL?) {
-        guard let index = restaurants.firstIndex(where: { $0.id == id }) else { return }
+        guard let index = indexByID[id] else { return }
         var changed = false
         if restaurants[index].summary == nil, let summary {
             restaurants[index].summary = summary
@@ -217,7 +246,7 @@ final class RestaurantStore: ObservableObject {
     /// Source-provided search URLs (Takeout list CSVs) may be upgraded to
     /// an exact link — that's the point of resolving.
     func setGoogleMapsURL(id: UUID, url: URL) {
-        guard let index = restaurants.firstIndex(where: { $0.id == id }) else { return }
+        guard let index = indexByID[id] else { return }
         if let existing = restaurants[index].googleMapsURL {
             guard !GoogleMapsOpener.isExactPlaceURL(existing),
                   GoogleMapsOpener.isExactPlaceURL(url) else { return }
@@ -232,7 +261,7 @@ final class RestaurantStore: ObservableObject {
     /// for a cooldown period instead of re-spending a 1–2 MB search per
     /// session. Cleared by a later success (setGoogleMapsURL).
     func setMapsNoMatch(id: UUID, searchName: String) {
-        guard let index = restaurants.firstIndex(where: { $0.id == id }) else { return }
+        guard let index = indexByID[id] else { return }
         restaurants[index].mapsNoMatchAt = Date()
         restaurants[index].mapsNoMatchName = searchName
         scheduleSave()
@@ -242,13 +271,13 @@ final class RestaurantStore: ObservableObject {
     /// cooldown period instead of re-running a slow WebView check every
     /// session. Cleared by a later success (setUberEatsURL).
     func setUberEatsNotFound(id: UUID) {
-        guard let index = restaurants.firstIndex(where: { $0.id == id }) else { return }
+        guard let index = indexByID[id] else { return }
         restaurants[index].uberEatsNotFoundAt = Date()
         scheduleSave()
     }
 
     func setUberEatsURL(id: UUID, url: URL) {
-        guard let index = restaurants.firstIndex(where: { $0.id == id }),
+        guard let index = indexByID[id],
               restaurants[index].uberEatsURL != url else { return }
         restaurants[index].uberEatsURL = url
         restaurants[index].uberEatsNotFoundAt = nil
@@ -256,7 +285,7 @@ final class RestaurantStore: ObservableObject {
     }
 
     func setLocalizedName(id: UUID, editionKey: String, name: String) {
-        guard let index = restaurants.firstIndex(where: { $0.id == id }) else { return }
+        guard let index = indexByID[id] else { return }
         var names = restaurants[index].localizedNames ?? [:]
         names[editionKey] = name
         restaurants[index].localizedNames = names
