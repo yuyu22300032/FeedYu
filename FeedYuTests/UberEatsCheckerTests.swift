@@ -104,6 +104,23 @@ final class UberEatsCheckerTests: XCTestCase {
         XCTAssertNil(UberEatsChecker.parseNextOpenTime(fromStoreJSON: "<html>garbage</html>"))
     }
 
+    func testCachedVerdictFreshness() {
+        let now = Date()
+        let url = URL(string: "https://www.ubereats.com/store-browse-uuid/x")
+        // available goes stale after the TTL (a store open at noon may be
+        // closed when the user returns to the tab).
+        XCTAssertTrue(UberEatsChecker.isFresh(.available(url), checkedAt: now.addingTimeInterval(-60), now: now))
+        XCTAssertFalse(UberEatsChecker.isFresh(.available(url), checkedAt: now.addingTimeInterval(-31 * 60), now: now))
+        // closedNow expires exactly at reopen time.
+        XCTAssertTrue(UberEatsChecker.isFresh(.closedNow(url, reopens: now.addingTimeInterval(600)),
+                                              checkedAt: now.addingTimeInterval(-3600), now: now))
+        XCTAssertFalse(UberEatsChecker.isFresh(.closedNow(url, reopens: now.addingTimeInterval(-1)),
+                                               checkedAt: now, now: now))
+        // Existence verdicts last the session.
+        XCTAssertTrue(UberEatsChecker.isFresh(.notFound, checkedAt: .distantPast, now: now))
+        XCTAssertTrue(UberEatsChecker.isFresh(.unknown, checkedAt: .distantPast, now: now))
+    }
+
     func testStoreUUIDExtraction() {
         XCTAssertEqual(
             UberEatsChecker.storeUUID(fromStoreURL: URL(string: "https://www.ubereats.com/tw/store-browse-uuid/0f52222d-4b8e-49d0-ad7d-b9ae8b501ac1?diningMode=DELIVERY")!),

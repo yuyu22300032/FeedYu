@@ -131,6 +131,22 @@ struct TonightView: View {
                 searchIsSlow = false
             }
         }
+        .onAppear {
+            // Swiping back to the Uber tab hours later: the current
+            // suggestion was open-checked when it was ROLLED, and may have
+            // closed since. The checker's open-state cache is TTL'd, so
+            // this is free when fresh; if the store has since closed,
+            // re-roll silently.
+            guard uberEatsMode, engine.current != nil, !engine.isSearching else { return }
+            Task {
+                guard let current = engine.current else { return }
+                let result = await UberEatsChecker.shared.availability(
+                    for: current.restaurant, near: locationProvider.location)
+                if case .closedNow = result, !engine.isSearching, engine.current?.id == current.id {
+                    await refresh()
+                }
+            }
+        }
     }
 
     /// Delivery only cares how far away the kitchen is — the Uber Eats tab

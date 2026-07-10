@@ -52,20 +52,27 @@ final class UberEatsChecker: ObservableObject {
         return now.timeIntervalSince(checkedAt) < notFoundCooldownSeconds
     }
 
-    /// Session cache keyed by normalized name (availability changes rarely
-    /// within a session; notFound persists via the store cooldown above).
-    /// closedNow entries self-expire at the store's reopen time.
-    private var cache: [String: Availability] = [:]
+    /// Session cache keyed by normalized name. notFound/unknown last the
+    /// session (existence rarely changes); `.available` expires after
+    /// `openStateTTL` (a store open at noon may be closed by the time the
+    /// user returns to the tab); `.closedNow` self-expires at reopen time.
+    private var cache: [String: (result: Availability, at: Date)] = [:]
+    nonisolated static let openStateTTL: TimeInterval = 30 * 60
+
+    /// Pure freshness rule (testable): is a cached verdict still valid?
+    nonisolated static func isFresh(_ result: Availability, checkedAt: Date, now: Date = Date()) -> Bool {
+        switch result {
+        case .available: return now.timeIntervalSince(checkedAt) < openStateTTL
+        case .closedNow(_, let reopens): return now < (reopens ?? .distantFuture)
+        case .notFound, .unknown: return true
+        }
+    }
 
     func availability(for restaurant: Restaurant, near origin: CLLocation?) async -> Availability {
         let key = restaurant.normalizedName
         if let cached = cache[key] {
-            if case .closedNow(_, let reopens) = cached {
-                if Date() < (reopens ?? .distantFuture) { return cached }
-                cache[key] = nil // reopened — fall through and recheck
-            } else {
-                return cached
-            }
+            if Self.isFresh(cached.result, checkedAt: cached.at) { return cached.result }
+            cache[key] = nil // stale open-state — recheck below
         }
         if let url = restaurant.uberEatsURL {
             // Known store: only the open-now question remains. A closed
@@ -77,7 +84,7 @@ final class UberEatsChecker: ObservableObject {
                let reopens = await Self.fetchNextOpenTime(storeUuid: uuid, region: region),
                reopens > Date() {
                 let result = Availability.closedNow(url, reopens: reopens)
-                cache[key] = result
+                cache[key] = (result, Date())
                 return result
             }
             return .available(url)
@@ -86,7 +93,7 @@ final class UberEatsChecker: ObservableObject {
         let result = await Self.fetchAvailability(name: restaurant.name,
                                                   coordinate: restaurant.coordinate,
                                                   origin: origin)
-        cache[key] = result
+        cache[key] = (result, Date())
         return result
     }
 
