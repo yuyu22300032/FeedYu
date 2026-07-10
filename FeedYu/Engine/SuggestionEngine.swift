@@ -163,6 +163,14 @@ final class SuggestionEngine: ObservableObject {
         guard let suggestion = current, !isSearching,
               let coordinate = suggestion.restaurant.coordinate else { return }
 
+        // Filters are constraints too: if the current pick fell out of the
+        // candidate set (Michelin price/award filters, list toggles), it
+        // no longer qualifies regardless of travel budget.
+        guard candidates.contains(where: { $0.id == suggestion.restaurant.id }) else {
+            await refreshSuggestion(candidates: candidates, origin: origin, budget: budget)
+            return
+        }
+
         if let quickReject, quickReject(suggestion.restaurant) {
             await refreshSuggestion(candidates: candidates, origin: origin, budget: budget)
             return

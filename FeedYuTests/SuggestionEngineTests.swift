@@ -247,6 +247,30 @@ final class SuggestionEngineTests: XCTestCase {
                           "over-budget pick replaced silently")
     }
 
+    func testRevalidateReplacesWhenCurrentLeavesCandidateSet() async {
+        // Filters are constraints: Michelin's price/award chips narrow the
+        // candidate set — a current pick that fell out must be replaced,
+        // one still inside must survive.
+        let engine = SuggestionEngine()
+        engine.etaProvider = { _, _, _ in XCTFail("distance mode"); return 0 }
+        let a = place("A", latOffset: 0.001)
+        let b = place("B", latOffset: 0.002)
+        await engine.refreshSuggestion(candidates: [a, b], origin: origin,
+                                       budget: TravelBudget(mode: .distance, value: 500))
+        guard let first = engine.current?.restaurant else { return XCTFail("no pick") }
+        let survivor = first.name == "A" ? b : a
+
+        // Still in the set → survives.
+        await engine.revalidateCurrent(candidates: [a, b], origin: origin,
+                                       budget: TravelBudget(mode: .distance, value: 500))
+        XCTAssertEqual(engine.current?.restaurant.name, first.name)
+
+        // Filtered out → replaced by one that qualifies.
+        await engine.revalidateCurrent(candidates: [survivor], origin: origin,
+                                       budget: TravelBudget(mode: .distance, value: 500))
+        XCTAssertEqual(engine.current?.restaurant.name, survivor.name)
+    }
+
     func testRevalidateRollsWhenAvailabilityFlips() async {
         let engine = SuggestionEngine()
         engine.etaProvider = { _, _, _ in XCTFail("distance mode"); return 0 }

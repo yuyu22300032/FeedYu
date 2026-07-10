@@ -44,8 +44,9 @@ Michelin dataset is *not* in this pool — only the user's saved places.
   return-to-tab revalidation keeps every page honest.
 - A slider snaps across the mode's presets; the **+ / −** buttons step one
   preset slot, exactly like nudging the slider.
-- Changing the budget while a card is showing immediately re-suggests under
-  the new constraint.
+- Changing the budget while a card is showing revalidates it immediately:
+  a pick that still fits the new constraint stays (traffic minutes
+  refreshed); one that doesn't is replaced.
 
 **Suggestion flow:** the page auto-suggests when data and location are ready;
 "Not feeling it — another" pops the next candidate. No place repeats until
@@ -76,7 +77,9 @@ plus a browsable nearby list.
 - **Suggest a restaurant** rolls a random match, shown on the same card as
   Tonight; the page auto-rolls on first visit. Re-pressing the button is the
   "another one" action. Adjusting any constraint — budget, price bands,
-  awards, current/former — re-rolls immediately, same as Tonight.
+  awards, current/former — revalidates immediately, same as Tonight: the
+  card stays if it still qualifies (filters count via candidate-set
+  membership), and is replaced if not.
 - Below, every Michelin place inside the straight-line radius, nearest
   first, with award, price, cuisine, and distance; tap opens Google Maps,
   long-press hides.

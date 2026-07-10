@@ -115,12 +115,12 @@ struct TonightView: View {
                 await refresh()
             }
         }
-        // onChange (not .task(id:)): only actual constraint changes re-suggest.
-        // A task would also re-fire on every tab return and replace the card.
+        // onChange (not .task(id:)): only actual constraint changes react.
+        // A task would also re-fire on every tab return. Revalidate, don't
+        // blind-roll: a card that still fits the new budget stays (its
+        // traffic minutes refresh); only a fallen-out card is replaced.
         .onChange(of: effectiveBudget) { _, _ in
-            if engine.current != nil, !engine.isSearching, locationProvider.location != nil {
-                Task { await refresh() }
-            }
+            revalidate()
         }
         .onChange(of: engine.isSearching) { _, searching in
             if searching {
