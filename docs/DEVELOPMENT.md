@@ -176,7 +176,11 @@ sleeps as scene timing: `testDemoChoreography` (feature tour) and
 payoff; select one with `-only-testing:`). Film it: `simctl io
 recordVideo` around `xcodebuild test-without-building -scheme
 FeedYuDemo`. Homebrew ffmpeg lacks drawtext, so captions are
-AppKit-rendered PNGs overlaid with `overlay=…:enable=`.
+AppKit-rendered PNGs overlaid with `overlay=…:enable=` — and AppKit
+`lockFocus` renders them at Retina 2× pixels, so ALWAYS halve them
+(`sips --resampleWidth <pixelWidth/2>`) before overlaying or they show
+up double-size and cropped (bitten in v1.0 AND v1.1; 38 pt after the
+halving is the shipped caption size).
 Per-storefront language: `TEST_RUNNER_DEMO_LANGUAGE=en|ja` on the
 xcodebuild invocation (the choreography taps by localized label, so the
 env var switches both the app language and the tap targets). Narration:
