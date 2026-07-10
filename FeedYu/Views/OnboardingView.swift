@@ -53,10 +53,11 @@ struct OnboardingView: View {
     private var importLists: some View {
         pageLayout(vignette: { MiniShareSheet() },
                    title: "Bring your Google Maps lists") {
-            VStack(alignment: .leading, spacing: 14) {
-                bullet("1.circle.fill", "In Google Maps, open Saved and pick a list")
-                bullet("2.circle.fill", "Tap Share and choose FeedYu")
-                bullet("3.circle.fill", "FeedYu imports it the next time it opens")
+            VStack(alignment: .leading, spacing: 12) {
+                bullet("1.circle.fill", "In Google Maps, tap You at the bottom")
+                bullet("2.circle.fill", "Find your list and tap its ⋯ button")
+                bullet("3.circle.fill", "Choose Share list, then FeedYu")
+                bullet("4.circle.fill", "FeedYu imports it the next time it opens")
             }
             Button {
                 // LSApplicationQueriesSchemes already whitelists this.
@@ -155,88 +156,33 @@ private struct MiniSuggestionCard: View {
     }
 }
 
-/// Page 2: the whole gesture acted out in phases — a Google-Maps-ish
-/// saved list, a tap on its Share button, the share sheet rising, and
-/// FeedYu pulsing as the thing to pick. Loops; Reduce Motion shows the
-/// final frame statically.
+/// Page 2: the real Google Maps flow acted out in phases — Maps home
+/// with a tap on the "You" tab, the saved-lists screen with a tap on a
+/// list's ⋯ button, its menu with a tap on Share, then the share sheet
+/// with FeedYu pulsing. Loops; Reduce Motion shows the final frame.
 private struct MiniShareSheet: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// 0 = list, 1 = tapping Share, 2 = sheet up + FeedYu pulse.
-    @State private var phase = 2
+    /// 0 = Maps home (tap You) · 1 = lists (tap ⋯) · 2 = menu (tap Share)
+    /// · 3 = share sheet + FeedYu pulse.
+    @State private var phase = 3
     @State private var pulse = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            // The "list" behind the sheet, with a visible Share affordance.
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 6) {
-                    Image(systemName: "heart.fill").font(.caption).foregroundStyle(.red)
-                    Capsule().fill(Color.primary.opacity(0.7)).frame(width: 70, height: 9)
-                    Spacer()
-                    // The Share button the tap lands on.
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.caption.bold())
-                        .foregroundStyle(Color.accentColor)
-                        .padding(5)
-                        .background(Color.accentColor.opacity(0.12), in: Circle())
-                        .overlay {
-                            if phase == 1 {
-                                Circle()
-                                    .stroke(Color.accentColor.opacity(0.6), lineWidth: 3)
-                                    .scaleEffect(pulse ? 1.7 : 0.9)
-                                    .opacity(pulse ? 0 : 1)
-                            }
-                        }
-                }
-                ForEach(0..<3, id: \.self) { _ in
-                    HStack(spacing: 6) {
-                        Circle().fill(Color.secondary.opacity(0.3)).frame(width: 14, height: 14)
-                        Capsule().fill(Color.secondary.opacity(0.3)).frame(height: 8)
-                    }
-                }
-                Spacer()
+            if phase == 0 {
+                mapsHome
+            } else {
+                savedLists
             }
-            .padding(12)
-
-            // The share sheet (rises in phase 2).
-            VStack(spacing: 8) {
-                Capsule().fill(Color.secondary.opacity(0.4)).frame(width: 28, height: 4)
-                HStack(spacing: 14) {
-                    ForEach(0..<3, id: \.self) { index in
-                        VStack(spacing: 3) {
-                            if index == 1 {
-                                ZStack {
-                                    Circle()
-                                        .fill(Color.accentColor)
-                                        .frame(width: 34, height: 34)
-                                    Image(systemName: "fork.knife")
-                                        .font(.caption.bold())
-                                        .foregroundStyle(.white)
-                                    if phase == 2 {
-                                        Circle()
-                                            .stroke(Color.accentColor.opacity(0.5), lineWidth: 2)
-                                            .frame(width: 34, height: 34)
-                                            .scaleEffect(pulse ? 1.5 : 1)
-                                            .opacity(pulse ? 0 : 0.9)
-                                    }
-                                }
-                                Text(verbatim: "FeedYu")
-                                    .font(.system(size: 8, weight: .semibold))
-                            } else {
-                                Circle().fill(Color.secondary.opacity(0.3)).frame(width: 34, height: 34)
-                                Capsule().fill(Color.secondary.opacity(0.3)).frame(width: 26, height: 5)
-                            }
-                        }
-                    }
-                }
-                .padding(.bottom, 10)
+            if phase == 2 {
+                listMenu
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .padding(.top, 30)
+                    .padding(.trailing, 10)
             }
-            .padding(.top, 8)
-            .frame(maxWidth: .infinity)
-            .background(Color(.secondarySystemGroupedBackground),
-                        in: UnevenRoundedRectangle(topLeadingRadius: 14, topTrailingRadius: 14))
-            .shadow(color: .black.opacity(0.15), radius: 10, y: -3)
-            .offset(y: phase == 2 ? 0 : 130)
+            shareSheet
+                .offset(y: phase == 3 ? 0 : 130)
         }
         .frame(width: 210, height: 170)
         .background(Color(.systemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
@@ -245,20 +191,155 @@ private struct MiniShareSheet: View {
         .task {
             guard !reduceMotion else { return } // static: sheet up, no loop
             while !Task.isCancelled {
-                withAnimation(.easeInOut(duration: 0.3)) { phase = 0 }
-                pulse = false
-                try? await Task.sleep(for: .milliseconds(1100))
-                guard !Task.isCancelled else { return }
-                phase = 1 // tap ring on Share
-                withAnimation(.easeOut(duration: 0.7)) { pulse = true }
-                try? await Task.sleep(for: .milliseconds(800))
+                await step(to: 0, holdMilliseconds: 1400) // home, tap You
+                await step(to: 1, holdMilliseconds: 1500) // lists, tap ⋯
+                await step(to: 2, holdMilliseconds: 1400) // menu, tap Share
                 guard !Task.isCancelled else { return }
                 pulse = false
-                withAnimation(.spring(duration: 0.45)) { phase = 2 }
+                withAnimation(.spring(duration: 0.45)) { phase = 3 }
                 withAnimation(.easeOut(duration: 1.2).delay(0.3)) { pulse = true }
-                try? await Task.sleep(for: .milliseconds(2400))
+                try? await Task.sleep(for: .milliseconds(2500))
+                guard !Task.isCancelled else { return }
             }
         }
+    }
+
+    private func step(to newPhase: Int, holdMilliseconds: Int) async {
+        guard !Task.isCancelled else { return }
+        pulse = false
+        withAnimation(.easeInOut(duration: 0.3)) { phase = newPhase }
+        withAnimation(.easeOut(duration: 0.7).delay(0.4)) { pulse = true }
+        try? await Task.sleep(for: .milliseconds(holdMilliseconds))
+    }
+
+    /// A pulsing ring marking the thing being tapped in `activePhase`.
+    @ViewBuilder
+    private func tapRing(_ activePhase: Int) -> some View {
+        if phase == activePhase {
+            Circle()
+                .stroke(Color.accentColor.opacity(0.6), lineWidth: 3)
+                .scaleEffect(pulse ? 1.9 : 0.9)
+                .opacity(pulse ? 0 : 1)
+        }
+    }
+
+    // Phase 0 — Maps home: search bar, map, bottom bar ending in "You".
+    private var mapsHome: some View {
+        VStack(spacing: 6) {
+            Capsule().fill(Color.secondary.opacity(0.25)).frame(height: 14)
+                .padding(.horizontal, 10).padding(.top, 10)
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.green.opacity(0.12))
+                .overlay(Image(systemName: "mappin.and.ellipse")
+                    .font(.title3).foregroundStyle(.red.opacity(0.7)))
+                .padding(.horizontal, 10)
+            HStack {
+                Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                Spacer()
+                Image(systemName: "bookmark").foregroundStyle(.secondary)
+                Spacer()
+                Image(systemName: "person.crop.circle.fill")
+                    .foregroundStyle(Color.accentColor)
+                    .overlay(tapRing(0))
+            }
+            .font(.footnote)
+            .padding(.horizontal, 26)
+            .padding(.bottom, 10)
+        }
+    }
+
+    // Phases 1–3 — the saved-lists screen; each row carries a ⋯ button.
+    private var savedLists: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Capsule().fill(Color.primary.opacity(0.7)).frame(width: 60, height: 9)
+            listRow(heart: true, showRing: true)
+            listRow(heart: false, showRing: false)
+            Spacer()
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func listRow(heart: Bool, showRing: Bool) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: heart ? "heart.fill" : "flag.fill")
+                .font(.caption)
+                .foregroundStyle(heart ? .red : .green)
+            Capsule().fill(Color.secondary.opacity(0.3)).frame(width: 66, height: 8)
+            Spacer()
+            Image(systemName: "ellipsis")
+                .font(.caption.bold())
+                .foregroundStyle(.secondary)
+                .padding(4)
+                .overlay { if showRing { tapRing(1) } }
+        }
+        .padding(8)
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 10))
+    }
+
+    // Phase 2 — the list's ⋯ menu, Share row highlighted.
+    private var listMenu: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: "pencil").font(.caption2).foregroundStyle(.secondary)
+                Capsule().fill(Color.secondary.opacity(0.3)).frame(width: 44, height: 6)
+            }
+            HStack(spacing: 6) {
+                Image(systemName: "square.and.arrow.up")
+                    .font(.caption2.bold())
+                    .foregroundStyle(Color.accentColor)
+                    .overlay(tapRing(2))
+                Capsule().fill(Color.accentColor.opacity(0.4)).frame(width: 52, height: 6)
+            }
+            HStack(spacing: 6) {
+                Image(systemName: "trash").font(.caption2).foregroundStyle(.secondary)
+                Capsule().fill(Color.secondary.opacity(0.3)).frame(width: 38, height: 6)
+            }
+        }
+        .padding(10)
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 10))
+        .shadow(color: .black.opacity(0.2), radius: 8, y: 3)
+    }
+
+    // Phase 3 — the system share sheet with FeedYu as the pick.
+    private var shareSheet: some View {
+        VStack(spacing: 8) {
+            Capsule().fill(Color.secondary.opacity(0.4)).frame(width: 28, height: 4)
+            HStack(spacing: 14) {
+                ForEach(0..<3, id: \.self) { index in
+                    VStack(spacing: 3) {
+                        if index == 1 {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.accentColor)
+                                    .frame(width: 34, height: 34)
+                                Image(systemName: "fork.knife")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(.white)
+                                if phase == 3 {
+                                    Circle()
+                                        .stroke(Color.accentColor.opacity(0.5), lineWidth: 2)
+                                        .frame(width: 34, height: 34)
+                                        .scaleEffect(pulse ? 1.5 : 1)
+                                        .opacity(pulse ? 0 : 0.9)
+                                }
+                            }
+                            Text(verbatim: "FeedYu")
+                                .font(.system(size: 8, weight: .semibold))
+                        } else {
+                            Circle().fill(Color.secondary.opacity(0.3)).frame(width: 34, height: 34)
+                            Capsule().fill(Color.secondary.opacity(0.3)).frame(width: 26, height: 5)
+                        }
+                    }
+                }
+            }
+            .padding(.bottom, 10)
+        }
+        .padding(.top, 8)
+        .frame(maxWidth: .infinity)
+        .background(Color(.secondarySystemGroupedBackground),
+                    in: UnevenRoundedRectangle(topLeadingRadius: 14, topTrailingRadius: 14))
+        .shadow(color: .black.opacity(0.15), radius: 10, y: -3)
     }
 }
 
