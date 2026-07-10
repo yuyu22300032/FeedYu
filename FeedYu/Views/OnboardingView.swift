@@ -115,10 +115,44 @@ struct OnboardingView: View {
 
 // MARK: - Vignettes (miniature UI drawn in code)
 
-/// Page 1: a shrunken suggestion card — photo, badges, name, travel line,
-/// re-roll pill. Skeleton bars instead of words: nothing to translate.
+/// Page 1: the core loop acted out — a suggestion card, a tap on its
+/// photo, and the Google-Maps-ish place page it opens (details + a
+/// navigate button). Loops; Reduce Motion shows the card statically.
 private struct MiniSuggestionCard: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// 0 = card · 1 = tapping the photo · 2 = the place page in Maps.
+    @State private var phase = 0
+    @State private var pulse = false
+
     var body: some View {
+        ZStack {
+            card
+                .opacity(phase == 2 ? 0 : 1)
+            mapsPlacePage
+                .opacity(phase == 2 ? 1 : 0)
+                .scaleEffect(phase == 2 ? 1 : 0.94)
+        }
+        .frame(width: 210)
+        .task {
+            guard !reduceMotion else { return } // static: the card itself
+            while !Task.isCancelled {
+                withAnimation(.easeInOut(duration: 0.35)) { phase = 0 }
+                pulse = false
+                try? await Task.sleep(for: .milliseconds(1500))
+                guard !Task.isCancelled else { return }
+                phase = 1 // tap ring on the photo
+                withAnimation(.easeOut(duration: 0.7)) { pulse = true }
+                try? await Task.sleep(for: .milliseconds(800))
+                guard !Task.isCancelled else { return }
+                pulse = false
+                withAnimation(.spring(duration: 0.45)) { phase = 2 }
+                try? await Task.sleep(for: .milliseconds(2500))
+                guard !Task.isCancelled else { return }
+            }
+        }
+    }
+
+    private var card: some View {
         VStack(alignment: .leading, spacing: 10) {
             RoundedRectangle(cornerRadius: 12)
                 .fill(LinearGradient(colors: [Color.orange.opacity(0.75), Color.red.opacity(0.55)],
@@ -133,6 +167,15 @@ private struct MiniSuggestionCard: View {
                         .padding(6)
                         .background(.thinMaterial, in: Capsule())
                         .padding(6)
+                }
+                .overlay {
+                    if phase == 1 {
+                        Circle()
+                            .stroke(Color.white.opacity(0.9), lineWidth: 3)
+                            .frame(width: 30, height: 30)
+                            .scaleEffect(pulse ? 2.0 : 0.9)
+                            .opacity(pulse ? 0 : 1)
+                    }
                 }
             HStack(spacing: 6) {
                 MiniChip(text: "⭐️", tint: .red)
@@ -150,7 +193,47 @@ private struct MiniSuggestionCard: View {
                     .font(.caption2.bold()).foregroundStyle(.white))
         }
         .padding(14)
-        .frame(width: 210)
+        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.12), radius: 14, y: 6)
+    }
+
+    /// The place page the tap lands on: map with the pin, name, rating,
+    /// and the directions button ready to navigate.
+    private var mapsPlacePage: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.green.opacity(0.14))
+                .frame(height: 64)
+                .overlay(Image(systemName: "mappin.and.ellipse")
+                    .font(.title3).foregroundStyle(.red.opacity(0.8)))
+            Capsule().fill(Color.primary.opacity(0.75)).frame(width: 110, height: 10)
+            HStack(spacing: 3) {
+                ForEach(0..<5, id: \.self) { index in
+                    Image(systemName: index < 4 ? "star.fill" : "star.leadinghalf.filled")
+                        .font(.system(size: 8))
+                        .foregroundStyle(.yellow)
+                }
+                Capsule().fill(Color.secondary.opacity(0.35)).frame(width: 34, height: 6)
+            }
+            HStack(spacing: 6) {
+                Capsule()
+                    .fill(Color.accentColor)
+                    .frame(height: 24)
+                    .overlay(HStack(spacing: 4) {
+                        Image(systemName: "arrow.triangle.turn.up.right.diamond.fill")
+                        Capsule().fill(.white.opacity(0.8)).frame(width: 26, height: 5)
+                    }
+                    .font(.caption2.bold())
+                    .foregroundStyle(.white))
+                Circle().fill(Color.secondary.opacity(0.2)).frame(width: 24, height: 24)
+                    .overlay(Image(systemName: "phone.fill")
+                        .font(.system(size: 10)).foregroundStyle(.secondary))
+                Circle().fill(Color.secondary.opacity(0.2)).frame(width: 24, height: 24)
+                    .overlay(Image(systemName: "bookmark.fill")
+                        .font(.system(size: 10)).foregroundStyle(.secondary))
+            }
+        }
+        .padding(14)
         .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
         .shadow(color: .black.opacity(0.12), radius: 14, y: 6)
     }
