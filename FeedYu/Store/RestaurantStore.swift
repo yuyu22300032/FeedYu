@@ -142,8 +142,14 @@ final class RestaurantStore: ObservableObject {
                 return nil
             }
             // Incoming has no coordinates (e.g. Takeout list CSV): match by
-            // name only when unambiguous.
-            return candidates.count == 1 ? candidates[0] : nil
+            // name only when unambiguous — and only into user-space rows.
+            // With ~19k guide rows loaded, "unique in the whole store" let a
+            // coordinate-less row merge into a same-named Michelin place
+            // anywhere on earth; the user's place inherited the foreign
+            // coordinates and silently fell out of every radius. Guide rows
+            // still merge via the name + ≤150 m rule above.
+            let userRows = candidates.filter { updated[$0].michelinAward == nil }
+            return userRows.count == 1 ? userRows[0] : nil
         }
 
         for var incoming in fetched {

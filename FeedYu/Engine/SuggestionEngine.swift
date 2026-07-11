@@ -98,6 +98,12 @@ final class SuggestionEngine: ObservableObject {
         var wrapped = false
         search: while true {
             while !queue.isEmpty {
+                // A cancelled search (view task torn down, tab left) stops
+                // here instead of finishing the scan — on the Uber tab each
+                // further step is a slow WebView check for a card nobody is
+                // looking at. The queue keeps its position, so the next
+                // refresh resumes where this one stopped.
+                if Task.isCancelled { return }
                 let candidate = queue.removeFirst()
                 guard let coordinate = candidate.coordinate else { continue }
                 if let quickReject, quickReject(candidate) { continue }

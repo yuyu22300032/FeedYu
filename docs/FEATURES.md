@@ -20,10 +20,14 @@ On every launch (and whenever the app returns to the foreground) the app:
    re-request only when the last fix is **older than 30 minutes**,
 4. syncs the Michelin dataset when its weekly refresh clock is stale (or
    the store has no Michelin rows) — a fresh dataset skips the CSV
-   re-parse entirely; first run uses the bundled snapshot so the tab
-   works offline/instantly,
+   re-parse entirely; an unchanged upstream answers a cheap HTTP 304
+   (saved ETag) instead of re-downloading; a *failing* refresh (offline)
+   backs off and retries **hourly at most**, without re-parsing local
+   CSVs; first run uses the bundled snapshot so the tab works
+   offline/instantly,
 5. re-syncs any enabled Google list whose last successful sync is **older
-   than 7 days** (manual "Sync now" in Settings is always available).
+   than 7 days**, with the same hourly failure backoff (manual "Sync now"
+   in Settings is always available and skips both gates).
 
 ---
 
@@ -62,8 +66,9 @@ Maps** — that's the "check reviews, hours, live traffic" flow; there's no
 separate button), award/price/list badges, the travel line ("18 min in
 current traffic" / "12 min on foot" / "1.4 km away (straight line)"), a
 description, and a "View in Michelin Guide" button when the place is on the
-guide. Long-press to hide a place from future suggestions. Photo and
-description are fetched lazily the first time the place is suggested (see
+guide. Long-press to hide a place from future suggestions — the card rolls
+a replacement immediately. Photo and description are fetched lazily the
+first time the place is suggested (see
 [Lazy loading](#lazy-loading--caching)).
 
 ## Michelin page
@@ -76,7 +81,9 @@ plus a browsable nearby list.
   current-guide/include-former toggle (places that dropped off the guide
   since 2022 show their listed years), price-band buttons ($–$$$$; defaults
   $ + $$; none selected = any price), and award buttons (Selected, Bib,
-  1–3 stars; defaults Selected + Bib).
+  1–3 stars; defaults Selected + Bib). Price and award selections persist
+  across launches (`AppSettings`); the former-places toggle is
+  session-scoped.
 - **Suggest a restaurant** rolls a random match, shown on the same card as
   Tonight; the page auto-rolls on first visit. Re-pressing the button is the
   "another one" action. Adjusting any constraint — budget, price bands,
@@ -107,7 +114,11 @@ independent Tonight and Uber Eats switches), with two differences:
    the app verifies it actually exists on Uber Eats near you (see
    [Uber Eats integration](#uber-eats)). Not on the platform → the engine
    silently rolls another. Non-restaurants saved in your lists (shops etc.)
-   fall out naturally here.
+   fall out naturally here. Each press runs at most 25 of these slow
+   verifications; a scan that pauses mid-queue says "refresh to keep
+   looking" and the next press resumes exactly where it stopped. Verified
+   not-founds cool down for a week, so a neighborhood is mapped out after
+   a press or two and later refreshes are near-instant.
 
 The card keeps the photo→Google-Maps behavior (reviews/info) and adds a
 green **Order on Uber Eats** button that deep-links into the Uber Eats app,
@@ -242,7 +253,7 @@ narrowest sensible scope:
 | Michelin local-script names | per Michelin-tab visit, visible rows first | persisted forever; ≤40 fetches/visit, 0.4 s apart; failures negatively cached per session |
 | Uber Eats availability | per candidate, Uber tab only | verified store URL persisted to the store (next suggestion skips the check); a *verified* not-found persists with a **1-week cooldown** and is skipped for free via `quickReject`; `unknown` (bot wall) is never persisted |
 | Maps cid resolution no-match | per card display / tap | definitive no-match persists with a **30-day cooldown**, keyed by search name (a newly localized name retries sooner); transient failures never persist |
-| Michelin dataset | bundled CSV instantly; GitHub refresh weekly (checked at launch and on foreground return) | downloaded copy cached on disk (`michelin-cache.csv`); offline falls back silently |
+| Michelin dataset | bundled CSV instantly; GitHub refresh weekly (checked at launch and on foreground return; failed attempts back off, retrying hourly at most) | downloaded copy cached on disk (`michelin-cache.csv`) with its ETag — an unchanged upstream answers 304 instead of the multi-MB body; offline the store keeps serving its data |
 | Google list sync | on add, on demand, and weekly per enabled list | merged into the store; a failed sync keeps the previous data; a *successful* sync also removes places deleted from the list upstream (skipped as a safety guard when the parse returns less than half the previous count — a format drift must not mass-delete) |
 | The store itself | — | single JSON file, saved off-main with a 3 s debounce + 20 s deadline (bursts coalesce); loads off-main at launch |
 | Uber bot-wall clearance | first Uber check of a session | WKWebView default cookie store, persists across launches |

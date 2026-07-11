@@ -52,11 +52,15 @@ final class UberEatsChecker: ObservableObject {
         return now.timeIntervalSince(checkedAt) < notFoundCooldownSeconds
     }
 
-    /// Session cache keyed by normalized name. notFound/unknown last the
-    /// session (existence rarely changes); `.available` expires after
-    /// `openStateTTL` (10 min — cheap to recheck, and a store open at noon may
-    /// be closed when the user returns); `.closedNow` self-expires at reopen.
-    private var cache: [String: (result: Availability, at: Date)] = [:]
+    /// Session cache keyed by restaurant id — NOT by name: two same-named
+    /// branches of a chain would share a verdict, and the first branch's
+    /// verified store URL would get persisted onto the other (the engine's
+    /// availabilityCheck writes `.available` URLs to the store). notFound/
+    /// unknown last the session (existence rarely changes); `.available`
+    /// expires after `openStateTTL` (10 min — cheap to recheck, and a store
+    /// open at noon may be closed when the user returns); `.closedNow`
+    /// self-expires at reopen.
+    private var cache: [UUID: (result: Availability, at: Date)] = [:]
     nonisolated static let openStateTTL: TimeInterval = 10 * 60
 
     /// Pure freshness rule (testable): is a cached verdict still valid?
@@ -69,7 +73,7 @@ final class UberEatsChecker: ObservableObject {
     }
 
     func availability(for restaurant: Restaurant, near origin: CLLocation?) async -> Availability {
-        let key = restaurant.normalizedName
+        let key = restaurant.id
         if let cached = cache[key] {
             if Self.isFresh(cached.result, checkedAt: cached.at) { return cached.result }
             cache[key] = nil // stale open-state — recheck below
@@ -87,7 +91,13 @@ final class UberEatsChecker: ObservableObject {
                 cache[key] = (result, Date())
                 return result
             }
-            return .available(url)
+            // Cache the open verdict too — every uncached call here costs a
+            // WebView getStoreV1 fetch (plus a full ubereats.com page load
+            // when the idle webview was torn down), and revalidation runs on
+            // every tab appearance and foreground return.
+            let result = Availability.available(url)
+            cache[key] = (result, Date())
+            return result
         }
         if Self.isInNotFoundCooldown(restaurant) { return .notFound }
         let result = await Self.fetchAvailability(name: restaurant.name,

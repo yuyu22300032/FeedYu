@@ -162,6 +162,12 @@ be recovered with the container-surgery recipe once the decode is fixed.
   snapshot. Upstream: `ngshiheng/michelin-my-maps` on GitHub — if that repo
   moves or dies, `remoteURL` needs a new home and
   `scripts/preprocess_michelin.py` needs its history source updated.
+- Stale and "not even trying" → the failure backoff is working as designed:
+  a stale dataset re-attempts the download at most hourly
+  (`michelinLastRemoteAttempt`), an unchanged upstream answers 304 to the
+  saved ETag (`michelinCacheETag`), and a failed retry surfaces in the
+  source's SyncStatus instead of re-parsing local CSVs. Settings →
+  "Refresh from GitHub now" bypasses all of it (forceRemote).
 - Award tier names changed upstream → `MichelinAward(datasetValue:)`.
 
 ### "Local-language names aren't appearing"
@@ -201,21 +207,26 @@ store URL still persists (existence is durable, closedness isn't).
 
 ### "Uber Eats tab says no results, but refreshing finds one"
 
-Historical bug, fixed with three mechanisms — don't regress them:
-(1) the Uber tab searches **exhaustively** per refresh
-(`maxETAChecksPerRefresh = Int.max`; safe because the tab is
-distance-mode, so the cap never protected MapKit there — it only made the
-tab give up mid-queue and say "press again"); (2) a *verified* notFound
+Historical bug, fixed with these mechanisms — don't regress them:
+(1) the Uber tab scans in **resumable batches** (`maxETAChecksPerRefresh
+= 25` slow WebView checks per press — the earlier unbounded scan ran for
+minutes of network on one press): a paused scan requeues the current
+candidate and says "refresh to keep looking", and the next press resumes
+mid-queue. The invariant is honesty, not exhaustiveness: the tab must
+never *claim* "no results" while an unchecked candidate sits in the queue
+(the historic bug was a tiny cap with the cooldown skips counted against
+it, which turned pauses into false no-results); (2) a *verified* notFound
 persists in the store for a 7-day cooldown (`uberEatsNotFoundAt`; cleared
 by a later success, and `unknown`/bot-wall results are never persisted);
 (3) cooled-down places are skipped via the engine's free `quickReject`
 hook; (4) a refresh whose queue drains without a hit **wraps the rotation
 once in-place** — after the only orderable places had been shown, the
 drain used to end with "nothing new — refresh to keep looking" and demand
-a pointless extra press before the reshuffle ran. Net: the first refresh
-in a new area may run long (loading card takes over after 1 s), later
-refreshes are near-instant, and a refresh only ever ends in a suggestion,
-"nothing reachable", or a genuine walk/drive ETA-budget pause.
+a pointless extra press before the reshuffle ran. Net: the first press or
+two in a new area map it out (loading card takes over after 1 s; each
+press is bounded and resumes the queue; leaving the tab cancels the scan),
+later refreshes are near-instant, and a refresh only ever ends in a
+suggestion, "nothing reachable", or an honest "refresh to keep looking".
 
 ### "Suggestions are slow / ETAs missing"
 

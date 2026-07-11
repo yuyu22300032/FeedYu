@@ -17,6 +17,11 @@ struct TonightView: View {
     /// still-visible previous suggestion — a long exhaustive Uber check
     /// behind a stale card reads as a frozen app.
     @State private var searchIsSlow = false
+    /// The button-started search, kept so leaving the tab can cancel it —
+    /// an Uber scan otherwise keeps burning slow WebView checks for a card
+    /// nobody is looking at. (The auto-suggest path is a .task, so its
+    /// cancellation is already tied to the view's lifetime.)
+    @State private var refreshTask: Task<Void, Never>?
 
     /// The user's own saved places (not the whole Michelin dataset), drawn
     /// only from lists enabled in Settings *for this tab* (Tonight and Uber
@@ -88,6 +93,12 @@ struct TonightView: View {
                             .contextMenu {
                                 Button(role: .destructive) {
                                     store.setHidden(true, id: suggestion.restaurant.id)
+                                    // Replace the card right away: nothing
+                                    // else watches candidate membership, and
+                                    // a card the user just hid must not
+                                    // linger until the next manual refresh
+                                    // or tab return.
+                                    revalidate()
                                 } label: {
                                     Label("Hide this restaurant", systemImage: "eye.slash")
                                 }
@@ -110,7 +121,7 @@ struct TonightView: View {
             }
 
             Button {
-                Task { await refresh() }
+                refreshTask = Task { await refresh() }
             } label: {
                 Label(engine.current == nil ? "Suggest a place" : "Not feeling it — another",
                       systemImage: "arrow.clockwise")
@@ -146,6 +157,7 @@ struct TonightView: View {
             }
         }
         .onAppear { revalidate() }
+        .onDisappear { refreshTask?.cancel() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { revalidate() }
         }
@@ -187,17 +199,19 @@ struct TonightView: View {
     }
 
     private func configureEngine(origin: CLLocation) {
-        // WebView-rendered availability checks are slow (seconds each) —
-        // give up sooner than the ETA-check budget would.
-        // Uber tab: distance mode never calls MapKit, so the check budget
-        // only gated availability checks — and a capped budget made the tab
-        // claim "no results" while orderable places sat later in the queue.
-        // Search exhaustively instead: with notFound persisted for a week
-        // and skipped for free, each place costs a slow check at most once
-        // per week, and the search stops at the first orderable hit.
-        engine.maxETAChecksPerRefresh = uberEatsMode ? Int.max : 12
+        // Uber tab: distance mode never calls MapKit, so the budget gates
+        // only the slow WebView availability checks (seconds each). 25 per
+        // refresh bounds the worst case — a first scan of a dense area with
+        // nothing orderable used to run unbounded, minutes of network for
+        // one press. A paused scan is honest, not a give-up: the engine
+        // requeues where it stopped, says "refresh to keep looking", and
+        // the next press resumes mid-queue. Free skips (quickReject on the
+        // week-long notFound cooldowns) never count, so re-walks stay cheap
+        // and the tab still can't falsely claim "no results" (the historic
+        // bug was a tiny cap WITH cooldowns counted against it).
+        engine.maxETAChecksPerRefresh = uberEatsMode ? 25 : 12
         // Fresh verified "not on Uber Eats" places are skipped for free —
-        // NOT via availabilityCheck, which counts against the 6-check
+        // NOT via availabilityCheck, which counts against the 25-check
         // budget (a neighborhood of them used to exhaust it and show "no
         // results" while orderable places sat further down the queue).
         engine.quickReject = uberEatsMode ? { UberEatsChecker.isInNotFoundCooldown($0) } : nil
