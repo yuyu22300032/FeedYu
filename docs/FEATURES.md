@@ -90,7 +90,9 @@ plus a browsable nearby list.
   "another one" action. Adjusting any constraint — budget, price bands,
   awards, current/former — revalidates immediately, same as Tonight: the
   card stays if it still qualifies (filters count via candidate-set
-  membership), and is replaced if not.
+  membership), and is replaced if not; with no card up at all, a fresh
+  one is rolled right away ("try a bigger budget" must not demand an
+  extra press after the user does exactly that).
 - Below, every Michelin place inside the straight-line radius, nearest
   first, with award, price, cuisine, and distance; tap opens Google Maps,
   long-press hides. In walk/drive mode the section header says
@@ -118,7 +120,9 @@ independent Tonight and Uber Eats switches), with two differences:
    fall out naturally here. Each press runs at most 25 of these slow
    verifications; a scan that pauses mid-queue says so ("Checked many
    stores — refresh to keep looking") and the next press resumes exactly
-   where it stopped. Verified not-founds cool down for a
+   where it stopped (returning to the tab with no card up may also
+   auto-resume one bounded batch — the pane stays eager, and cooldowns
+   keep re-walks cheap). Verified not-founds cool down for a
    week, so a neighborhood is mapped out after a press or two and later
    refreshes are near-instant. A store the app already knows is
    re-verified **open right now** each time it's suggested — deliberately

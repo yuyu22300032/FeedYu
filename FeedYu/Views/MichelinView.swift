@@ -177,24 +177,28 @@ struct MichelinView: View {
         // Adjusting any constraint revalidates immediately, same as
         // Tonight: a card that still satisfies the new budget AND filters
         // stays (filters flow through candidate-set membership); one that
-        // doesn't is replaced. onChange (not .task(id:)): tab returns must
-        // not re-fire.
-        .onChange(of: settings.michelinBudget) { _, _ in revalidate() }
-        .onChange(of: settings.michelinPriceBands) { _, _ in revalidate() }
-        .onChange(of: settings.michelinAwards) { _, _ in revalidate() }
-        .onChange(of: includeFormer) { _, _ in revalidate() }
+        // doesn't is replaced — and with NO card, a fresh one is rolled
+        // (the auto-suggest task id usually changes with the filters, but
+        // not when the candidate COUNT happens to stay equal). onChange
+        // (not .task(id:)): tab returns must not re-fire.
+        .onChange(of: settings.michelinBudget) { _, _ in revalidateOrRoll() }
+        .onChange(of: settings.michelinPriceBands) { _, _ in revalidateOrRoll() }
+        .onChange(of: settings.michelinAwards) { _, _ in revalidateOrRoll() }
+        .onChange(of: includeFormer) { _, _ in revalidateOrRoll() }
         // First visit: roll a suggestion as if the button were pressed.
         // current != nil guards tab returns (the engine outlives switches).
         .task(id: autoSuggestKey) {
             // Same unwind-wait as TonightView: an id change mid-search
             // cancels the old task, and skipping while it unwound left a
-            // blank pane. Only auto-roll when the engine ended with
-            // nothing at all (a paused scan's message waits for a press).
+            // blank pane. Roll whenever there is no card — gating on a
+            // clear statusMessage suppressed recovery rolls after a stale
+            // "nothing reachable" once new candidates arrived (Tonight
+            // shipped that exact regression).
             while engine.isSearching {
                 try? await Task.sleep(nanoseconds: 100_000_000)
                 if Task.isCancelled { return }
             }
-            if engine.current == nil, engine.statusMessage == nil,
+            if engine.current == nil,
                locationProvider.location != nil, !suggestionCandidates.isEmpty {
                 await suggest()
             }
@@ -311,6 +315,18 @@ struct MichelinView: View {
         await engine.refreshSuggestion(candidates: suggestionCandidates,
                                        origin: origin,
                                        budget: settings.michelinBudget.travelBudget)
+    }
+
+    /// Constraint changed: revalidate the current card, or — when there is
+    /// no card to revalidate — roll a fresh one right away.
+    private func revalidateOrRoll() {
+        if engine.current == nil {
+            guard !engine.isSearching, locationProvider.location != nil,
+                  !suggestionCandidates.isEmpty else { return }
+            Task { await suggest() }
+        } else {
+            revalidate()
+        }
     }
 
     /// Tab appearance / foreground return: the current card's drive time

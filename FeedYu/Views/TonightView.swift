@@ -145,14 +145,21 @@ struct TonightView: View {
             // sync lands mid-scan and bumps candidates.count) — SwiftUI
             // cancels the old task, which unwinds without producing a
             // card. Skipping on isSearching left a blank, message-less
-            // pane; wait out the unwind instead, then only search when the
-            // engine ended with NOTHING (no card AND no status — a paused
-            // batch sets a message and must wait for a real press).
+            // pane; wait out the unwind instead.
             while engine.isSearching {
                 try? await Task.sleep(nanoseconds: 100_000_000)
                 if Task.isCancelled { return }
             }
-            if engine.current == nil, engine.statusMessage == nil,
+            // Roll whenever there is no card. Deliberately NOT gated on a
+            // clear statusMessage: on a cold launch the location fix can
+            // beat the store load, and the first roll's "no restaurants"
+            // message then suppressed every auto-roll after the real
+            // candidates arrived — the app opened to a dead pane. The
+            // store.isLoaded guard skips that pointless empty first roll
+            // (the load's version bump re-fires this task). Cost of the
+            // eager rule on the Uber tab: a paused batch may auto-continue
+            // once per tab return — bounded (25) and cooldown-amortized.
+            if engine.current == nil, store.isLoaded,
                locationProvider.location != nil {
                 await refresh()
             }
@@ -161,8 +168,12 @@ struct TonightView: View {
         // A task would also re-fire on every tab return. Revalidate, don't
         // blind-roll: a card that still fits the new budget stays (its
         // traffic minutes refresh); only a fallen-out card is replaced.
+        // With NO card, roll instead — "try a bigger budget" must not
+        // demand a button press after the user does exactly that
+        // (candidates aren't budget-filtered here, so the auto-suggest
+        // task id never changes with the budget).
         .onChange(of: effectiveBudget) { _, _ in
-            revalidate()
+            revalidateOrRoll()
         }
         .onChange(of: engine.isSearching) { _, searching in
             if searching {
@@ -198,6 +209,19 @@ struct TonightView: View {
     /// — stores open while you browse Michelin and decide not to go out.
     /// Cheap when caches are fresh; the card survives whenever it still
     /// fits, so suggestions stay stable across casual tab switches.
+    /// Constraint changed: revalidate the current card, or — when there is
+    /// no card to revalidate — roll a fresh one right away.
+    private func revalidateOrRoll() {
+        if engine.current == nil {
+            guard !engine.isSearching, store.isLoaded,
+                  locationProvider.location != nil else { return }
+            refreshTask?.cancel()
+            refreshTask = Task { await refresh() }
+        } else {
+            revalidate()
+        }
+    }
+
     private func revalidate() {
         guard engine.current != nil, !engine.isSearching,
               let origin = locationProvider.location else { return }
