@@ -235,9 +235,13 @@ struct TonightView: View {
         // Tracked like the button's search: a revalidation escalates into
         // a full scan when the card fell out of budget/candidates (up to
         // 25 slow WebView checks on the Uber tab), and leaving the tab
-        // must be able to cancel that too. No cancel of the previous slot
-        // here — the isSearching guard above means nothing engine-side is
-        // running when this fires.
+        // must be able to cancel that too. Cancel the previous slot first:
+        // the isSearching guard above does NOT prove it is idle — a
+        // revalidation runs its ETA/open-check awaits without setting
+        // isSearching, so overlapping triggers (tab appear + foreground
+        // return) would otherwise strand a live task in an untracked slot
+        // that onDisappear can no longer reach.
+        refreshTask?.cancel()
         refreshTask = Task {
             await engine.revalidateCurrent(candidates: candidates, origin: origin,
                                            budget: effectiveBudget)

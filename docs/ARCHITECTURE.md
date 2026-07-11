@@ -467,7 +467,10 @@ tests pass with an updated *synthetic* fixture.
     100k+ distance computations per render, on the main thread, on every
     `@Published` change. Pattern: cache in a reference-type box in
     `@State`, keyed on `store.version` + the other inputs
-    (MichelinView.InRangeCache, TonightView.CandidatesCache).
+    (MichelinView.InRangeCache, TonightView.CandidatesCache,
+    SettingsView.StoreTalliesCache, ManageRestaurantsView.PlacesCache —
+    the last one was missed until a 2026-07 review; any NEW view that
+    scans the store gets a box too).
 13. **`try? await Task.sleep` swallows cancellation inside loops.** The
     localizer's fill loop kept iterating after its `.task(id:)` was
     cancelled: each URLSession call failed instantly with

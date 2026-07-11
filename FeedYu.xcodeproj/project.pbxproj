@@ -35,6 +35,7 @@
 		6E7DFE363409F8A538532F7E /* michelin.csv in Resources */ = {isa = PBXBuildFile; fileRef = D488BB5547F8CF49571AEF1E /* michelin.csv */; };
 		6FB539D7051158D54A26BE32 /* FeedYuShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 9013BBD3A3C8E4EEF4F509CA /* FeedYuShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		710C08AB5272DF2C5891B6D4 /* PlaceInfoFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70FE8D89BA1EDBC49B840F51 /* PlaceInfoFetcher.swift */; };
+		7873605695097E6A1F85FDDF /* PlaceInfoFetcherPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD4253D4B599FBEFCC5E570 /* PlaceInfoFetcherPolicyTests.swift */; };
 		797218FF1579686DF1DD8261 /* sharedlist.html in Resources */ = {isa = PBXBuildFile; fileRef = 09A301BC00F62F51D7D38F27 /* sharedlist.html */; };
 		7A2B1D9268AED7E2FBB99AD9 /* DemoChoreographyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BCE6435F0D4131416635FD9 /* DemoChoreographyTests.swift */; };
 		8101CD8AC130040B8E116BAD /* listpage-snippet.html in Resources */ = {isa = PBXBuildFile; fileRef = 9E460EA21E57BF64877848CF /* listpage-snippet.html */; };
@@ -125,6 +126,7 @@
 		34B6065279F321F9CFCCEE66 /* StoreMergeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreMergeTests.swift; sourceTree = "<group>"; };
 		373DC8B167718D9BA1CB186E /* GetlistParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetlistParserTests.swift; sourceTree = "<group>"; };
 		3AB19E04C4D27D4B71BE11A0 /* FeedYuTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = FeedYuTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3CD4253D4B599FBEFCC5E570 /* PlaceInfoFetcherPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceInfoFetcherPolicyTests.swift; sourceTree = "<group>"; };
 		3D1968F4E0F1FE9E28854C7B /* WebPageFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebPageFetcher.swift; sourceTree = "<group>"; };
 		41E4DE5A3946C287DFD3B86E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		47C659FC58BBF88A8F91F526 /* ManageRestaurantsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManageRestaurantsView.swift; sourceTree = "<group>"; };
@@ -276,6 +278,7 @@
 				BEADCD6821ABAE88A82A8F78 /* LocalizationCatalogTests.swift */,
 				AACDF96AEA6F672396F0978F /* MichelinDataSourceTests.swift */,
 				E34DEB9870F10C198917A9EF /* MichelinNameLocalizerTests.swift */,
+				3CD4253D4B599FBEFCC5E570 /* PlaceInfoFetcherPolicyTests.swift */,
 				FC06CBC112A0920428803DD6 /* PlaceInfoParserTests.swift */,
 				84D124C6E14619ED159E5C0B /* RestaurantStorePersistenceTests.swift */,
 				EC4FB93CA23818F3EFA90FA9 /* SpatialGridTests.swift */,
@@ -529,6 +532,7 @@
 				1911ADA4173F458ECF9C857C /* LocalizationCatalogTests.swift in Sources */,
 				9381B7AA377E5C4F3FBC58B5 /* MichelinDataSourceTests.swift in Sources */,
 				FC5CD2E5B6FDF50421E2CDE0 /* MichelinNameLocalizerTests.swift in Sources */,
+				7873605695097E6A1F85FDDF /* PlaceInfoFetcherPolicyTests.swift in Sources */,
 				485758D4AF1D01709B6F1BDA /* PlaceInfoParserTests.swift in Sources */,
 				FDBBA8816ABFB1E7EB1B0C0E /* RestaurantStorePersistenceTests.swift in Sources */,
 				2A4F51A6244E0A599D08815F /* SpatialGridTests.swift in Sources */,

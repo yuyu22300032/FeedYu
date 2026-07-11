@@ -9,18 +9,42 @@ struct ManageRestaurantsView: View {
 
     /// Only the user's own places — the 7.5k-row Michelin dataset would drown
     /// the list (hide Michelin places from their own tab instead).
-    private var userPlaces: [Restaurant] {
-        store.restaurants
-            .filter { !$0.lists.isEmpty || $0.addedManually }
-            .filter { searchText.isEmpty || $0.name.localizedCaseInsensitiveContains(searchText) }
-            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    /// Memoized (gotcha #12): one body evaluation reads these lists several
+    /// times (headers, ForEach, isEmpty), and each uncached compute filtered
+    /// and locale-sorted the whole ~20k-row store on the main thread — per
+    /// render, per search keystroke. One pass fills both, keyed on
+    /// store.version + the search text; the box is a plain reference in
+    /// @State so it survives re-renders without triggering any.
+    private final class PlacesCache {
+        var key: String?
+        var visible: [Restaurant] = []
+        var hidden: [Restaurant] = []
     }
+    @State private var placesCache = PlacesCache()
 
-    private var hiddenPlaces: [Restaurant] {
-        store.restaurants
-            .filter(\.isHidden)
-            .filter { searchText.isEmpty || $0.name.localizedCaseInsensitiveContains(searchText) }
-            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    private var places: PlacesCache {
+        let key = "\(store.version)|\(searchText)"
+        if placesCache.key == key { return placesCache }
+        var visible: [Restaurant] = []
+        var hidden: [Restaurant] = [] // ALL hidden places, guide rows too — unhide lives here
+        for restaurant in store.restaurants {
+            guard searchText.isEmpty
+                    || restaurant.name.localizedCaseInsensitiveContains(searchText) else { continue }
+            if restaurant.isHidden {
+                hidden.append(restaurant)
+            } else if !restaurant.lists.isEmpty || restaurant.addedManually {
+                visible.append(restaurant)
+            }
+        }
+        let byName: (Restaurant, Restaurant) -> Bool = {
+            $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+        }
+        visible.sort(by: byName)
+        hidden.sort(by: byName)
+        placesCache.visible = visible
+        placesCache.hidden = hidden
+        placesCache.key = key
+        return placesCache
     }
 
     var body: some View {
@@ -43,8 +67,12 @@ struct ManageRestaurantsView: View {
 
     @ViewBuilder
     private var sections: some View {
-        Section("Your places (\(userPlaces.count))") {
-            ForEach(userPlaces.filter { !$0.isHidden }) { restaurant in
+        // The header counts exactly the rows below it — hidden places used
+        // to be counted here while the rows filtered them out, so the
+        // number visibly disagreed with the list whenever anything was
+        // hidden (they show under "Hidden" instead).
+        Section("Your places (\(places.visible.count))") {
+            ForEach(places.visible) { restaurant in
                 row(restaurant)
                     .swipeActions(edge: .trailing) {
                         Button(role: .destructive) {
@@ -60,9 +88,9 @@ struct ManageRestaurantsView: View {
                     }
             }
         }
-        if !hiddenPlaces.isEmpty {
-            Section("Hidden (\(hiddenPlaces.count))") {
-                ForEach(hiddenPlaces) { restaurant in
+        if !places.hidden.isEmpty {
+            Section("Hidden (\(places.hidden.count))") {
+                ForEach(places.hidden) { restaurant in
                     row(restaurant)
                         .swipeActions(edge: .trailing) {
                             Button {

@@ -21,6 +21,16 @@ final class MichelinNameLocalizer: ObservableObject {
     private var activeTask: Task<Void, Never>?
     private let maxFetchesPerRun = 40
 
+    /// Transport for the guide-page name fetch — injectable for tests, the
+    /// same seam as SuggestionEngine.etaProvider and UberEatsChecker.runJS:
+    /// the fill loop's cancellation and negative-cache rules (gotcha #13
+    /// shipped from exactly this loop) are pinned by unit tests that stub
+    /// this. Production fetches the real locale-edition page.
+    static var fetchName: (URL) async -> String? = { await livePageName(from: $0) }
+
+    /// Throttle between guide-page fetches; tests set 0 to keep the suite fast.
+    static var interFetchDelayNanoseconds: UInt64 = 400_000_000
+
     /// Fill missing localized names for the given (already prioritized)
     /// restaurants. Call freely: a newer call cancels the run in progress
     /// and takes over once it winds down — the caller is `.task(id:)`, so
@@ -60,12 +70,12 @@ final class MichelinNameLocalizer: ObservableObject {
             guard !failedKeys.contains(cacheKey) else { continue }
 
             fetched += 1
-            if let name = await Self.fetchName(from: editionURL) {
+            if let name = await Self.fetchName(editionURL) {
                 store.setLocalizedName(id: restaurant.id, editionKey: editionKey, name: name)
             } else if !Task.isCancelled {
                 failedKeys.insert(cacheKey)
             }
-            try? await Task.sleep(nanoseconds: 400_000_000)
+            try? await Task.sleep(nanoseconds: Self.interFetchDelayNanoseconds)
         }
     }
 
@@ -78,7 +88,9 @@ final class MichelinNameLocalizer: ObservableObject {
         return URL(string: rewritten)
     }
 
-    static func fetchName(from url: URL) async -> String? {
+    /// The real transport behind `fetchName`: guide.michelin.com with the
+    /// mobile Safari UA (the bot filter serves 202 challenges to anything else).
+    static func livePageName(from url: URL) async -> String? {
         var request = URLRequest(url: url)
         request.timeoutInterval = 15
         request.setValue(mobileUserAgent, forHTTPHeaderField: "User-Agent")
