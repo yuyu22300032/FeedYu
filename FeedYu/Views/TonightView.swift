@@ -22,6 +22,9 @@ struct TonightView: View {
     /// nobody is looking at. (The auto-suggest path is a .task, so its
     /// cancellation is already tied to the view's lifetime.)
     @State private var refreshTask: Task<Void, Never>?
+    /// Pending debounced budget revalidation (see the onChange below) —
+    /// cancelled by the next change in the burst and on tab leave.
+    @State private var budgetDebounceTask: Task<Void, Never>?
 
     /// The user's own saved places (not the whole Michelin dataset), drawn
     /// only from lists enabled in Settings *for this tab* (Tonight and Uber
@@ -178,8 +181,20 @@ struct TonightView: View {
         // demand a button press after the user does exactly that
         // (candidates aren't budget-filtered here, so the auto-suggest
         // task id never changes with the budget).
+        // Debounced: a slider drag snaps through several presets, and on
+        // the Uber tab each uncoalesced revalidation re-ran the LIVE open
+        // check on the current card. The check stays deliberately uncached
+        // per shown card — only the burst coalesces, into one revalidation
+        // of the settled value. Not a gate: it always fires, once per burst.
         .onChange(of: effectiveBudget) { _, _ in
-            revalidateOrRoll()
+            budgetDebounceTask?.cancel()
+            budgetDebounceTask = Task {
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                // try? swallows the cancellation error (gotcha #13) —
+                // check before acting for a superseded burst / left tab.
+                guard !Task.isCancelled else { return }
+                revalidateOrRoll()
+            }
         }
         .onChange(of: engine.isSearching) { _, searching in
             if searching {
@@ -192,7 +207,12 @@ struct TonightView: View {
             }
         }
         .onAppear { revalidate() }
-        .onDisappear { refreshTask?.cancel() }
+        .onDisappear {
+            refreshTask?.cancel()
+            // A pending debounced revalidation must not fire on a hidden
+            // tab — the next onAppear / auto-suggest covers the change.
+            budgetDebounceTask?.cancel()
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { revalidate() }
         }

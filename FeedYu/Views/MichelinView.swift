@@ -20,6 +20,11 @@ struct MichelinView: View {
     /// over from a stale suggestion so a long search doesn't read as a
     /// frozen app.
     @State private var searchIsSlow = false
+    /// Button/revalidation tasks, tracked so leaving the tab can cancel
+    /// them (TonightView.refreshTask, same reasons scaled down — here an
+    /// untracked scan keeps spending MapKit ETA checks, ≤12, on a card
+    /// nobody is looking at).
+    @State private var refreshTask: Task<Void, Never>?
 
     /// Memoized: a body evaluation reads this many times (directly, via
     /// suggestionCandidates, the task keys, the section header), and each
@@ -93,7 +98,11 @@ struct MichelinView: View {
                 priceFilter
                 awardFilter
                 Button {
-                    Task { await suggest() }
+                    // Guard + cancel keep refreshTask pointing at the task
+                    // actually running (see TonightView's button).
+                    guard !engine.isSearching else { return }
+                    refreshTask?.cancel()
+                    refreshTask = Task { await suggest() }
                 } label: {
                     Label("Suggest a restaurant", systemImage: "sparkles")
                         .font(.headline)
@@ -176,6 +185,7 @@ struct MichelinView: View {
             }
         }
         .onAppear { revalidate() }
+        .onDisappear { refreshTask?.cancel() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { revalidate() }
         }
@@ -337,7 +347,8 @@ struct MichelinView: View {
         if engine.current == nil {
             guard !engine.isSearching, locationProvider.location != nil,
                   !suggestionCandidates.isEmpty else { return }
-            Task { await suggest() }
+            refreshTask?.cancel()
+            refreshTask = Task { await suggest() }
         } else {
             revalidate()
         }
@@ -349,7 +360,11 @@ struct MichelinView: View {
     private func revalidate() {
         guard engine.current != nil, !engine.isSearching,
               let origin = locationProvider.location else { return }
-        Task {
+        // Cancel-before-reassign, same invariant as TonightView: a
+        // revalidation runs its ETA awaits without setting isSearching,
+        // so the slot may still be live.
+        refreshTask?.cancel()
+        refreshTask = Task {
             await engine.revalidateCurrent(candidates: suggestionCandidates,
                                            origin: origin,
                                            budget: settings.michelinBudget.travelBudget)
