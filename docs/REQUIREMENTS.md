@@ -41,7 +41,8 @@ xcodebuild test -project FeedYu.xcodeproj -scheme FeedYuDemo \
 | Contract | Enforced by |
 |---|---|
 | **The Order button is a promise.** A known store's OPEN state is re-verified live on every shown suggestion — never served from a cache (product decision; a 10-minute-old "open" can be closed by now). | `testOpenVerdictIsNeverCachedForKnownStores` |
-| A closed store is skipped, and the closed verdict is cached only until Uber's own reopen time (it can't go stale in the wrong direction). | `testClosedVerdictIsCachedUntilReopenTime`, `testCachedVerdictFreshness`, `testParsesNextOpenTime` |
+| A closed store is skipped, and the closed verdict is cached until Uber's own reopen time (it can't go stale in the wrong direction). | `testClosedVerdictIsCachedUntilReopenTime`, `testCachedVerdictFreshness`, `testParsesNextOpenTime` |
+| **The closed suppression persists across launches** (`uberEatsClosedUntil`; 10-min fallback when Uber gave no reopen time) and is skipped for FREE via quickReject — an afternoon of closed restaurants must not cost one live check each per launch. The stamp only ever SUPPRESSES: once past, the live open check decides again, so it can never surface a closed store. Cleared by a verified open. | `testPersistedClosedSuppressionSkipsTheLiveCheck`, `testExpiredSuppressionGoesBackToLiveChecking`, `testClosedUntilPersistsWithFallbackAndClearsOnOpen` |
 | The open check survives a cold-start transport failure with exactly one retry (the app's first WebView call is this check when the Uber tab auto-rolls at launch). | `testColdStartRetryRecoversTheOpenCheck` |
 | After the retry the check fails OPEN — a bot wall must not hide the user's verified neighborhood — and the fail is logged for device consoles. | `testFailsOpenOnlyAfterRetryAlsoFails` |
 | Verdicts are per-restaurant-id; same-named chain branches never share a verdict or a store URL. | structural (cache keyed by `UUID`); flow tests above run per-id |

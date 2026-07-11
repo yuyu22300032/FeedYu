@@ -323,6 +323,26 @@ final class RestaurantStore: ObservableObject {
         scheduleSave()
     }
 
+    /// Verified "closed right now" — the Uber tab skips this place for FREE
+    /// until Uber's own reopen moment (10-minute fallback when Uber gave
+    /// none), across launches. The stamp only ever suppresses: once it
+    /// passes, the live open check at suggestion time decides again, so it
+    /// can never surface a closed store. Cleared by a verified open.
+    func setUberEatsClosedUntil(id: UUID, reopens: Date?) {
+        guard let index = indexByID[id] else { return }
+        let until = reopens ?? Date().addingTimeInterval(10 * 60)
+        guard restaurants[index].uberEatsClosedUntil != until else { return }
+        restaurants[index].uberEatsClosedUntil = until
+        scheduleSave()
+    }
+
+    func clearUberEatsClosedUntil(id: UUID) {
+        guard let index = indexByID[id],
+              restaurants[index].uberEatsClosedUntil != nil else { return }
+        restaurants[index].uberEatsClosedUntil = nil
+        scheduleSave()
+    }
+
     func setLocalizedName(id: UUID, editionKey: String, name: String) {
         guard let index = indexByID[id] else { return }
         var names = restaurants[index].localizedNames ?? [:]

@@ -206,8 +206,11 @@ a FUTURE value = closed now (accepts scheduled orders only — Uber's
 "closed right now" page); open stores report their most recent opening
 time (past). **`isOpen` and `isOrderable` are NOT open-now flags** — both
 were `true` for verifiably closed stores (checked live 2026-07-10).
-Closed results cache per session and self-expire at the reopen time; the
-store URL still persists (existence is durable, closedness isn't). The
+Closed results persist as `uberEatsClosedUntil` (self-expiring at Uber's
+reopen time, 10-min fallback when none) so relaunches skip known-closed
+stores for free — suppress-only: past the stamp, the live check decides
+again, so a stale stamp can only ever delay a store, never surface a
+closed one. The store URL persists separately (existence is durable). The
 OPEN state of a known store is deliberately never cached — each shown
 suggestion re-verifies live, so the order button can't land on a store
 that closed minutes after an earlier check. Don't "optimize" that call

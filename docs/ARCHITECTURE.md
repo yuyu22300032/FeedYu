@@ -266,7 +266,12 @@ Michelin fields, never clear anything, never touch `isHidden`.
   user taps "order", so open-now is re-verified LIVE per shown suggestion
   (one getStoreV1 JSON call); a 10-minute-old "open" can be a closed store
   by now. Only `closedNow` short-circuits — it self-expires at Uber's own
-  reopen time, so it can't go stale in the wrong direction. The check
+  reopen time, so it can't go stale in the wrong direction — and the
+  reopen stamp PERSISTS (`uberEatsClosedUntil`, 10-min fallback when Uber
+  gave no time): relaunches skip known-closed stores for free via
+  quickReject until the stamp passes, then the live check decides again
+  (suppress-only — an afternoon of closed restaurants used to cost one
+  live check each, on every launch). The check
   retries once on transport failure (the Uber tab auto-rolls at launch,
   making this the app's FIRST WebView call — cold calls throw; single-shot
   it failed open and the initial card could be a closed store), then fails

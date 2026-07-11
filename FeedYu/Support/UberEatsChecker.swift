@@ -52,6 +52,16 @@ final class UberEatsChecker: ObservableObject {
         return now.timeIntervalSince(checkedAt) < notFoundCooldownSeconds
     }
 
+    /// True while a persisted verified "closed until Uber's reopen time"
+    /// is still in the future — skip the WebView check AND the suggestion
+    /// for free (an afternoon of closed restaurants used to cost one live
+    /// check each, on every launch). The stamp only ever SUPPRESSES: once
+    /// it passes, the live open check decides again, so it can never put
+    /// a closed store on the card.
+    nonisolated static func isClosedSuppressed(_ restaurant: Restaurant, now: Date = Date()) -> Bool {
+        restaurant.uberEatsClosedUntil.map { now < $0 } ?? false
+    }
+
     /// Session cache keyed by restaurant id — NOT by name: two same-named
     /// branches of a chain would share a verdict, and the first branch's
     /// verified store URL would get persisted onto the other (the engine's
@@ -86,6 +96,11 @@ final class UberEatsChecker: ObservableObject {
             // orderable page. Only a still-fresh closedNow short-circuits
             // — it self-expires at Uber's own reopen time, so it can't go
             // stale in the wrong direction.
+            // Persisted suppression first (survives relaunches; the
+            // in-memory closedNow below is its session-local twin).
+            if Self.isClosedSuppressed(restaurant) {
+                return .closedNow(url, reopens: restaurant.uberEatsClosedUntil)
+            }
             if let cached = cache[key], case .closedNow = cached.result {
                 if Self.isFresh(cached.result, checkedAt: cached.at) { return cached.result }
                 cache[key] = nil

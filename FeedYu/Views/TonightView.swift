@@ -264,23 +264,34 @@ struct TonightView: View {
         // and the tab still can't falsely claim "no results" (the historic
         // bug was a tiny cap WITH cooldowns counted against it).
         engine.maxETAChecksPerRefresh = uberEatsMode ? 25 : 12
-        // Fresh verified "not on Uber Eats" places are skipped for free —
-        // NOT via availabilityCheck, which counts against the 25-check
-        // budget (a neighborhood of them used to exhaust it and show "no
-        // results" while orderable places sat further down the queue).
-        engine.quickReject = uberEatsMode ? { UberEatsChecker.isInNotFoundCooldown($0) } : nil
+        // Fresh verified "not on Uber Eats" places and stores known to be
+        // closed until a specific time are skipped for free — NOT via
+        // availabilityCheck, which counts against the 25-check budget (a
+        // neighborhood of them used to exhaust it and show "no results"
+        // while orderable places sat further down the queue; an afternoon
+        // of closed stores used to cost one live check each per launch).
+        engine.quickReject = uberEatsMode ? {
+            UberEatsChecker.isInNotFoundCooldown($0) || UberEatsChecker.isClosedSuppressed($0)
+        } : nil
         engine.availabilityCheck = uberEatsMode ? { [weak store] restaurant in
             let result = await UberEatsChecker.shared.availability(for: restaurant, near: origin)
             switch result {
             case .available(let storeURL):
                 if let storeURL { store?.setUberEatsURL(id: restaurant.id, url: storeURL) }
+                // A verified open ends any suppression early-ish (the stamp
+                // would expire on its own; this just keeps rows tidy).
+                store?.clearUberEatsClosedUntil(id: restaurant.id)
                 return true
-            case .closedNow(let storeURL, _):
+            case .closedNow(let storeURL, let reopens):
                 // Exists but not accepting orders right now — keep the URL
                 // (existence is durable), skip the suggestion (tapping
                 // through to Uber's "closed" page is the exact annoyance
-                // this avoids). No notFound cooldown: it reopens today.
+                // this avoids), and persist the reopen moment so future
+                // launches skip it for FREE until then (10-min fallback
+                // when Uber gave no time). Suppress-only: past the stamp
+                // the live open check decides again.
                 if let storeURL { store?.setUberEatsURL(id: restaurant.id, url: storeURL) }
+                store?.setUberEatsClosedUntil(id: restaurant.id, reopens: reopens)
                 return false
             case .notFound:
                 // Verified absence: persist so the next week of sessions

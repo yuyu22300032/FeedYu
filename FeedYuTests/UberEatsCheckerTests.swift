@@ -255,3 +255,40 @@ final class UberEatsAvailabilityFlowTests: XCTestCase {
         }
     }
 }
+
+extension UberEatsAvailabilityFlowTests {
+    func testPersistedClosedSuppressionSkipsTheLiveCheck() async {
+        // A store verified closed persists its reopen stamp; a FRESH
+        // checker (new launch, empty session cache) must skip the WebView
+        // check entirely while the stamp is in the future.
+        var calls = 0
+        UberEatsChecker.runJS = { _, _, _ in calls += 1; return nil }
+        var store = knownStore()
+        store.uberEatsClosedUntil = Date().addingTimeInterval(2 * 3600)
+        let result = await checker.availability(for: store, near: nil)
+        XCTAssertEqual(calls, 0, "suppressed stores cost zero network")
+        guard case .closedNow(_, let reopens) = result else {
+            return XCTFail("still closed, got \(result)")
+        }
+        XCTAssertEqual(reopens, store.uberEatsClosedUntil)
+    }
+
+    func testExpiredSuppressionGoesBackToLiveChecking() async {
+        // THE suppress-only guarantee: once the stamp passes, the live
+        // open check decides again — the stamp can never ADMIT a store,
+        // so an order button can never land on a known-closed page.
+        var calls = 0
+        let openedAt = Date().addingTimeInterval(-3600) // past = open now
+        UberEatsChecker.runJS = { _, _, _ in
+            calls += 1
+            return Self.storeJSON(nextOpenTime: openedAt)
+        }
+        var store = knownStore()
+        store.uberEatsClosedUntil = Date().addingTimeInterval(-60) // expired
+        let result = await checker.availability(for: store, near: nil)
+        XCTAssertEqual(calls, 1, "expired stamp → the live check ran")
+        guard case .available = result else {
+            return XCTFail("open store shows again, got \(result)")
+        }
+    }
+}
