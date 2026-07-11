@@ -219,8 +219,8 @@ Historical bug, fixed with these mechanisms — don't regress them:
 (1) the Uber tab scans in **resumable batches** (`maxETAChecksPerRefresh
 = 25` slow WebView checks per press — the earlier unbounded scan ran for
 minutes of network on one press): a paused scan requeues the current
-candidate and says "Checked N stores — refresh to keep looking", and the
-next press resumes mid-queue. The invariant is honesty, not exhaustiveness: the tab must
+candidate and says "Checked many stores — refresh to keep looking", and
+the next press resumes mid-queue. The invariant is honesty, not exhaustiveness: the tab must
 never *claim* "no results" while an unchecked candidate sits in the queue
 (the historic bug was a tiny cap with the cooldown skips counted against
 it, which turned pauses into false no-results); (2) a *verified* notFound

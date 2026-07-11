@@ -116,9 +116,9 @@ independent Tonight and Uber Eats switches), with two differences:
    [Uber Eats integration](#uber-eats)). Not on the platform → the engine
    silently rolls another. Non-restaurants saved in your lists (shops etc.)
    fall out naturally here. Each press runs at most 25 of these slow
-   verifications; a scan that pauses mid-queue says how far it got
-   ("Checked 25 stores — refresh to keep looking") and the next press
-   resumes exactly where it stopped. Verified not-founds cool down for a
+   verifications; a scan that pauses mid-queue says so ("Checked many
+   stores — refresh to keep looking") and the next press resumes exactly
+   where it stopped. Verified not-founds cool down for a
    week, so a neighborhood is mapped out after a press or two and later
    refreshes are near-instant. A store the app already knows is
    re-verified **open right now** each time it's suggested — deliberately

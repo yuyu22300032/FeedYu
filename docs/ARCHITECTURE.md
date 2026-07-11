@@ -220,10 +220,11 @@ Michelin fields, never clear anything, never touch `isHidden`.
   a ~500 m grid. Max 12 ETA checks per refresh on walk/drive; the Uber tab
   caps at 25 slow WebView availability checks per refresh (an unbounded
   first scan of a dense area ran for minutes on one press). A paused scan
-  requeues where it stopped and says "Checked N stores — refresh to keep
-  looking" — the next press resumes mid-queue, and `quickReject` +
-  persisted notFound cooldowns keep re-walks free, so the tab still never
-  falsely claims "no results".
+  requeues where it stopped and says "Checked many stores — refresh to
+  keep looking" (deliberately count-less: quickReject skips don't count,
+  so a number would undercount the pass) — the next press resumes
+  mid-queue, and `quickReject` + persisted notFound cooldowns keep
+  re-walks free, so the tab still never falsely claims "no results".
   A cancelled refresh (leaving the tab cancels the search task; the
   auto-suggest .task cancels with the view) stops at the next candidate,
   keeping queue position. A drained queue wraps the rotation once in-place
