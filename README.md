@@ -6,8 +6,10 @@ page: straight-line distance (200 m–50 km, no route lookups), walking time,
 or driving time in current traffic. A Michelin tab (all tiers) does the same
 with price/award filters. An Uber Eats tab suggests from the same lists
 (distance-only constraint), verifies each pick is actually orderable on
-Uber Eats near you (matched by location within 100 m + fuzzy name), and its
-order button deep-links straight into the verified store, ready to order.
+Uber Eats near you (matched by location within 100 m + fuzzy name, and
+checked open right now — closed or merchant-paused stores are skipped),
+and its order button deep-links straight into the verified store, ready
+to order.
 Suggestion cards show a cover photo and description
 (scraped lazily from the place's Michelin or Google Maps page); tapping the
 photo opens Google Maps to confirm hours and live traffic. Manage up to 20
@@ -21,7 +23,9 @@ Full spec and decisions: [PLAN.md](PLAN.md) (original, historical).
 the suggestion pipeline, lazy loading & caching, and the Google Maps / Apple
 Maps / Michelin / Uber Eats integrations),
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (structure, data flow, design
-rules, known gotchas), [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
+rules, known gotchas), [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md)
+(behavior contracts mapped to their enforcing tests),
+[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
 (build/test/deploy workflows, data pipeline, fixture policy, enhancement
 backlog), and [docs/MAINTENANCE.md](docs/MAINTENANCE.md) (debugging
 playbooks and the external-dependency risk register — start there when
@@ -30,9 +34,8 @@ something broke). `CLAUDE.md` (= `AGENTS.md`) orients AI coding sessions;
 
 ## Getting it running (one-time setup)
 
-1. **Install Xcode** (not currently on this Mac — only Command Line Tools):
-   App Store → Xcode, then run once and accept the license.
-   If `xcodebuild -version` still complains:
+1. **Install Xcode** (App Store), run it once and accept the license.
+   If `xcodebuild -version` complains afterwards:
    `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`
 2. Open `FeedYu.xcodeproj`, select the **FeedYu** target → Signing &
    Capabilities → choose your personal team (free Apple ID works; app re-signs
@@ -41,8 +44,10 @@ something broke). `CLAUDE.md` (= `AGENTS.md`) orients AI coding sessions;
    First run: on the phone, Settings → General → VPN & Device Management →
    trust your developer certificate.
 
-Run the unit tests with **⌘U** (parser/merge/engine tests, including the
-shared-list scraper against a saved HTML fixture).
+Run the unit tests with **⌘U** (130+ parser/merge/engine/checker tests,
+including the shared-list scraper against a saved HTML fixture). The
+view-wiring contract tests run in their own scheme — see
+[docs/REQUIREMENTS.md](docs/REQUIREMENTS.md).
 
 ## Day-to-day data setup (in the app's Settings tab)
 
@@ -120,8 +125,10 @@ Privacy notes for contributors:
 
 ## Known limitations (by design — see PLAN.md)
 
-- Open hours aren't checked in-app (no Google API key); tapping the card's
-  cover photo opens Google Maps to confirm hours and traffic.
+- Open hours aren't checked in-app for the Tonight/Michelin tabs (no
+  Google API key); tapping the card's cover photo opens Google Maps to
+  confirm hours and traffic. (The Uber Eats tab DOES verify open-now via
+  Uber's own data before suggesting.)
 - Cover photos and descriptions are scraped best-effort from the place's
   Michelin/Google page metadata — some places show a placeholder image and
   no text, and Google's description line is thin (rating · price · category).

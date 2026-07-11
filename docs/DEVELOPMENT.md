@@ -20,13 +20,22 @@ enhancement backlog. Architecture and design rationale live in
 ```sh
 export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
 
-# Full test suite (also builds the app target)
+# Full unit suite (also builds the app target)
 xcodebuild test -project FeedYu.xcodeproj -scheme FeedYu \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+
+# View-wiring contract tests (slower — four app launches; run when views
+# changed; contracts in docs/REQUIREMENTS.md)
+xcodebuild test -project FeedYu.xcodeproj -scheme FeedYuDemo \
+  -only-testing:FeedYuUITests/SuggestionContractUITests \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 ```
 
-Or ⌘U in Xcode. Tests are pure-logic (parsers, merge, engine queue) — no
-network, no location; the engine tests inject a fake `etaProvider`.
+Or ⌘U in Xcode. Unit tests are pure-logic (parsers, merge, engine queue,
+checker verdicts) — no network, no location; the engine tests inject a
+fake `etaProvider` and the checker tests a fake `runJS` transport. The UI
+contract tests seed a synthetic store + fixed location via the DEBUG
+`-uiTestSeed` hook (`UITestSeed.swift`) — no network either.
 
 ### Simulator smoke test with location + seeded data
 
@@ -245,7 +254,9 @@ screenshots out of git — they show personal lists.
    transport reachable from the UI-test process).
 2. Cross-script dedupe: 鮨さいとう (from Google) vs Sushi Saito (Michelin)
    don't merge — see ARCHITECTURE.md "Store" for constraints and ideas.
-2. Open-hours checking (needs Places API or scraping; deliberately punted).
+2. Open-hours checking for the Tonight/Michelin tabs (needs Places API or
+   scraping; deliberately punted — the Uber tab checks open-now via
+   Uber's own getStoreV1 data).
 3. Zip import for Takeout (needs a minizip dependency or iOS gaining an API).
 4. Starred places only update via manual Takeout re-import.
 5. Michelin name prefetch could batch smarter (currently ≤40/visit).

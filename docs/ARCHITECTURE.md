@@ -131,6 +131,11 @@ manual). Key fields and their contracts:
   → fetched display name. Filled lazily by `MichelinNameLocalizer`.
 - `lastSeenInSourceAt: [sourceID: Date]` — sync bookkeeping; sources never
   delete, they just stop stamping (user prunes manually).
+- `uberEatsURL` / `uberEatsNotFoundAt` / `uberEatsClosedUntil` /
+  `mapsNoMatchAt`+`mapsNoMatchName` — verification results and
+  cooldown/suppression markers filled by the Uber checker and the cid
+  resolver (semantics in the Engine section and MAINTENANCE playbooks);
+  each cleared by its own later success.
 - `isHidden` — user flag; **must survive re-syncs** (merge never touches it).
 - `summary`/`imageURL` — description + cover photo, filled lazily by
   `PlaceInfoFetcher` when a card is shown (Michelin guide page's og: meta
@@ -392,10 +397,11 @@ tests pass with an updated *synthetic* fixture.
 
 | Where | Key | Meaning |
 |---|---|---|
-| UserDefaults | `travelMode` | distance / walking / driving (default driving) |
-| UserDefaults | `driveBudgetMinutes` | 15–90, default 60 |
-| UserDefaults | `distanceBudgetMeters` | 100–50000, default 2000 |
-| UserDefaults | `walkBudgetMinutes` | 5–120, default 15 |
+| UserDefaults | `tonightBudget` / `michelinBudget` | JSON `PageBudget` per page: mode + each mode's own remembered value |
+| UserDefaults | `uberDistanceMeters` | the Uber tab's delivery radius (100–50000) |
+| UserDefaults | `travelMode`, `driveBudgetMinutes`, `distanceBudgetMeters`, `walkBudgetMinutes` | LEGACY single-budget keys — read once at init to seed the per-page budgets on upgrade, never written |
+| UserDefaults | `hasSeenOnboarding` | first-launch walkthrough dismissed |
+| UserDefaults | `uberEatsURLsResetV2` | one-time v1 store-URL wipe flag |
 | UserDefaults | `sharedListConfigs` | JSON `[SharedListConfig]` (incl. isEnabled) |
 | UserDefaults | `importedListConfigs` | JSON `[ImportedListConfig]` (Takeout lists) |
 | App Group `group.com.yuyu.FeedYu` | `pendingSharedListURLs` | share-extension inbox |
@@ -407,6 +413,7 @@ tests pass with an updated *synthetic* fixture.
 | UserDefaults | `michelinPriceBands` / `michelinAwardFilters` | Michelin tab filter chips (persisted) |
 | App Support/FeedYu | `store.json` | the entire restaurant store |
 | App Support/FeedYu | `michelin-cache.csv` | last downloaded dataset |
+| launch args (automation) | `initialTab`, `uiTestSeed`, `uiTestResetFilters` | tab override for screenshots; DEBUG UI-test seed hooks (UITestSeed.swift) |
 
 ## Gotchas that already caused bugs (don't rediscover these)
 

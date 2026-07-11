@@ -289,7 +289,9 @@ encoded. When a feature degrades with no code change — check here first.
 | Google place pages | `og:image`/`og:description` meta present | `PlaceInfoFetcher` | photos vanish for non-Michelin places |
 | guide.michelin.com | mobile Safari UA passes bot filter; locale editions share slugs; `<title>` = "Name – City …" | `MichelinNameLocalizer`, `PlaceInfoFetcher` | no local names / no Michelin photos |
 | michelin-my-maps (GitHub raw CSV) | column names (Name/Award/Latitude/…); >100 rows | `MichelinDataSource` | dataset stales silently (falls back to cache) |
-| Uber Eats pages/API | store links/JSON-LD geo in feed & store pages | `UberEatsChecker` | order button degrades to search |
+| ubereats.com same-origin APIs | `getSearchSuggestionsV1` (storeUuid+title+geo per store object) and `getStoreV1` callable from a bot-cleared WKWebView page | `UberEatsChecker` + `WebPageFetcher` | order button degrades to search; open checks fail open |
+| getStoreV1 availability signals | `storeAvailablityStatus.state` vocabulary (NOT_ACCEPTING_ORDERS / STORE_CLOSED — note Uber's "Availablity" typo) and `orderForLaterInfo.nextOpenTime` semantics; `isOpen`/`isOrderable`/`isAvailable` stay useless | `UberEatsChecker.parseClosedInfo` + `notOrderableStates` | closed/paused stores get suggested again, or (if states are renamed) never skipped |
+| Uber Eats store pages | store links/JSON-LD geo for candidates without feed geo | `UberEatsChecker.parseStorePage` | geo verification falls back to strict name-only |
 | MKDirections | throttled but free | `SuggestionEngine` | ETAs slow/missing if abused |
 
 ## Recapturing fixtures after a format change (privacy-critical)
@@ -306,13 +308,18 @@ The full policy is in DEVELOPMENT.md "Test fixtures policy". Short version:
 
 ## Verifying a change (what "done" means here)
 
-1. `xcodebuild test …` passes (78+ tests; pure logic, fast).
-2. Exercise the changed flow for real — unit tests here cover parsers and
-   engine logic, **not** live scraping or UI wiring. Use the simulator
-   smoke-test recipe (seeded store + fake location, DEVELOPMENT.md) or a
-   device build. Claude Code users: the `verify` and `deploy-device`
-   project skills in `.claude/skills/` script both.
-3. Per-area minimum checks:
+1. `xcodebuild test …` passes (130+ unit tests; pure logic, fast).
+2. The four UI contract tests pass when view wiring changed
+   (`SuggestionContractUITests` — run command in REQUIREMENTS.md; they
+   cover launch auto-suggest, budget-change rolls, hide-replacement, and
+   filter persistence via the DEBUG seed hook).
+3. Exercise the changed flow for real — unit tests here cover parsers and
+   engine logic, and the UI tests cover seeded view wiring, **not** live
+   scraping. Use the simulator smoke-test recipe (seeded store + fake
+   location, DEVELOPMENT.md) or a device build. Claude Code users: the
+   `verify` and `deploy-device` project skills in `.claude/skills/`
+   script both.
+4. Per-area minimum checks:
    - Parsers/scrapers → run against a fresh *real* capture, not just fixtures.
    - `Restaurant`/store changes → decode an existing `store.json` (invariant #1!).
    - Suggestion engine → Tonight tab: roll, re-roll, switch budget modes.
