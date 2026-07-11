@@ -460,3 +460,19 @@ tests pass with an updated *synthetic* fixture.
     session-long negative cache (names silently never localized). Loops
     that persist failure verdicts must check `Task.isCancelled` before
     both continuing and recording.
+14. **A bare `.accessibilityLabel` on a container swallows its children.**
+    The price-filter HStack's label collapsed it into ONE accessibility
+    element — VoiceOver lost the four chip buttons entirely, and the UI
+    contract tests couldn't find them on the visible page (offscreen pager
+    pages expose the raw tree, masking the bug in `exists` checks). Label
+    a container via `.accessibilityElement(children: .contain)` +
+    `.accessibilityLabel(...)`.
+15. **A reused card's @State outlives its restaurant.** RestaurantCard is
+    swapped in place when a suggestion is replaced (budget revalidation),
+    so SwiftUI keeps the view's identity — and the OLD restaurant's
+    cancelled-but-still-running photo fetch wrote its result onto the NEW
+    restaurant's card (a curry place wearing a mochi shop's photo; button
+    rolls masked it because the LoadingCard swap destroys the state).
+    Cards get per-restaurant identity (`.id(suggestion.id)`) AND the
+    fetch task checks `Task.isCancelled` before writing — a cancelled
+    Swift task keeps executing past its awaits unless it checks.

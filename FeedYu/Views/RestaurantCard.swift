@@ -115,7 +115,15 @@ struct RestaurantCard: View {
         .task(id: restaurant.id) {
             fetchedInfo = PlaceInfoFetcher.PlaceInfo(summary: restaurant.summary,
                                                      imageURL: restaurant.imageURL)
-            fetchedInfo = await PlaceInfoFetcher.shared.info(for: restaurant, store: store)
+            let info = await PlaceInfoFetcher.shared.info(for: restaurant, store: store)
+            // A replacement re-fires this task and cancels this run — but a
+            // cancelled task keeps executing past its await unless it
+            // checks, and the stale result then lands on the NEXT
+            // restaurant's card (shipped: a curry place wearing a mochi
+            // shop's photo). Callers also key the card's identity per
+            // restaurant (`.id(suggestion.id)`) so state can't be reused.
+            guard !Task.isCancelled else { return }
+            fetchedInfo = info
         }
     }
 

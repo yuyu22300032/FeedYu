@@ -150,6 +150,9 @@ struct RootView: View {
     }
 
     private func bootstrap() async {
+        // UI-test harness (DEBUG no-op otherwise): deterministic store +
+        // prefs must land before the load below reads them.
+        UITestSeed.applyIfRequested()
         await store.load()
         // Store URLs saved by the v1 name-only Uber matcher were noisy —
         // clear once so the geo-verified checker re-resolves them.

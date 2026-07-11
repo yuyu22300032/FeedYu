@@ -10,6 +10,17 @@ final class LocationProvider: NSObject, ObservableObject, CLLocationManagerDeleg
     override init() {
         authorizationStatus = manager.authorizationStatus
         super.init()
+        #if DEBUG
+        // UI-test harness: a fixed fix, granted auth, and NO delegate
+        // wiring — CoreLocation (and its permission prompt) stays entirely
+        // out of the test run.
+        if UITestSeed.isActive {
+            authorizationStatus = .authorizedWhenInUse
+            location = CLLocation(latitude: UITestSeed.origin.latitude,
+                                  longitude: UITestSeed.origin.longitude)
+            return
+        }
+        #endif
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
     }
@@ -27,6 +38,9 @@ final class LocationProvider: NSObject, ObservableObject, CLLocationManagerDeleg
     }
 
     func requestPermissionIfNeeded() {
+        #if DEBUG
+        if UITestSeed.isActive { return } // fixed fix — nothing to request
+        #endif
         if authorizationStatus == .notDetermined {
             manager.requestWhenInUseAuthorization()
         } else if isAuthorized {
@@ -35,6 +49,9 @@ final class LocationProvider: NSObject, ObservableObject, CLLocationManagerDeleg
     }
 
     func refresh() {
+        #if DEBUG
+        if UITestSeed.isActive { return }
+        #endif
         manager.requestLocation()
     }
 
@@ -46,6 +63,9 @@ final class LocationProvider: NSObject, ObservableObject, CLLocationManagerDeleg
     static let staleInterval: TimeInterval = 30 * 60
 
     func refreshIfStale() {
+        #if DEBUG
+        if UITestSeed.isActive { return }
+        #endif
         guard isAuthorized else { return }
         let isStale = location.map {
             Date().timeIntervalSince($0.timestamp) > Self.staleInterval

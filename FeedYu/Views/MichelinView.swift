@@ -121,6 +121,11 @@ struct MichelinView: View {
                         // change-restaurant button needed. Clear row: the
                         // card brings its own white box, same as Tonight.
                         RestaurantCard(suggestion: suggestion)
+                            // Same identity rule as Tonight: replacement
+                            // must not inherit the old card's @State (its
+                            // late photo fetch put the wrong restaurant's
+                            // image on the card).
+                            .id(suggestion.id)
                             .listRowInsets(EdgeInsets())
                             .listRowBackground(Color.clear)
                     } else if engine.isSearching {
@@ -224,9 +229,17 @@ struct MichelinView: View {
                                     in: RoundedRectangle(cornerRadius: 8))
                 }
                 .buttonStyle(.plain)
+                // Selection is otherwise color-only — VoiceOver and the UI
+                // contract tests both need the trait.
+                .accessibilityAddTraits(isOn ? [.isSelected] : [])
             }
         }
         .listRowSeparator(.hidden)
+        // A labeled CONTAINER, not a labeled element: a bare
+        // .accessibilityLabel on the stack collapses it into one element
+        // and swallows the four chip buttons — VoiceOver lost them and so
+        // did the UI contract tests.
+        .accessibilityElement(children: .contain)
         .accessibilityLabel("Price bands — none selected means any price")
     }
 
@@ -245,6 +258,7 @@ struct MichelinView: View {
                                     in: RoundedRectangle(cornerRadius: 8))
                 }
                 .buttonStyle(.plain)
+                .accessibilityAddTraits(isOn ? [.isSelected] : [])
             }
         }
         .listRowSeparator(.hidden)
