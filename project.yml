@@ -108,8 +108,10 @@ schemes:
       targets:
         - FeedYuTests
 
-  # Demo choreography for filming the App Preview (own scheme so the
-  # everyday test command never runs it).
+  # UI-test target scheme: the App Preview demo choreography AND the
+  # view-wiring contract tests (SuggestionContractUITests — run via
+  # -only-testing, see docs/REQUIREMENTS.md). Its own scheme so the
+  # everyday unit-test command never pays for app launches.
   FeedYuDemo:
     build:
       targets:

@@ -135,8 +135,10 @@ directly on the verified store page ready to order
 (`/store-browse-uuid/<uuid>?diningMode=DELIVERY`). Stores that exist but
 are **closed right now** (Uber's "accepts orders during open hours") are
 skipped, not suggested — detected via getStoreV1's
-`orderForLaterInfo.nextOpenTime` (see the MAINTENANCE playbook; `isOpen`
-is a lie). If verification was inconclusive (offline, bot wall), the
+`orderForLaterInfo.nextOpenTime` AND the `storeAvailablityStatus.state`
+deny-list — the state catches merchant pauses ("the store indicated they
+aren't available"), whose `nextOpenTime` is null (see the MAINTENANCE
+playbook; `isOpen`/`isOrderable`/`isAvailable` are lies). If verification was inconclusive (offline, bot wall), the
 button falls back to an Uber Eats search for the name — the tab degrades,
 it never goes empty.
 

@@ -44,6 +44,9 @@ export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer  # required
 xcodegen generate       # after adding/removing/renaming files (project.yml is truth)
 xcodebuild test -project FeedYu.xcodeproj -scheme FeedYu \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+xcodebuild test -project FeedYu.xcodeproj -scheme FeedYuDemo \
+  -only-testing:FeedYuUITests/SuggestionContractUITests \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro'  # view-wiring contracts (run when views change)
 python3 scripts/preprocess_michelin.py   # regenerate bundled Michelin CSVs
 ```
 
