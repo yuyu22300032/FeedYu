@@ -84,13 +84,15 @@ final class RestaurantStore: ObservableObject {
         let delay = max(0, min(now.addingTimeInterval(3), deadline).timeIntervalSince(now))
         saveTask = Task.detached(priority: .utility) {
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-            guard !Task.isCancelled else { return }
-            // Serialize behind a save already past ITS cancellation check:
-            // the deadline path schedules with zero delay, and two
-            // concurrent multi-MB .atomic writes can land out of order —
-            // the OLDER snapshot winning the rename. (Cancelled-in-sleep
-            // predecessors return immediately; the chain never stacks.)
+            // Serialize BEFORE the cancellation check: a cancelled-in-sleep
+            // task must still wait for its predecessor, or its successor's
+            // own `await previous` completes instantly and severs the chain
+            // back to a write already in flight — two concurrent multi-MB
+            // .atomic writes can land out of order, the OLDER snapshot
+            // winning the rename. Waiting first keeps the chain transitive;
+            // a cancelled waiter does no work of its own afterwards.
             await previous?.value
+            guard !Task.isCancelled else { return }
             await MainActor.run { self.saveDeadline = nil }
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
@@ -165,13 +167,21 @@ final class RestaurantStore: ObservableObject {
                 return nil
             }
             // Incoming has no coordinates (e.g. Takeout list CSV): match by
-            // name only when unambiguous — and only into user-space rows.
-            // With ~19k guide rows loaded, "unique in the whole store" let a
+            // name only when unambiguous — and only into rows the USER put
+            // there (any non-guide source stamp, or manually added). With
+            // ~19k guide rows loaded, "unique in the whole store" let a
             // coordinate-less row merge into a same-named Michelin place
             // anywhere on earth; the user's place inherited the foreign
-            // coordinates and silently fell out of every radius. Guide rows
-            // still merge via the name + ≤150 m rule above.
-            let userRows = candidates.filter { updated[$0].michelinAward == nil }
+            // coordinates and silently fell out of every radius. The
+            // discriminator is the source stamps, NOT michelinAward: a user
+            // place that merged with its local guide row carries the award,
+            // and excluding it appended a coordinate-less duplicate on
+            // every re-import. Guide-only rows still merge via the
+            // name + ≤150 m rule above.
+            let userRows = candidates.filter { index in
+                updated[index].addedManually
+                    || updated[index].lastSeenInSourceAt.keys.contains { $0 != "michelin" }
+            }
             return userRows.count == 1 ? userRows[0] : nil
         }
 

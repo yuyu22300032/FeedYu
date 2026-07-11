@@ -121,6 +121,12 @@ struct TonightView: View {
             }
 
             Button {
+                // Guard + cancel keep refreshTask pointing at the task
+                // that is actually running: a double-tap in the enabled
+                // window used to strand the live search untracked (and
+                // uncancellable by onDisappear) behind a no-op successor.
+                guard !engine.isSearching else { return }
+                refreshTask?.cancel()
                 refreshTask = Task { await refresh() }
             } label: {
                 Label(engine.current == nil ? "Suggest a place" : "Not feeling it — another",
@@ -135,7 +141,19 @@ struct TonightView: View {
             .padding(.bottom, 8)
         }
         .task(id: autoSuggestKey) {
-            if engine.current == nil, !engine.isSearching, locationProvider.location != nil {
+            // The id can change while a search runs (first launch: a list
+            // sync lands mid-scan and bumps candidates.count) — SwiftUI
+            // cancels the old task, which unwinds without producing a
+            // card. Skipping on isSearching left a blank, message-less
+            // pane; wait out the unwind instead, then only search when the
+            // engine ended with NOTHING (no card AND no status — a paused
+            // batch sets a message and must wait for a real press).
+            while engine.isSearching {
+                try? await Task.sleep(nanoseconds: 100_000_000)
+                if Task.isCancelled { return }
+            }
+            if engine.current == nil, engine.statusMessage == nil,
+               locationProvider.location != nil {
                 await refresh()
             }
         }
@@ -184,7 +202,13 @@ struct TonightView: View {
         guard engine.current != nil, !engine.isSearching,
               let origin = locationProvider.location else { return }
         configureEngine(origin: origin)
-        Task {
+        // Tracked like the button's search: a revalidation escalates into
+        // a full scan when the card fell out of budget/candidates (up to
+        // 25 slow WebView checks on the Uber tab), and leaving the tab
+        // must be able to cancel that too. No cancel of the previous slot
+        // here — the isSearching guard above means nothing engine-side is
+        // running when this fires.
+        refreshTask = Task {
             await engine.revalidateCurrent(candidates: candidates, origin: origin,
                                            budget: effectiveBudget)
         }

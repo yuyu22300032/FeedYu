@@ -145,6 +145,14 @@ final class SuggestionEngine: ObservableObject {
                     statusMessage = String(localized: "Apple Maps is rate-limiting drive-time checks. Wait a minute and refresh.")
                     return
                 } catch {
+                    // Cancellation surfaces here too (MapKit fails the
+                    // in-flight await): the candidate got no verdict, so it
+                    // keeps its queue position, and a deliberate cancel
+                    // must not be blamed on the network.
+                    if Task.isCancelled {
+                        queue.insert(candidate, at: 0)
+                        return
+                    }
                     statusMessage = String(localized: "Couldn't check drive time for some places (network?).")
                 }
             }

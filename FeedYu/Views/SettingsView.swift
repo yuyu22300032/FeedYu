@@ -431,7 +431,7 @@ struct SettingsView: View {
         } header: {
             Text("Michelin data")
         } footer: {
-            Text("Stars + Bib Gourmand from the open michelin-my-maps dataset. Auto-refreshes weekly; falls back to the bundled snapshot when offline.")
+            Text("Stars + Bib Gourmand from the open michelin-my-maps dataset. Auto-refreshes weekly on Wi-Fi; when it can't refresh, the app keeps its last data (the refresh button above works on any connection).")
         }
     }
 

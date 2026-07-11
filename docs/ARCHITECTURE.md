@@ -175,11 +175,14 @@ Michelin fields, never clear anything, never touch `isHidden`.
   1. identical `googleMapsURL`
   2. same normalized name AND coordinates within **150 m**
   3. same normalized name, incoming has no coordinates, and the name is
-     unique among NON-guide rows (Takeout CSV case). Michelin rows never
-     name-match a coordinate-less incoming: with ~19k guide rows loaded, a
-     same-named guide place anywhere on earth would swallow the user's
-     place (it inherits the foreign coordinates and falls out of every
-     radius). Guide rows still merge via rule 2.
+     unique among USER rows — rows with any non-"michelin" source stamp or
+     addedManually (Takeout CSV case). Guide-ONLY rows never name-match a
+     coordinate-less incoming: with ~19k of them loaded, a same-named
+     guide place anywhere on earth would swallow the user's place (it
+     inherits the foreign coordinates and falls out of every radius). The
+     discriminator is deliberately the stamps, not michelinAward — a user
+     place that merged with its local guide row carries the award and must
+     keep matching its own re-imports. Guide rows still merge via rule 2.
   Otherwise append. Name normalization = casefold + strip diacritics + keep
   alphanumerics only (CJK survives). Matching uses hash indexes so a 25k-row
   sync stays O(n).

@@ -2113,18 +2113,18 @@
         }
       }
     },
-    "Stars + Bib Gourmand from the open michelin-my-maps dataset. Auto-refreshes weekly; falls back to the bundled snapshot when offline." : {
+    "Stars + Bib Gourmand from the open michelin-my-maps dataset. Auto-refreshes weekly on Wi-Fi; when it can't refresh, the app keeps its last data (the refresh button above works on any connection)." : {
       "localizations" : {
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "星付きとビブグルマンはオープンな michelin-my-maps データセットから。毎週自動更新、オフライン時は内蔵スナップショットを使用します。"
+            "value" : "星付きとビブグルマンはオープンな michelin-my-maps データセットから。毎週 Wi-Fi 経由で自動更新。更新できないときは直近のデータをそのまま使用します（上の更新ボタンはどの回線でも使えます）。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "星級與必比登資料來自開源 michelin-my-maps 資料集。每週自動更新；離線時使用內建快照。"
+            "value" : "星級與必比登資料來自開源 michelin-my-maps 資料集。每週透過 Wi-Fi 自動更新；無法更新時沿用最近一次的資料（上方的更新按鈕不限網路皆可使用）。"
           }
         }
       }

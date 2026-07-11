@@ -246,6 +246,34 @@ final class SuggestionEngineTests: XCTestCase {
         XCTAssertEqual(checkedCount, 10, "resumed refresh checks the full pool")
     }
 
+    func testCancellationDuringETAIsSilentAndKeepsTheCandidate() async {
+        // A cancellation that lands while awaiting a route check surfaces
+        // as a thrown error — it must not be blamed on the network, and
+        // the unverdicted candidate must keep its queue position.
+        let engine = SuggestionEngine()
+        var etaCalls = 0
+        var search: Task<Void, Never>?
+        engine.etaProvider = { _, _, _ in
+            etaCalls += 1
+            search?.cancel() // cancellation lands mid-await
+            throw CancellationError()
+        }
+        let candidates = [place("A", latOffset: 0.001), place("B", latOffset: 0.002)]
+        search = Task { @MainActor in
+            await engine.refreshSuggestion(candidates: candidates, origin: origin, budget: drive(30))
+        }
+        await search?.value
+        XCTAssertNil(engine.current)
+        XCTAssertNil(engine.statusMessage, "a deliberate cancel is not a network error")
+        XCTAssertEqual(etaCalls, 1)
+
+        // Next refresh finds the requeued candidate still first in line.
+        engine.etaProvider = { _, _, _ in etaCalls += 1; return 10 * 60 }
+        await engine.refreshSuggestion(candidates: candidates, origin: origin, budget: drive(30))
+        XCTAssertNotNil(engine.current)
+        XCTAssertEqual(etaCalls, 2, "no candidate was lost to the cancelled check")
+    }
+
     func testQuickRejectIsFreeAndDoesNotExhaustBudget() async {
         let engine = SuggestionEngine()
         engine.etaProvider = { _, _, _ in XCTFail("distance mode must not request routes"); return 0 }

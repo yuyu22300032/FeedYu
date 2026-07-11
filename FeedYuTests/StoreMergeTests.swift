@@ -93,6 +93,30 @@ final class RestaurantStoreMergeTests: XCTestCase {
         XCTAssertNotNil(merged?.lastSeenInSourceAt["takeout-csv-list"])
     }
 
+    func testNoCoordinateIncomingMergesIntoUserRowThatAbsorbedGuideRow() {
+        // A user's place that merged with its local Michelin row carries
+        // the award — it is still a USER row (source stamps say so) and
+        // must keep matching its own coordinate-less re-imports.
+        // Discriminating by michelinAward appended a coordinate-less
+        // ghost duplicate on every re-import.
+        let store = makeStore()
+        var mine = Restaurant(name: "Den")
+        mine.latitude = 35.66; mine.longitude = 139.72
+        mine.lists = [.wantToGo]
+        store.apply([mine], sourceID: "takeout-csv-list")
+        var guide = Restaurant(name: "Den")
+        guide.latitude = 35.6601; guide.longitude = 139.7201 // ~15 m away
+        guide.michelinAward = .oneStar
+        store.apply([guide], sourceID: "michelin")
+        XCTAssertEqual(store.restaurants.count, 1, "guide row merged into the user's place")
+
+        let reimport = Restaurant(name: "Den", lists: [.custom])
+        store.apply([reimport], sourceID: "takeout-csv-list")
+        XCTAssertEqual(store.restaurants.count, 1, "re-import merges — no coordinate-less ghost")
+        XCTAssertEqual(store.restaurants[0].michelinAward, .oneStar)
+        XCTAssertEqual(store.restaurants[0].lists, [.wantToGo, .custom])
+    }
+
     func testSourceDroppingPlaceDoesNotDeleteIt() {
         let store = makeStore()
         var place = Restaurant(name: "Keeper")

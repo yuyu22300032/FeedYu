@@ -218,8 +218,12 @@ struct RootView: View {
             if lastSuccess == nil || lastSuccess! < weekAgo {
                 // Same failure backoff as Michelin: a list that keeps
                 // failing (offline, Google format drift) retries hourly,
-                // not on every foreground return.
-                if let lastAttempt = status?.lastAttempt,
+                // not on every foreground return. Only for lists that have
+                // EVER synced, though — one added moments ago (possibly
+                // offline) deserves eager retries or it sits empty for an
+                // hour; each retry is one cheap fetch that fails fast.
+                if lastSuccess != nil,
+                   let lastAttempt = status?.lastAttempt,
                    Date().timeIntervalSince(lastAttempt) < MichelinDataSource.remoteRetryBackoff {
                     continue
                 }

@@ -186,7 +186,15 @@ struct MichelinView: View {
         // First visit: roll a suggestion as if the button were pressed.
         // current != nil guards tab returns (the engine outlives switches).
         .task(id: autoSuggestKey) {
-            if engine.current == nil, !engine.isSearching,
+            // Same unwind-wait as TonightView: an id change mid-search
+            // cancels the old task, and skipping while it unwound left a
+            // blank pane. Only auto-roll when the engine ended with
+            // nothing at all (a paused scan's message waits for a press).
+            while engine.isSearching {
+                try? await Task.sleep(nanoseconds: 100_000_000)
+                if Task.isCancelled { return }
+            }
+            if engine.current == nil, engine.statusMessage == nil,
                locationProvider.location != nil, !suggestionCandidates.isEmpty {
                 await suggest()
             }
