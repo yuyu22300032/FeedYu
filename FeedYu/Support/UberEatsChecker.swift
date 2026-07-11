@@ -78,7 +78,12 @@ final class UberEatsChecker: ObservableObject {
     nonisolated static func isFresh(_ result: Availability, checkedAt: Date, now: Date = Date()) -> Bool {
         switch result {
         case .available: return now.timeIntervalSince(checkedAt) < openStateTTL
-        case .closedNow(_, let reopens): return now < (reopens ?? .distantFuture)
+        case .closedNow(_, let reopens):
+            // No reopen moment = a merchant pause (not a schedule closure):
+            // recheck after openStateTTL, matching the persisted 10-minute
+            // fallback — distantFuture would pin it closed all session.
+            guard let reopens else { return now.timeIntervalSince(checkedAt) < openStateTTL }
+            return now < reopens
         case .notFound, .unknown: return true
         }
     }
@@ -107,9 +112,9 @@ final class UberEatsChecker: ObservableObject {
             }
             let region = (Locale.current.region?.identifier ?? "US").lowercased()
             if let uuid = Self.storeUUID(fromStoreURL: url) {
-                if let reopens = await Self.fetchNextOpenTime(storeUuid: uuid, region: region) {
-                    if reopens > Date() {
-                        let result = Availability.closedNow(url, reopens: reopens)
+                if let info = await Self.fetchClosedInfo(storeUuid: uuid, region: region) {
+                    if info.closed {
+                        let result = Availability.closedNow(url, reopens: info.reopens)
                         cache[key] = (result, Date())
                         return result
                     }
@@ -230,10 +235,10 @@ final class UberEatsChecker: ObservableObject {
                 if distance <= matchRadiusMeters, entry.score >= 0.5 {
                     debugLog("verified '\(name)' → \(entry.candidate.url.path)")
                     if let uuid = entry.candidate.uuid,
-                       let reopens = await fetchNextOpenTime(storeUuid: uuid, region: region),
-                       reopens > Date() {
-                        debugLog("'\(name)' is closed until \(reopens)")
-                        return .closedNow(entry.candidate.url, reopens: reopens)
+                       let info = await fetchClosedInfo(storeUuid: uuid, region: region),
+                       info.closed {
+                        debugLog("'\(name)' is closed (reopens: \(info.reopens.map(String.init(describing:)) ?? "unknown"))")
+                        return .closedNow(entry.candidate.url, reopens: info.reopens)
                     }
                     return .available(entry.candidate.url)
                 }
@@ -260,16 +265,18 @@ final class UberEatsChecker: ObservableObject {
                 debugLog("store '\(entry.candidate.slug)': \(Int(distance)) m away (getStoreV1), score \(String(format: "%.2f", score))")
                 if distance <= matchRadiusMeters, score >= 0.5 {
                     debugLog("verified '\(name)' → \(entry.candidate.url.path)")
-                    if let reopens = parseNextOpenTime(fromStoreJSON: storeBody), reopens > Date() {
-                        debugLog("'\(name)' is closed until \(reopens)")
-                        return .closedNow(entry.candidate.url, reopens: reopens)
+                    let info = parseClosedInfo(fromStoreJSON: storeBody)
+                    if info.closed {
+                        debugLog("'\(name)' is closed (reopens: \(info.reopens.map(String.init(describing:)) ?? "unknown"))")
+                        return .closedNow(entry.candidate.url, reopens: info.reopens)
                     }
                     return .available(entry.candidate.url)
                 }
             } else if score >= 0.85 {
                 // No geo anywhere → only a near-certain name match passes.
-                if let reopens = parseNextOpenTime(fromStoreJSON: storeBody), reopens > Date() {
-                    return .closedNow(entry.candidate.url, reopens: reopens)
+                let info = parseClosedInfo(fromStoreJSON: storeBody)
+                if info.closed {
+                    return .closedNow(entry.candidate.url, reopens: info.reopens)
                 }
                 return .available(entry.candidate.url)
             }
@@ -315,13 +322,33 @@ final class UberEatsChecker: ObservableObject {
         return String(response.dropFirst(4))
     }
 
-    /// The store's next opening moment, per getStoreV1's
-    /// orderForLaterInfo.nextOpenTime. Semantics verified live 2026-07-10:
-    /// a FUTURE value means "closed right now, accepts scheduled orders"
-    /// (Uber's exact in-app message); an open store reports its most
-    /// recent opening time (past). `isOpen`/`isOrderable` are NOT open-now
-    /// flags — they were true for verifiably closed stores.
-    static func fetchNextOpenTime(storeUuid: String, region: String) async -> Date? {
+    /// getStoreV1 states that mean "you cannot order right now", verified
+    /// against REAL captures (2026-07-11, synthetic mirrors in tests):
+    /// NOT_ACCEPTING_ORDERS = merchant paused mid-shift ("the store
+    /// indicated they aren't available…", nextOpenTime is null — a taiyaki
+    /// shop shipped through the old schedule-only check this way);
+    /// STORE_CLOSED = outside scheduled hours (nextOpenTime set).
+    /// Deliberately a DENY-list: UNKNOWN and NO_COURIERS_NEARBY were also
+    /// observed but are ambiguous without a confirmed open-state anchor
+    /// (and courier states depend on delivery context we can't reproduce
+    /// off-device) — unrecognized states fail OPEN and are debug-logged so
+    /// device consoles collect the missing vocabulary.
+    nonisolated static let notOrderableStates: Set<String> = ["NOT_ACCEPTING_ORDERS", "STORE_CLOSED"]
+
+    /// `storeAvailablityStatus.state` — Uber's own "Availablity" typo is
+    /// load-bearing; the pattern tolerates both spellings in case they
+    /// ever fix it.
+    nonisolated static func parseAvailabilityState(fromStoreJSON json: String) -> String? {
+        guard let match = json.firstMatch(of: #/"storeAvailab(?:li|ili)tyStatus"\s*:\s*\{[^}]*?"state"\s*:\s*"([^"]+)"/#) else { return nil }
+        return String(match.1)
+    }
+
+    /// The store-level "can you order right now" verdict from getStoreV1.
+    /// nil = transport failure (callers fail open). `(true, reopens)` =
+    /// not orderable; reopens is Uber's schedule moment when there is one
+    /// — merchant pauses have none, and callers apply the 10-minute
+    /// recheck fallback.
+    static func fetchClosedInfo(storeUuid: String, region: String) async -> (closed: Bool, reopens: Date?)? {
         var body = await fetchStoreBody(storeUuid: storeUuid, region: region)
         if body == nil {
             // Cold-start etiquette copied from fetchAvailability: the first
@@ -334,7 +361,26 @@ final class UberEatsChecker: ObservableObject {
             body = await fetchStoreBody(storeUuid: storeUuid, region: region)
         }
         guard let body else { return nil }
-        return parseNextOpenTime(fromStoreJSON: body)
+        return parseClosedInfo(fromStoreJSON: body)
+    }
+
+    /// Two independent closed signals, either suffices (redundancy against
+    /// format drift): the availability-state deny-list above, and
+    /// orderForLaterInfo.nextOpenTime — semantics verified live 2026-07-10:
+    /// a FUTURE value means "closed right now, accepts scheduled orders";
+    /// an open store reports its most recent opening time (past).
+    /// `isOpen`/`isOrderable`/`isAvailable` are NOT open-now flags — all
+    /// three were true for verifiably closed AND merchant-paused stores.
+    nonisolated static func parseClosedInfo(fromStoreJSON json: String, now: Date = Date()) -> (closed: Bool, reopens: Date?) {
+        let reopens = parseNextOpenTime(fromStoreJSON: json)
+        if let state = parseAvailabilityState(fromStoreJSON: json) {
+            if notOrderableStates.contains(state) {
+                return (true, reopens)
+            }
+            debugLog("storeAvailablityStatus '\(state)' not in the deny-list — treating as orderable")
+        }
+        if let reopens, reopens > now { return (true, reopens) }
+        return (false, reopens)
     }
 
     nonisolated static func parseNextOpenTime(fromStoreJSON json: String) -> Date? {

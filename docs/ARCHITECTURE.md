@@ -271,7 +271,10 @@ Michelin fields, never clear anything, never touch `isHidden`.
   gave no time): relaunches skip known-closed stores for free via
   quickReject until the stamp passes, then the live check decides again
   (suppress-only — an afternoon of closed restaurants used to cost one
-  live check each, on every launch). The check
+  live check each, on every launch). Closed-now itself is judged by TWO
+  signals (see the MAINTENANCE playbook): the `storeAvailablityStatus`
+  state deny-list — which catches merchant pauses whose `nextOpenTime` is
+  null — and the future-`nextOpenTime` schedule rule. The check
   retries once on transport failure (the Uber tab auto-rolls at launch,
   making this the app's FIRST WebView call — cold calls throw; single-shot
   it failed open and the initial card could be a closed store), then fails
