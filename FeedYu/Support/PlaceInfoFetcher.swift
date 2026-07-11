@@ -1,4 +1,5 @@
 import Foundation
+import CoreLocation
 
 /// Lazily fills a suggested restaurant's cover photo + description by
 /// scraping a page the app already links to: the Michelin guide page when
@@ -34,6 +35,15 @@ final class PlaceInfoFetcher: ObservableObject {
         return now.timeIntervalSince(at) < noMatchCooldownSeconds
     }
 
+    /// Cid-resolution transport — injectable for tests (the etaProvider /
+    /// runJS seam, third instance): the caching policy in `resolvedMapsURL`
+    /// below (transient vs definitive, cooldown persistence, fresh-name
+    /// retries) is pinned by PlaceInfoFetcherPolicyTests. Production runs
+    /// the real coordinate-anchored search.
+    static var resolveCid: (String, CLLocationCoordinate2D, Bool) async -> GooglePlaceResolver.Resolution = {
+        await GooglePlaceResolver.resolveCid(name: $0, coordinate: $1, allowsExpensiveNetwork: $2)
+    }
+
     /// The stored exact place link, or one resolved (and persisted) right
     /// now. Stored *search* URLs (Takeout list CSVs export those) don't
     /// count — they get upgraded to a cid like URL-less places do.
@@ -57,14 +67,12 @@ final class PlaceInfoFetcher: ObservableObject {
         attemptedCidSearchNames[restaurant.id] = searchName
         // Local-market name first (matches Google's own listing), then the
         // dataset romanization — the pin-proximity match rejects impostors.
-        let first = await GooglePlaceResolver.resolveCid(name: searchName, coordinate: coordinate,
-                                                         allowsExpensiveNetwork: allowsExpensiveNetwork)
+        let first = await Self.resolveCid(searchName, coordinate, allowsExpensiveNetwork)
         var cid: String?
         var transient = first == .unavailable
         if case .resolved(let value) = first { cid = value }
         if cid == nil, searchName != restaurant.name {
-            let second = await GooglePlaceResolver.resolveCid(name: restaurant.name, coordinate: coordinate,
-                                                              allowsExpensiveNetwork: allowsExpensiveNetwork)
+            let second = await Self.resolveCid(restaurant.name, coordinate, allowsExpensiveNetwork)
             if case .resolved(let value) = second { cid = value }
             transient = transient || second == .unavailable
         }

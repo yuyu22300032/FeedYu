@@ -22,6 +22,9 @@ struct TonightView: View {
     /// nobody is looking at. (The auto-suggest path is a .task, so its
     /// cancellation is already tied to the view's lifetime.)
     @State private var refreshTask: Task<Void, Never>?
+    /// Pending debounced budget revalidation (see the onChange below) —
+    /// cancelled by the next change in the burst and on tab leave.
+    @State private var budgetDebounceTask: Task<Void, Never>?
 
     /// The user's own saved places (not the whole Michelin dataset), drawn
     /// only from lists enabled in Settings *for this tab* (Tonight and Uber
@@ -178,8 +181,20 @@ struct TonightView: View {
         // demand a button press after the user does exactly that
         // (candidates aren't budget-filtered here, so the auto-suggest
         // task id never changes with the budget).
+        // Debounced: a slider drag snaps through several presets, and on
+        // the Uber tab each uncoalesced revalidation re-ran the LIVE open
+        // check on the current card. The check stays deliberately uncached
+        // per shown card — only the burst coalesces, into one revalidation
+        // of the settled value. Not a gate: it always fires, once per burst.
         .onChange(of: effectiveBudget) { _, _ in
-            revalidateOrRoll()
+            budgetDebounceTask?.cancel()
+            budgetDebounceTask = Task {
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                // try? swallows the cancellation error (gotcha #13) —
+                // check before acting for a superseded burst / left tab.
+                guard !Task.isCancelled else { return }
+                revalidateOrRoll()
+            }
         }
         .onChange(of: engine.isSearching) { _, searching in
             if searching {
@@ -192,7 +207,12 @@ struct TonightView: View {
             }
         }
         .onAppear { revalidate() }
-        .onDisappear { refreshTask?.cancel() }
+        .onDisappear {
+            refreshTask?.cancel()
+            // A pending debounced revalidation must not fire on a hidden
+            // tab — the next onAppear / auto-suggest covers the change.
+            budgetDebounceTask?.cancel()
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { revalidate() }
         }
@@ -235,9 +255,13 @@ struct TonightView: View {
         // Tracked like the button's search: a revalidation escalates into
         // a full scan when the card fell out of budget/candidates (up to
         // 25 slow WebView checks on the Uber tab), and leaving the tab
-        // must be able to cancel that too. No cancel of the previous slot
-        // here — the isSearching guard above means nothing engine-side is
-        // running when this fires.
+        // must be able to cancel that too. Cancel the previous slot first:
+        // the isSearching guard above does NOT prove it is idle — a
+        // revalidation runs its ETA/open-check awaits without setting
+        // isSearching, so overlapping triggers (tab appear + foreground
+        // return) would otherwise strand a live task in an untracked slot
+        // that onDisappear can no longer reach.
+        refreshTask?.cancel()
         refreshTask = Task {
             await engine.revalidateCurrent(candidates: candidates, origin: origin,
                                            budget: effectiveBudget)
