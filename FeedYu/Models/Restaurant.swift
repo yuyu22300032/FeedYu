@@ -87,6 +87,7 @@ struct Restaurant: Codable, Identifiable, Hashable {
     var imageURL: URL?           // cover photo, lazily scraped (Optional — store back-compat)
     var uberEatsURL: URL?        // exact store page, captured by the availability check
     var uberEatsNotFoundAt: Date?    // last VERIFIED "not on Uber Eats" (cooldown gate)
+    var uberEatsClosedUntil: Date?   // verified closed — suppressed until Uber's own reopen time (blocks, never admits)
     var mapsNoMatchAt: Date?         // last definitive cid-resolution no-match…
     var mapsNoMatchName: String?     // …and the search name it failed under
     var isHidden = false
@@ -181,6 +182,7 @@ struct Restaurant: Codable, Identifiable, Hashable {
         if imageURL == nil { imageURL = incoming.imageURL }
         if uberEatsURL == nil { uberEatsURL = incoming.uberEatsURL }
         if uberEatsNotFoundAt == nil { uberEatsNotFoundAt = incoming.uberEatsNotFoundAt }
+        if uberEatsClosedUntil == nil { uberEatsClosedUntil = incoming.uberEatsClosedUntil }
         if mapsNoMatchAt == nil {
             mapsNoMatchAt = incoming.mapsNoMatchAt
             mapsNoMatchName = incoming.mapsNoMatchName

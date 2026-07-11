@@ -204,10 +204,28 @@ link. Format canaries live in its fixture tests.
 The open-now filter reads getStoreV1's `orderForLaterInfo.nextOpenTime`:
 a FUTURE value = closed now (accepts scheduled orders only — Uber's
 "closed right now" page); open stores report their most recent opening
-time (past). **`isOpen` and `isOrderable` are NOT open-now flags** — both
-were `true` for verifiably closed stores (checked live 2026-07-10).
-Closed results cache per session and self-expire at the reopen time; the
-store URL still persists (existence is durable, closedness isn't). The
+time (past). **`isOpen`, `isOrderable`, and `isAvailable` are NOT
+open-now flags** — all were `true` for verifiably closed AND
+merchant-paused stores (checked live 2026-07-10 and 2026-07-11).
+
+The schedule signal alone MISSES merchant pauses ("the store indicated
+they aren't available at the moment" — a paused shop reports
+`nextOpenTime: null`; one shipped through that way). The second signal is
+`storeAvailablityStatus.state` (Uber's own "Availablity" typo — the
+parser tolerates both spellings): observed vocabulary as of 2026-07-11 —
+`NOT_ACCEPTING_ORDERS` (merchant paused), `STORE_CLOSED` (outside
+schedule), `NO_COURIERS_NEARBY` and `UNKNOWN` (ambiguous: entangled with
+delivery context we could not reproduce off-device; no confirmed
+open-state value captured yet). `UberEatsChecker.notOrderableStates` is
+a DENY-list of the two unambiguous ones; anything else fails open and
+DEBUG builds log `storeAvailablityStatus '…' not in the deny-list` —
+grep device consoles for that line to collect the missing vocabulary
+before extending the list.
+Closed results persist as `uberEatsClosedUntil` (self-expiring at Uber's
+reopen time, 10-min fallback when none) so relaunches skip known-closed
+stores for free — suppress-only: past the stamp, the live check decides
+again, so a stale stamp can only ever delay a store, never surface a
+closed one. The store URL persists separately (existence is durable). The
 OPEN state of a known store is deliberately never cached — each shown
 suggestion re-verifies live, so the order button can't land on a store
 that closed minutes after an earlier check. Don't "optimize" that call

@@ -255,3 +255,111 @@ final class UberEatsAvailabilityFlowTests: XCTestCase {
         }
     }
 }
+
+extension UberEatsAvailabilityFlowTests {
+    func testPersistedClosedSuppressionSkipsTheLiveCheck() async {
+        // A store verified closed persists its reopen stamp; a FRESH
+        // checker (new launch, empty session cache) must skip the WebView
+        // check entirely while the stamp is in the future.
+        var calls = 0
+        UberEatsChecker.runJS = { _, _, _ in calls += 1; return nil }
+        var store = knownStore()
+        store.uberEatsClosedUntil = Date().addingTimeInterval(2 * 3600)
+        let result = await checker.availability(for: store, near: nil)
+        XCTAssertEqual(calls, 0, "suppressed stores cost zero network")
+        guard case .closedNow(_, let reopens) = result else {
+            return XCTFail("still closed, got \(result)")
+        }
+        XCTAssertEqual(reopens, store.uberEatsClosedUntil)
+    }
+
+    func testExpiredSuppressionGoesBackToLiveChecking() async {
+        // THE suppress-only guarantee: once the stamp passes, the live
+        // open check decides again — the stamp can never ADMIT a store,
+        // so an order button can never land on a known-closed page.
+        var calls = 0
+        let openedAt = Date().addingTimeInterval(-3600) // past = open now
+        UberEatsChecker.runJS = { _, _, _ in
+            calls += 1
+            return Self.storeJSON(nextOpenTime: openedAt)
+        }
+        var store = knownStore()
+        store.uberEatsClosedUntil = Date().addingTimeInterval(-60) // expired
+        let result = await checker.availability(for: store, near: nil)
+        XCTAssertEqual(calls, 1, "expired stamp → the live check ran")
+        guard case .available = result else {
+            return XCTFail("open store shows again, got \(result)")
+        }
+    }
+}
+
+/// Synthetic mirrors of REAL getStoreV1 captures (2026-07-11): a
+/// merchant-paused taiyaki shop (the shipped miss), two schedule-closed
+/// restaurants, and courier/UNKNOWN states. Real captures stay out of git.
+extension UberEatsCheckerTests {
+    func testParsesAvailabilityStateBothSpellings() {
+        // Uber's own "Availablity" typo is live today; tolerate the
+        // corrected spelling too so a silent fix upstream doesn't blind us.
+        XCTAssertEqual(UberEatsChecker.parseAvailabilityState(
+            fromStoreJSON: #"{"storeAvailablityStatus":{"state":"NOT_ACCEPTING_ORDERS","displayMessage":"x"}}"#),
+            "NOT_ACCEPTING_ORDERS")
+        XCTAssertEqual(UberEatsChecker.parseAvailabilityState(
+            fromStoreJSON: #"{"storeAvailabilityStatus":{"state":"STORE_CLOSED"}}"#),
+            "STORE_CLOSED")
+    }
+
+    func testMerchantPausedStoreIsClosedWithoutReopenTime() {
+        // The taiyaki case: paused mid-shift, nextOpenTime null, and the
+        // lying trio (isOpen/isOrderable/isAvailable) all true.
+        let json = #"{"isOpen":true,"isOrderable":true,"isAvailable":true,"closedMessage":"paused","storeAvailablityStatus":{"state":"NOT_ACCEPTING_ORDERS","displayMessage":"paused"},"orderForLaterInfo":{"nextOpenTime":null}}"#
+        let info = UberEatsChecker.parseClosedInfo(fromStoreJSON: json)
+        XCTAssertTrue(info.closed, "a paused store is not orderable")
+        XCTAssertNil(info.reopens, "merchant pauses carry no schedule moment")
+    }
+
+    func testScheduleClosedStoreCarriesReopenTime() {
+        let json = #"{"storeAvailablityStatus":{"state":"STORE_CLOSED"},"orderForLaterInfo":{"nextOpenTime":"2026-07-11T09:00:00.000Z"}}"#
+        let now = ISO8601DateFormatter().date(from: "2026-07-11T05:00:00Z")!
+        let info = UberEatsChecker.parseClosedInfo(fromStoreJSON: json, now: now)
+        XCTAssertTrue(info.closed)
+        XCTAssertNotNil(info.reopens)
+    }
+
+    func testUnrecognizedStateFailsOpen() {
+        // Deny-list discipline: courier/UNKNOWN states are ambiguous
+        // without a confirmed open anchor — they must NOT hide a store.
+        let json = #"{"storeAvailablityStatus":{"state":"NO_COURIERS_NEARBY"},"orderForLaterInfo":{"nextOpenTime":null}}"#
+        XCTAssertFalse(UberEatsChecker.parseClosedInfo(fromStoreJSON: json).closed)
+    }
+
+    func testCachedMerchantPauseExpiresAfterTTL() {
+        // closedNow with NO reopen moment must self-expire like the
+        // persisted 10-minute fallback — distantFuture pinned it closed
+        // for the whole session.
+        let paused = UberEatsChecker.Availability.closedNow(nil, reopens: nil)
+        let checkedAt = Date()
+        XCTAssertTrue(UberEatsChecker.isFresh(paused, checkedAt: checkedAt,
+                                              now: checkedAt.addingTimeInterval(5 * 60)))
+        XCTAssertFalse(UberEatsChecker.isFresh(paused, checkedAt: checkedAt,
+                                               now: checkedAt.addingTimeInterval(11 * 60)))
+    }
+}
+
+extension UberEatsAvailabilityFlowTests {
+    func testMerchantPausedKnownStoreIsSkippedEndToEnd() async {
+        // The taiyaki regression, end to end: the old schedule-only check
+        // read "nextOpenTime": null as OPEN and deep-linked the user to
+        // Uber's "store indicated they aren't available" page.
+        var calls = 0
+        UberEatsChecker.runJS = { _, _, _ in
+            calls += 1
+            return #"200|{"isOpen":true,"isOrderable":true,"storeAvailablityStatus":{"state":"NOT_ACCEPTING_ORDERS"},"orderForLaterInfo":{"nextOpenTime":null}}"#
+        }
+        let result = await checker.availability(for: knownStore(), near: nil)
+        XCTAssertEqual(calls, 1)
+        guard case .closedNow(_, let reopens) = result else {
+            return XCTFail("paused store must be skipped, got \(result)")
+        }
+        XCTAssertNil(reopens, "no schedule moment — the 10-minute fallback applies downstream")
+    }
+}

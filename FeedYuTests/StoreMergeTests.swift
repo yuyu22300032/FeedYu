@@ -178,3 +178,32 @@ final class RestaurantStoreMergeTests: XCTestCase {
         XCTAssertEqual(store.restaurants[0].googleMapsURL, cidURL)
     }
 }
+
+extension RestaurantStoreMergeTests {
+    func testClosedUntilPersistsWithFallbackAndClearsOnOpen() {
+        let store = makeStore()
+        var place = Restaurant(name: "Afternoon Closed")
+        place.latitude = 25; place.longitude = 121
+        store.apply([place], sourceID: "scrape")
+        let id = store.restaurants[0].id
+
+        // Uber gave a reopen time → persisted verbatim.
+        let reopens = Date().addingTimeInterval(3 * 3600)
+        store.setUberEatsClosedUntil(id: id, reopens: reopens)
+        XCTAssertEqual(store.restaurants[0].uberEatsClosedUntil, reopens)
+
+        // No reopen time from Uber → 10-minute fallback.
+        store.clearUberEatsClosedUntil(id: id)
+        let before = Date()
+        store.setUberEatsClosedUntil(id: id, reopens: nil)
+        let until = store.restaurants[0].uberEatsClosedUntil
+        XCTAssertNotNil(until)
+        let delta = until!.timeIntervalSince(before)
+        XCTAssertGreaterThan(delta, 9 * 60, "fallback ≈ 10 minutes out")
+        XCTAssertLessThan(delta, 11 * 60)
+
+        // A verified open ends the suppression.
+        store.clearUberEatsClosedUntil(id: id)
+        XCTAssertNil(store.restaurants[0].uberEatsClosedUntil)
+    }
+}
