@@ -11,9 +11,9 @@ struct MichelinView: View {
     @StateObject private var engine = SuggestionEngine()
     @Environment(\.openURL) private var openURL
 
-    /// Empty = any price. Bands 1–4 ($–$$$$).
-    @State private var selectedBands: Set<Int> = [1, 2]
-    @State private var selectedAwards: Set<MichelinAward> = [.selected, .bibGourmand]
+    // Price/award filters live in AppSettings (persisted): as plain @State
+    // they silently reset to the defaults on every launch. includeFormer
+    // stays session-scoped — the current guide is the right opening view.
     @State private var includeFormer = false
     @StateObject private var localizer = MichelinNameLocalizer()
     /// See TonightView.searchIsSlow — after 1 s the loading card takes
@@ -51,10 +51,10 @@ struct MichelinView: View {
 
     private var suggestionCandidates: [Restaurant] {
         michelinInRange.map(\.restaurant).filter { restaurant in
-            guard let award = restaurant.michelinAward, selectedAwards.contains(award) else { return false }
-            guard !selectedBands.isEmpty else { return true }
+            guard let award = restaurant.michelinAward, settings.michelinAwards.contains(award) else { return false }
+            guard !settings.michelinPriceBands.isEmpty else { return true }
             guard let band = restaurant.priceBand else { return false }
-            return selectedBands.contains(band)
+            return settings.michelinPriceBands.contains(band)
         }
     }
 
@@ -177,16 +177,28 @@ struct MichelinView: View {
         // Adjusting any constraint revalidates immediately, same as
         // Tonight: a card that still satisfies the new budget AND filters
         // stays (filters flow through candidate-set membership); one that
-        // doesn't is replaced. onChange (not .task(id:)): tab returns must
-        // not re-fire.
-        .onChange(of: settings.michelinBudget) { _, _ in revalidate() }
-        .onChange(of: selectedBands) { _, _ in revalidate() }
-        .onChange(of: selectedAwards) { _, _ in revalidate() }
-        .onChange(of: includeFormer) { _, _ in revalidate() }
+        // doesn't is replaced — and with NO card, a fresh one is rolled
+        // (the auto-suggest task id usually changes with the filters, but
+        // not when the candidate COUNT happens to stay equal). onChange
+        // (not .task(id:)): tab returns must not re-fire.
+        .onChange(of: settings.michelinBudget) { _, _ in revalidateOrRoll() }
+        .onChange(of: settings.michelinPriceBands) { _, _ in revalidateOrRoll() }
+        .onChange(of: settings.michelinAwards) { _, _ in revalidateOrRoll() }
+        .onChange(of: includeFormer) { _, _ in revalidateOrRoll() }
         // First visit: roll a suggestion as if the button were pressed.
         // current != nil guards tab returns (the engine outlives switches).
         .task(id: autoSuggestKey) {
-            if engine.current == nil, !engine.isSearching,
+            // Same unwind-wait as TonightView: an id change mid-search
+            // cancels the old task, and skipping while it unwound left a
+            // blank pane. Roll whenever there is no card — gating on a
+            // clear statusMessage suppressed recovery rolls after a stale
+            // "nothing reachable" once new candidates arrived (Tonight
+            // shipped that exact regression).
+            while engine.isSearching {
+                try? await Task.sleep(nanoseconds: 100_000_000)
+                if Task.isCancelled { return }
+            }
+            if engine.current == nil,
                locationProvider.location != nil, !suggestionCandidates.isEmpty {
                 await suggest()
             }
@@ -200,9 +212,9 @@ struct MichelinView: View {
     private var priceFilter: some View {
         HStack(spacing: 8) {
             ForEach(1...4, id: \.self) { band in
-                let isOn = selectedBands.contains(band)
+                let isOn = settings.michelinPriceBands.contains(band)
                 Button {
-                    if isOn { selectedBands.remove(band) } else { selectedBands.insert(band) }
+                    if isOn { settings.michelinPriceBands.remove(band) } else { settings.michelinPriceBands.insert(band) }
                 } label: {
                     Text(String(repeating: "$", count: band))
                         .font(.subheadline.weight(.semibold))
@@ -221,9 +233,9 @@ struct MichelinView: View {
     private var awardFilter: some View {
         HStack(spacing: 8) {
             ForEach(MichelinAward.allCases) { award in
-                let isOn = selectedAwards.contains(award)
+                let isOn = settings.michelinAwards.contains(award)
                 Button {
-                    if isOn { selectedAwards.remove(award) } else { selectedAwards.insert(award) }
+                    if isOn { settings.michelinAwards.remove(award) } else { settings.michelinAwards.insert(award) }
                 } label: {
                     Text(shortLabel(for: award))
                         .font(.caption.weight(.semibold))
@@ -288,6 +300,10 @@ struct MichelinView: View {
         .contextMenu {
             Button(role: .destructive) {
                 store.setHidden(true, id: restaurant.id)
+                // If this row is also the current suggestion, replace the
+                // card right away — nothing else watches candidate
+                // membership until the next tab return.
+                revalidate()
             } label: {
                 Label("Hide", systemImage: "eye.slash")
             }
@@ -299,6 +315,18 @@ struct MichelinView: View {
         await engine.refreshSuggestion(candidates: suggestionCandidates,
                                        origin: origin,
                                        budget: settings.michelinBudget.travelBudget)
+    }
+
+    /// Constraint changed: revalidate the current card, or — when there is
+    /// no card to revalidate — roll a fresh one right away.
+    private func revalidateOrRoll() {
+        if engine.current == nil {
+            guard !engine.isSearching, locationProvider.location != nil,
+                  !suggestionCandidates.isEmpty else { return }
+            Task { await suggest() }
+        } else {
+            revalidate()
+        }
     }
 
     /// Tab appearance / foreground return: the current card's drive time

@@ -13,6 +13,7 @@
 		0DE46D7C8811C7D63EEE8882 /* CSVParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93696CE048929DAD36825626 /* CSVParserTests.swift */; };
 		104ED0718D77629B6B681D93 /* GoogleSharedListParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7AFC05E50102E224796464C /* GoogleSharedListParserTests.swift */; };
 		127E3A519FF1BAF00A3BBC40 /* MichelinNameLocalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBDDB96AA140C4789C158FE2 /* MichelinNameLocalizer.swift */; };
+		1911ADA4173F458ECF9C857C /* LocalizationCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEADCD6821ABAE88A82A8F78 /* LocalizationCatalogTests.swift */; };
 		1B8B61BD78E2F3C17D2562D4 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 2E07D91437F28E5C19586AF6 /* InfoPlist.xcstrings */; };
 		1E80113577F6D0F16EC29118 /* GooglePlaceResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 230C40C297C005CC0A6CF154 /* GooglePlaceResolver.swift */; };
 		2A4F51A6244E0A599D08815F /* SpatialGridTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC4FB93CA23818F3EFA90FA9 /* SpatialGridTests.swift */; };
@@ -64,6 +65,7 @@
 		EFC8300B3021AAD38F649CF6 /* GooglePlaceResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E27C083663865EE9599BA70 /* GooglePlaceResolverTests.swift */; };
 		FBB0AC0BF7F7A359251A06DB /* TonightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3BCD75B1D89C6B67869D417 /* TonightView.swift */; };
 		FC5CD2E5B6FDF50421E2CDE0 /* MichelinNameLocalizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E34DEB9870F10C198917A9EF /* MichelinNameLocalizerTests.swift */; };
+		FDBBA8816ABFB1E7EB1B0C0E /* RestaurantStorePersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84D124C6E14619ED159E5C0B /* RestaurantStorePersistenceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -138,6 +140,7 @@
 		7B19191B684F5A7115F8C2DE /* UberEatsChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UberEatsChecker.swift; sourceTree = "<group>"; };
 		7F1D491751B526F5A7C6D90C /* GoogleMapsOpenerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleMapsOpenerTests.swift; sourceTree = "<group>"; };
 		8197B4B26A5F4B139C77A287 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		84D124C6E14619ED159E5C0B /* RestaurantStorePersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantStorePersistenceTests.swift; sourceTree = "<group>"; };
 		868FDC93F30440F46EF17705 /* michelin_history.csv */ = {isa = PBXFileReference; path = michelin_history.csv; sourceTree = "<group>"; };
 		86B4F9280933BB1481377E91 /* GoogleMapsOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleMapsOpener.swift; sourceTree = "<group>"; };
 		9013BBD3A3C8E4EEF4F509CA /* FeedYuShare.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = FeedYuShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -153,6 +156,7 @@
 		A7AFC05E50102E224796464C /* GoogleSharedListParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleSharedListParserTests.swift; sourceTree = "<group>"; };
 		AACDF96AEA6F672396F0978F /* MichelinDataSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MichelinDataSourceTests.swift; sourceTree = "<group>"; };
 		BB513F70D6923F97E196A17D /* Restaurant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Restaurant.swift; sourceTree = "<group>"; };
+		BEADCD6821ABAE88A82A8F78 /* LocalizationCatalogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationCatalogTests.swift; sourceTree = "<group>"; };
 		C3BCD75B1D89C6B67869D417 /* TonightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TonightView.swift; sourceTree = "<group>"; };
 		CC350E4BCEDE22E40384D423 /* MichelinView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MichelinView.swift; sourceTree = "<group>"; };
 		D2E45202029D98BC6820F34B /* FeedYuApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedYuApp.swift; sourceTree = "<group>"; };
@@ -264,9 +268,11 @@
 				A7AFC05E50102E224796464C /* GoogleSharedListParserTests.swift */,
 				4B33BB285D942D95E724120F /* ListConfigTests.swift */,
 				9695CC3F82931F479F40109C /* ListRemovalTests.swift */,
+				BEADCD6821ABAE88A82A8F78 /* LocalizationCatalogTests.swift */,
 				AACDF96AEA6F672396F0978F /* MichelinDataSourceTests.swift */,
 				E34DEB9870F10C198917A9EF /* MichelinNameLocalizerTests.swift */,
 				FC06CBC112A0920428803DD6 /* PlaceInfoParserTests.swift */,
+				84D124C6E14619ED159E5C0B /* RestaurantStorePersistenceTests.swift */,
 				EC4FB93CA23818F3EFA90FA9 /* SpatialGridTests.swift */,
 				34B6065279F321F9CFCCEE66 /* StoreMergeTests.swift */,
 				06BC1CCFBB9E4A24509799E0 /* SuggestionEngineTests.swift */,
@@ -514,9 +520,11 @@
 				104ED0718D77629B6B681D93 /* GoogleSharedListParserTests.swift in Sources */,
 				089BF3E36BE8BE15F24777ED /* ListConfigTests.swift in Sources */,
 				E170A2CB474DCE3FFA635639 /* ListRemovalTests.swift in Sources */,
+				1911ADA4173F458ECF9C857C /* LocalizationCatalogTests.swift in Sources */,
 				9381B7AA377E5C4F3FBC58B5 /* MichelinDataSourceTests.swift in Sources */,
 				FC5CD2E5B6FDF50421E2CDE0 /* MichelinNameLocalizerTests.swift in Sources */,
 				485758D4AF1D01709B6F1BDA /* PlaceInfoParserTests.swift in Sources */,
+				FDBBA8816ABFB1E7EB1B0C0E /* RestaurantStorePersistenceTests.swift in Sources */,
 				2A4F51A6244E0A599D08815F /* SpatialGridTests.swift in Sources */,
 				B013A9E8339B4C26BC80DB27 /* StoreMergeTests.swift in Sources */,
 				3BBAED62166C4A9D7EB4640A /* SuggestionEngineTests.swift in Sources */,

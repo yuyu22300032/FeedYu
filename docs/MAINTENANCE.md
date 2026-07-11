@@ -147,9 +147,11 @@ also excludes *hidden* places). Causes seen in the wild, most first:
 
 Almost certainly invariant #1 (a non-optional stored property was added to
 `Restaurant`). Make the property `Optional` and ship a fix. The user's old
-`store.json` is still on disk — decode failure doesn't delete the file
-(verify current code kept it that way: `RestaurantStore` load path). It can
-be recovered with the container-surgery recipe once the decode is fixed.
+data is preserved: a store file that fails to decode is moved to
+`store.json.corrupt` (`RestaurantStore.loadSnapshot`) so the next debounced
+save can't overwrite the only copy — only the newest corrupt copy is kept.
+Recover it with the container-surgery recipe once the decode is fixed
+(rename it back to `store.json`).
 
 ### "Michelin tab is empty / stale"
 
@@ -162,6 +164,14 @@ be recovered with the container-surgery recipe once the decode is fixed.
   snapshot. Upstream: `ngshiheng/michelin-my-maps` on GitHub — if that repo
   moves or dies, `remoteURL` needs a new home and
   `scripts/preprocess_michelin.py` needs its history source updated.
+- Stale and "not even trying" → the failure backoff is working as designed:
+  a stale dataset re-attempts the download at most hourly
+  (`michelinLastRemoteAttempt`), the auto-download is Wi-Fi/unmetered only
+  (cellular-only users see a persistent sync error — expected), an
+  unchanged upstream answers 304 to the saved ETag (`michelinCacheETag`),
+  and a failed retry surfaces in the source's SyncStatus instead of
+  re-parsing local CSVs. Settings → "Refresh from GitHub now" bypasses all
+  of it (forceRemote, full network access).
 - Award tier names changed upstream → `MichelinAward(datasetValue:)`.
 
 ### "Local-language names aren't appearing"
@@ -197,25 +207,38 @@ a FUTURE value = closed now (accepts scheduled orders only — Uber's
 time (past). **`isOpen` and `isOrderable` are NOT open-now flags** — both
 were `true` for verifiably closed stores (checked live 2026-07-10).
 Closed results cache per session and self-expire at the reopen time; the
-store URL still persists (existence is durable, closedness isn't).
+store URL still persists (existence is durable, closedness isn't). The
+OPEN state of a known store is deliberately never cached — each shown
+suggestion re-verifies live, so the order button can't land on a store
+that closed minutes after an earlier check. Don't "optimize" that call
+away; it is the product's freshness guarantee. The check retries once on
+a cold transport (launch auto-roll makes it the app's first WebView call)
+and only then fails open, logging
+`open-check unavailable for known store '…' — failing open` — grep the
+device console for that line when a closed store slips through.
 
 ### "Uber Eats tab says no results, but refreshing finds one"
 
-Historical bug, fixed with three mechanisms — don't regress them:
-(1) the Uber tab searches **exhaustively** per refresh
-(`maxETAChecksPerRefresh = Int.max`; safe because the tab is
-distance-mode, so the cap never protected MapKit there — it only made the
-tab give up mid-queue and say "press again"); (2) a *verified* notFound
+Historical bug, fixed with these mechanisms — don't regress them:
+(1) the Uber tab scans in **resumable batches** (`maxETAChecksPerRefresh
+= 25` slow WebView checks per press — the earlier unbounded scan ran for
+minutes of network on one press): a paused scan requeues the current
+candidate and says "Checked many stores — refresh to keep looking", and
+the next press resumes mid-queue. The invariant is honesty, not exhaustiveness: the tab must
+never *claim* "no results" while an unchecked candidate sits in the queue
+(the historic bug was a tiny cap with the cooldown skips counted against
+it, which turned pauses into false no-results); (2) a *verified* notFound
 persists in the store for a 7-day cooldown (`uberEatsNotFoundAt`; cleared
 by a later success, and `unknown`/bot-wall results are never persisted);
 (3) cooled-down places are skipped via the engine's free `quickReject`
 hook; (4) a refresh whose queue drains without a hit **wraps the rotation
 once in-place** — after the only orderable places had been shown, the
 drain used to end with "nothing new — refresh to keep looking" and demand
-a pointless extra press before the reshuffle ran. Net: the first refresh
-in a new area may run long (loading card takes over after 1 s), later
-refreshes are near-instant, and a refresh only ever ends in a suggestion,
-"nothing reachable", or a genuine walk/drive ETA-budget pause.
+a pointless extra press before the reshuffle ran. Net: the first press or
+two in a new area map it out (loading card takes over after 1 s; each
+press is bounded and resumes the queue; leaving the tab cancels the scan),
+later refreshes are near-instant, and a refresh only ever ends in a
+suggestion, "nothing reachable", or an honest "refresh to keep looking".
 
 ### "Suggestions are slow / ETAs missing"
 

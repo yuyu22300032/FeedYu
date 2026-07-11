@@ -116,15 +116,37 @@ struct SettingsView: View {
 
     // MARK: - Your lists (shared links + Takeout imports, each toggleable)
 
-    /// Visible-place count per list source, one pass over the store.
-    private var placeCounts: [String: Int] {
+    /// Memoized whole-store tallies (gotcha #12: a computed property is
+    /// re-evaluated on EVERY access, and every list row reads placeCounts —
+    /// uncached, one Settings render during a sync burst cost ~20 full-store
+    /// passes on the main thread). One pass fills all three, keyed on
+    /// store.version; the box is a plain reference in @State so it survives
+    /// re-renders without triggering any.
+    private final class StoreTalliesCache {
+        var version = -1
+        var placeCounts: [String: Int] = [:]
+        var michelinCount = 0
+        var hiddenCount = 0
+    }
+    @State private var talliesCache = StoreTalliesCache()
+
+    private var tallies: StoreTalliesCache {
+        if talliesCache.version == store.version { return talliesCache }
         var counts: [String: Int] = [:]
-        for restaurant in store.restaurants where !restaurant.isHidden {
+        var michelin = 0
+        var hidden = 0
+        for restaurant in store.restaurants {
+            if restaurant.michelinAward != nil { michelin += 1 }
+            if restaurant.isHidden { hidden += 1; continue } // hidden don't count toward lists
             for sourceID in restaurant.lastSeenInSourceAt.keys {
                 counts[sourceID, default: 0] += 1
             }
         }
-        return counts
+        talliesCache.placeCounts = counts
+        talliesCache.michelinCount = michelin
+        talliesCache.hiddenCount = hidden
+        talliesCache.version = store.version
+        return talliesCache
     }
 
     private var listsSection: some View {
@@ -185,7 +207,7 @@ struct SettingsView: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
             HStack {
-                Text("\(placeCounts[config.wrappedValue.sourceID] ?? 0) places")
+                Text("\(tallies.placeCounts[config.wrappedValue.sourceID] ?? 0) places")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -227,7 +249,7 @@ struct SettingsView: View {
                 .font(.body.weight(.medium))
             tabToggles(tonight: config.isEnabled, uberEats: config.isEnabledForUberEats)
             HStack {
-                Text("\(placeCounts[config.wrappedValue.sourceID] ?? 0) places")
+                Text("\(tallies.placeCounts[config.wrappedValue.sourceID] ?? 0) places")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -390,8 +412,7 @@ struct SettingsView: View {
 
     private var michelinSection: some View {
         Section {
-            LabeledContent("Places in dataset",
-                           value: "\(store.restaurants.filter { $0.michelinAward != nil }.count)")
+            LabeledContent("Places in dataset", value: "\(tallies.michelinCount)")
             LabeledContent("Dataset date", value: MichelinDataSource.datasetDateDescription)
             Picker("Restaurant name language", selection: $settings.michelinNameLanguage) {
                 Text("Local language").tag("local")
@@ -410,7 +431,7 @@ struct SettingsView: View {
         } header: {
             Text("Michelin data")
         } footer: {
-            Text("Stars + Bib Gourmand from the open michelin-my-maps dataset. Auto-refreshes weekly; falls back to the bundled snapshot when offline.")
+            Text("Stars + Bib Gourmand from the open michelin-my-maps dataset. Auto-refreshes weekly on Wi-Fi; when it can't refresh, the app keeps its last data (the refresh button above works on any connection).")
         }
     }
 
@@ -438,9 +459,8 @@ struct SettingsView: View {
             } label: {
                 Label("Manage & add restaurants", systemImage: "list.bullet.rectangle")
             }
-            let hiddenCount = store.restaurants.filter(\.isHidden).count
-            if hiddenCount > 0 {
-                Text("\(hiddenCount) hidden")
+            if tallies.hiddenCount > 0 {
+                Text("\(tallies.hiddenCount) hidden")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }

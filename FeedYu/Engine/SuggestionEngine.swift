@@ -98,6 +98,12 @@ final class SuggestionEngine: ObservableObject {
         var wrapped = false
         search: while true {
             while !queue.isEmpty {
+                // A cancelled search (view task torn down, tab left) stops
+                // here instead of finishing the scan — on the Uber tab each
+                // further step is a slow WebView check for a card nobody is
+                // looking at. The queue keeps its position, so the next
+                // refresh resumes where this one stopped.
+                if Task.isCancelled { return }
                 let candidate = queue.removeFirst()
                 guard let coordinate = candidate.coordinate else { continue }
                 if let quickReject, quickReject(candidate) { continue }
@@ -108,6 +114,7 @@ final class SuggestionEngine: ObservableObject {
                     if let availabilityCheck {
                         guard checks < maxETAChecksPerRefresh else {
                             queue.insert(candidate, at: 0)
+                            pauseForCheckBudget()
                             break search
                         }
                         checks += 1
@@ -119,6 +126,7 @@ final class SuggestionEngine: ObservableObject {
 
                 guard checks < maxETAChecksPerRefresh else {
                     queue.insert(candidate, at: 0)
+                    pauseForCheckBudget()
                     break search
                 }
                 checks += 1
@@ -137,6 +145,14 @@ final class SuggestionEngine: ObservableObject {
                     statusMessage = String(localized: "Apple Maps is rate-limiting drive-time checks. Wait a minute and refresh.")
                     return
                 } catch {
+                    // Cancellation surfaces here too (MapKit fails the
+                    // in-flight await): the candidate got no verdict, so it
+                    // keeps its queue position, and a deliberate cancel
+                    // must not be blamed on the network.
+                    if Task.isCancelled {
+                        queue.insert(candidate, at: 0)
+                        return
+                    }
                     statusMessage = String(localized: "Couldn't check drive time for some places (network?).")
                 }
             }
@@ -208,6 +224,18 @@ final class SuggestionEngine: ObservableObject {
             // not the stale "5 min in current traffic".
             accept(suggestion.restaurant, etaSeconds: nil, origin: origin, mode: budget.mode)
         }
+    }
+
+    /// Batch paused mid-queue (check budget spent, more candidates left):
+    /// say what happened and invite continuation — the generic "nothing
+    /// new" line read as a dead end. Deliberately vague on the count: a
+    /// precise number would be wrong in both directions (quickReject skips
+    /// pass over stores without counting, and the counted number is always
+    /// just the batch cap at this point).
+    private func pauseForCheckBudget() {
+        statusMessage = availabilityCheck != nil
+            ? String(localized: "Checked many stores — refresh to keep looking.")
+            : String(localized: "Checked many places — refresh to keep looking.")
     }
 
     /// Rotation exhausted: reshuffle the whole pool, avoiding an immediate

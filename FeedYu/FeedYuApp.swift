@@ -180,12 +180,28 @@ struct RootView: View {
         // No Michelin rows despite a fresh refresh stamp = the store file
         // and the UserDefaults clock diverged (store deleted, restore) —
         // resync regardless of staleness or the tab stays empty for a week.
+        // (Local fallback stays on here: bundled data beats an empty tab.)
         let hasMichelin = store.restaurants.contains { $0.michelinAward != nil }
+        guard hasMichelin else {
+            await store.sync(MichelinDataSource())
+            return
+        }
         let isStale = MichelinDataSource.lastRemoteRefresh.map {
             Date().timeIntervalSince($0) > MichelinDataSource.refreshInterval
         } ?? true
-        if isStale || !hasMichelin {
-            await store.sync(MichelinDataSource())
+        // Failure backoff: while stale-and-failing (offline, GitHub
+        // unreachable), retry hourly, not on every foreground return —
+        // each retry is a download attempt, and its local-CSV fallback
+        // used to re-parse and re-merge ~19k unchanged rows every time
+        // the user switched back to the app. fallsBackToLocal: false
+        // because the store already has the data; a failed retry lands in
+        // SyncStatus instead of burning CPU to change nothing. Settings'
+        // "Refresh from GitHub now" bypasses all of this (forceRemote).
+        let attemptedRecently = MichelinDataSource.lastRemoteAttempt.map {
+            Date().timeIntervalSince($0) < MichelinDataSource.remoteRetryBackoff
+        } ?? false
+        if isStale, !attemptedRecently {
+            await store.sync(MichelinDataSource(fallsBackToLocal: false))
         }
     }
 
@@ -197,8 +213,20 @@ struct RootView: View {
         guard store.isLoaded else { return }
         let weekAgo = Date().addingTimeInterval(-7 * 24 * 3600)
         for source in settings.sharedListSources where source.config.isEnabled {
-            let lastSuccess = store.syncStatuses[source.id]?.lastSuccess
+            let status = store.syncStatuses[source.id]
+            let lastSuccess = status?.lastSuccess
             if lastSuccess == nil || lastSuccess! < weekAgo {
+                // Same failure backoff as Michelin: a list that keeps
+                // failing (offline, Google format drift) retries hourly,
+                // not on every foreground return. Only for lists that have
+                // EVER synced, though — one added moments ago (possibly
+                // offline) deserves eager retries or it sits empty for an
+                // hour; each retry is one cheap fetch that fails fast.
+                if lastSuccess != nil,
+                   let lastAttempt = status?.lastAttempt,
+                   Date().timeIntervalSince(lastAttempt) < MichelinDataSource.remoteRetryBackoff {
+                    continue
+                }
                 await store.sync(source)
             }
         }

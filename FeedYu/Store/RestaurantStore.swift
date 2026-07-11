@@ -43,15 +43,31 @@ final class RestaurantStore: ObservableObject {
         defer { isLoaded = true }
         let url = Self.storeFileURL
         let snapshot: Snapshot? = await Task.detached(priority: .userInitiated) {
-            guard let data = try? Data(contentsOf: url) else { return nil }
-            let decoder = JSONDecoder()
-            decoder.dateDecodingStrategy = .iso8601
-            return try? decoder.decode(Snapshot.self, from: data)
+            Self.loadSnapshot(from: url)
         }.value
         if let snapshot {
             restaurants = snapshot.restaurants
             syncStatuses = snapshot.syncStatuses
         }
+    }
+
+    /// Reads and decodes the store file. A file that EXISTS but fails to
+    /// decode is set aside as `store.json.corrupt` before returning nil —
+    /// the app then starts empty and the next save would otherwise
+    /// overwrite the user's only copy. The set-aside file is recoverable
+    /// via the container-surgery recipe (see MAINTENANCE.md "All my
+    /// restaurants disappeared"); only the newest corrupt copy is kept.
+    nonisolated static func loadSnapshot(from url: URL) -> Snapshot? {
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        if let snapshot = try? decoder.decode(Snapshot.self, from: data) {
+            return snapshot
+        }
+        let corrupt = url.appendingPathExtension("corrupt")
+        try? FileManager.default.removeItem(at: corrupt)
+        try? FileManager.default.moveItem(at: url, to: corrupt)
+        return nil
     }
 
     /// Debounce with a deadline: each mutation restarts a 3 s timer (one
@@ -60,6 +76,7 @@ final class RestaurantStore: ObservableObject {
     /// disk past 20 s, bounding what a force-quit mid-burst could lose.
     private func scheduleSave() {
         saveTask?.cancel()
+        let previous = saveTask
         let snapshot = Snapshot(restaurants: restaurants, syncStatuses: syncStatuses)
         let now = Date()
         let deadline = saveDeadline ?? now.addingTimeInterval(20)
@@ -67,6 +84,14 @@ final class RestaurantStore: ObservableObject {
         let delay = max(0, min(now.addingTimeInterval(3), deadline).timeIntervalSince(now))
         saveTask = Task.detached(priority: .utility) {
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            // Serialize BEFORE the cancellation check: a cancelled-in-sleep
+            // task must still wait for its predecessor, or its successor's
+            // own `await previous` completes instantly and severs the chain
+            // back to a write already in flight — two concurrent multi-MB
+            // .atomic writes can land out of order, the OLDER snapshot
+            // winning the rename. Waiting first keeps the chain transitive;
+            // a cancelled waiter does no work of its own afterwards.
+            await previous?.value
             guard !Task.isCancelled else { return }
             await MainActor.run { self.saveDeadline = nil }
             let encoder = JSONEncoder()
@@ -142,8 +167,22 @@ final class RestaurantStore: ObservableObject {
                 return nil
             }
             // Incoming has no coordinates (e.g. Takeout list CSV): match by
-            // name only when unambiguous.
-            return candidates.count == 1 ? candidates[0] : nil
+            // name only when unambiguous — and only into rows the USER put
+            // there (any non-guide source stamp, or manually added). With
+            // ~19k guide rows loaded, "unique in the whole store" let a
+            // coordinate-less row merge into a same-named Michelin place
+            // anywhere on earth; the user's place inherited the foreign
+            // coordinates and silently fell out of every radius. The
+            // discriminator is the source stamps, NOT michelinAward: a user
+            // place that merged with its local guide row carries the award,
+            // and excluding it appended a coordinate-less duplicate on
+            // every re-import. Guide-only rows still merge via the
+            // name + ≤150 m rule above.
+            let userRows = candidates.filter { index in
+                updated[index].addedManually
+                    || updated[index].lastSeenInSourceAt.keys.contains { $0 != "michelin" }
+            }
+            return userRows.count == 1 ? userRows[0] : nil
         }
 
         for var incoming in fetched {

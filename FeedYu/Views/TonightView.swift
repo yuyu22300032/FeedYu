@@ -17,6 +17,11 @@ struct TonightView: View {
     /// still-visible previous suggestion — a long exhaustive Uber check
     /// behind a stale card reads as a frozen app.
     @State private var searchIsSlow = false
+    /// The button-started search, kept so leaving the tab can cancel it —
+    /// an Uber scan otherwise keeps burning slow WebView checks for a card
+    /// nobody is looking at. (The auto-suggest path is a .task, so its
+    /// cancellation is already tied to the view's lifetime.)
+    @State private var refreshTask: Task<Void, Never>?
 
     /// The user's own saved places (not the whole Michelin dataset), drawn
     /// only from lists enabled in Settings *for this tab* (Tonight and Uber
@@ -88,6 +93,12 @@ struct TonightView: View {
                             .contextMenu {
                                 Button(role: .destructive) {
                                     store.setHidden(true, id: suggestion.restaurant.id)
+                                    // Replace the card right away: nothing
+                                    // else watches candidate membership, and
+                                    // a card the user just hid must not
+                                    // linger until the next manual refresh
+                                    // or tab return.
+                                    revalidate()
                                 } label: {
                                     Label("Hide this restaurant", systemImage: "eye.slash")
                                 }
@@ -110,7 +121,13 @@ struct TonightView: View {
             }
 
             Button {
-                Task { await refresh() }
+                // Guard + cancel keep refreshTask pointing at the task
+                // that is actually running: a double-tap in the enabled
+                // window used to strand the live search untracked (and
+                // uncancellable by onDisappear) behind a no-op successor.
+                guard !engine.isSearching else { return }
+                refreshTask?.cancel()
+                refreshTask = Task { await refresh() }
             } label: {
                 Label(engine.current == nil ? "Suggest a place" : "Not feeling it — another",
                       systemImage: "arrow.clockwise")
@@ -124,7 +141,26 @@ struct TonightView: View {
             .padding(.bottom, 8)
         }
         .task(id: autoSuggestKey) {
-            if engine.current == nil, !engine.isSearching, locationProvider.location != nil {
+            // The id can change while a search runs (first launch: a list
+            // sync lands mid-scan and bumps candidates.count) — SwiftUI
+            // cancels the old task, which unwinds without producing a
+            // card. Skipping on isSearching left a blank, message-less
+            // pane; wait out the unwind instead.
+            while engine.isSearching {
+                try? await Task.sleep(nanoseconds: 100_000_000)
+                if Task.isCancelled { return }
+            }
+            // Roll whenever there is no card. Deliberately NOT gated on a
+            // clear statusMessage: on a cold launch the location fix can
+            // beat the store load, and the first roll's "no restaurants"
+            // message then suppressed every auto-roll after the real
+            // candidates arrived — the app opened to a dead pane. The
+            // store.isLoaded guard skips that pointless empty first roll
+            // (the load's version bump re-fires this task). Cost of the
+            // eager rule on the Uber tab: a paused batch may auto-continue
+            // once per tab return — bounded (25) and cooldown-amortized.
+            if engine.current == nil, store.isLoaded,
+               locationProvider.location != nil {
                 await refresh()
             }
         }
@@ -132,8 +168,12 @@ struct TonightView: View {
         // A task would also re-fire on every tab return. Revalidate, don't
         // blind-roll: a card that still fits the new budget stays (its
         // traffic minutes refresh); only a fallen-out card is replaced.
+        // With NO card, roll instead — "try a bigger budget" must not
+        // demand a button press after the user does exactly that
+        // (candidates aren't budget-filtered here, so the auto-suggest
+        // task id never changes with the budget).
         .onChange(of: effectiveBudget) { _, _ in
-            revalidate()
+            revalidateOrRoll()
         }
         .onChange(of: engine.isSearching) { _, searching in
             if searching {
@@ -146,6 +186,7 @@ struct TonightView: View {
             }
         }
         .onAppear { revalidate() }
+        .onDisappear { refreshTask?.cancel() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { revalidate() }
         }
@@ -168,11 +209,30 @@ struct TonightView: View {
     /// — stores open while you browse Michelin and decide not to go out.
     /// Cheap when caches are fresh; the card survives whenever it still
     /// fits, so suggestions stay stable across casual tab switches.
+    /// Constraint changed: revalidate the current card, or — when there is
+    /// no card to revalidate — roll a fresh one right away.
+    private func revalidateOrRoll() {
+        if engine.current == nil {
+            guard !engine.isSearching, store.isLoaded,
+                  locationProvider.location != nil else { return }
+            refreshTask?.cancel()
+            refreshTask = Task { await refresh() }
+        } else {
+            revalidate()
+        }
+    }
+
     private func revalidate() {
         guard engine.current != nil, !engine.isSearching,
               let origin = locationProvider.location else { return }
         configureEngine(origin: origin)
-        Task {
+        // Tracked like the button's search: a revalidation escalates into
+        // a full scan when the card fell out of budget/candidates (up to
+        // 25 slow WebView checks on the Uber tab), and leaving the tab
+        // must be able to cancel that too. No cancel of the previous slot
+        // here — the isSearching guard above means nothing engine-side is
+        // running when this fires.
+        refreshTask = Task {
             await engine.revalidateCurrent(candidates: candidates, origin: origin,
                                            budget: effectiveBudget)
         }
@@ -187,17 +247,19 @@ struct TonightView: View {
     }
 
     private func configureEngine(origin: CLLocation) {
-        // WebView-rendered availability checks are slow (seconds each) —
-        // give up sooner than the ETA-check budget would.
-        // Uber tab: distance mode never calls MapKit, so the check budget
-        // only gated availability checks — and a capped budget made the tab
-        // claim "no results" while orderable places sat later in the queue.
-        // Search exhaustively instead: with notFound persisted for a week
-        // and skipped for free, each place costs a slow check at most once
-        // per week, and the search stops at the first orderable hit.
-        engine.maxETAChecksPerRefresh = uberEatsMode ? Int.max : 12
+        // Uber tab: distance mode never calls MapKit, so the budget gates
+        // only the slow WebView availability checks (seconds each). 25 per
+        // refresh bounds the worst case — a first scan of a dense area with
+        // nothing orderable used to run unbounded, minutes of network for
+        // one press. A paused scan is honest, not a give-up: the engine
+        // requeues where it stopped, says "refresh to keep looking", and
+        // the next press resumes mid-queue. Free skips (quickReject on the
+        // week-long notFound cooldowns) never count, so re-walks stay cheap
+        // and the tab still can't falsely claim "no results" (the historic
+        // bug was a tiny cap WITH cooldowns counted against it).
+        engine.maxETAChecksPerRefresh = uberEatsMode ? 25 : 12
         // Fresh verified "not on Uber Eats" places are skipped for free —
-        // NOT via availabilityCheck, which counts against the 6-check
+        // NOT via availabilityCheck, which counts against the 25-check
         // budget (a neighborhood of them used to exhaust it and show "no
         // results" while orderable places sat further down the queue).
         engine.quickReject = uberEatsMode ? { UberEatsChecker.isInNotFoundCooldown($0) } : nil

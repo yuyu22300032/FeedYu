@@ -47,7 +47,11 @@ FeedYu/
 │                          stale, and refresh location when the fix is
 │                          older than 30 min — launch and foreground use
 │                          the SAME staleness gates, so neither path
-│                          re-parses/re-fetches fresh data)
+│                          re-parses/re-fetches fresh data; FAILING
+│                          refreshes back off and retry hourly at most,
+│                          gated on each source's lastAttempt — an offline
+│                          stretch must not re-download/re-parse per
+│                          foreground return)
 ├── Models/Restaurant.swift        Restaurant + ListKind + MichelinAward
 ├── Models/TravelBudget.swift      TravelMode + TravelBudget (radius/presets)
 ├── DataSources/
@@ -154,7 +158,13 @@ Michelin fields, never clear anything, never touch `isHidden`.
   detached task with a 3 s debounce + 20 s deadline — mutation bursts (a
   localizer fill run lands ~40 names seconds apart) coalesce into a few
   multi-MB rewrites instead of one per mutation, while the deadline bounds
-  force-quit loss. ~25k restaurants ≈ 15 MB; loads off-main.
+  force-quit loss. Writes are serialized (each save awaits its
+  predecessor): the deadline path schedules at zero delay, and two
+  overlapping atomic writes could land the OLDER snapshot last. ~25k
+  restaurants ≈ 15 MB; loads off-main. A store file that exists but fails
+  to decode is set aside as `store.json.corrupt` (newest copy kept) before
+  the app continues empty — the next save must not overwrite the user's
+  only copy.
 - `version` (bumped in the `restaurants` didSet) keys the views' memoized
   derived collections; `indexByID` (rebuilt there too) backs O(1)
   `restaurant(withID:)` lookups — per-mutation O(n) rebuild traded for
@@ -165,7 +175,14 @@ Michelin fields, never clear anything, never touch `isHidden`.
   1. identical `googleMapsURL`
   2. same normalized name AND coordinates within **150 m**
   3. same normalized name, incoming has no coordinates, and the name is
-     unique in the store (Takeout CSV case)
+     unique among USER rows — rows with any non-"michelin" source stamp or
+     addedManually (Takeout CSV case). Guide-ONLY rows never name-match a
+     coordinate-less incoming: with ~19k of them loaded, a same-named
+     guide place anywhere on earth would swallow the user's place (it
+     inherits the foreign coordinates and falls out of every radius). The
+     discriminator is deliberately the stamps, not michelinAward — a user
+     place that merged with its local guide row carries the award and must
+     keep matching its own re-imports. Guide rows still merge via rule 2.
   Otherwise append. Name normalization = casefold + strip diacritics + keep
   alphanumerics only (CJK survives). Matching uses hash indexes so a 25k-row
   sync stays O(n).
@@ -204,10 +221,17 @@ Michelin fields, never clear anything, never touch `isHidden`.
   and the user is told to wait a minute.
 - ETA cache: 10 min TTL, keyed by restaurant id + mode + origin bucketed to
   a ~500 m grid. Max 12 ETA checks per refresh on walk/drive; the Uber tab
-  sets the cap to Int.max (distance mode makes no route calls, so the cap
-  only made it quit mid-queue) and relies on `quickReject` + persisted
-  notFound cooldowns to keep exhaustive scans cheap. A drained queue wraps
-  the rotation once in-place instead of ending with "press again".
+  caps at 25 slow WebView availability checks per refresh (an unbounded
+  first scan of a dense area ran for minutes on one press). A paused scan
+  requeues where it stopped and says "Checked many stores — refresh to
+  keep looking" (deliberately count-less: quickReject skips don't count,
+  so a number would undercount the pass) — the next press resumes
+  mid-queue, and `quickReject` + persisted notFound cooldowns keep
+  re-walks free, so the tab still never falsely claims "no results".
+  A cancelled refresh (leaving the tab cancels the search task; the
+  auto-suggest .task cancels with the view) stops at the next candidate,
+  keeping queue position. A drained queue wraps the rotation once in-place
+  instead of ending with "press again".
 - `quickReject` (optional injectable): free synchronous skip, NOT counted
   against the check budget (Uber tab: places in notFound cooldown).
 - `availabilityCheck` (optional injectable): post-budget filter used by the
@@ -234,8 +258,23 @@ Michelin fields, never clear anything, never touch `isHidden`.
   API/JS failure (one retry) → PERMISSIVE unknown (kept; button falls back
   to a search universal link — iOS hands ubereats.com URLs to the
   installed app without any web request). Checks count against the
-  per-refresh budget (6 on this tab); results session-cached by normalized
-  name, notFound deliberately not persisted. (v1 name-only URLs were wiped
+  per-refresh budget (25 on this tab); verdicts session-cached by
+  restaurant id — NOT by name: same-named chain branches must not share a
+  verdict, or one branch's verified store URL gets persisted onto the
+  other. A known store's OPEN state is deliberately NOT cached (product
+  decision — don't "optimize" it back): the card is the moment before the
+  user taps "order", so open-now is re-verified LIVE per shown suggestion
+  (one getStoreV1 JSON call); a 10-minute-old "open" can be a closed store
+  by now. Only `closedNow` short-circuits — it self-expires at Uber's own
+  reopen time, so it can't go stale in the wrong direction. The check
+  retries once on transport failure (the Uber tab auto-rolls at launch,
+  making this the app's FIRST WebView call — cold calls throw; single-shot
+  it failed open and the initial card could be a closed store), then fails
+  open with a debugLog. The transport is injectable
+  (`UberEatsChecker.runJS`) so these contracts are unit-tested — see
+  docs/REQUIREMENTS.md "Uber Eats". A verified
+  notFound persists with a week's cooldown (skipped free via quickReject);
+  `unknown` (bot wall) is never persisted. (v1 name-only URLs were wiped
   once via the `uberEatsURLsResetV2` flag.)
 - No repeats until the in-range pool is exhausted, then reshuffle (avoiding
   an immediate repeat of the current card).
@@ -279,7 +318,20 @@ tests pass with an updated *synthetic* fixture.
 
 - Load order: cached download (`michelin-cache.csv` in App Support) → bundled
   `michelin.csv`. Auto-refreshes weekly from the michelin-my-maps GitHub raw
-  URL (or on Settings → Refresh now); refresh failures fall back silently.
+  URL (or on Settings → Refresh now). The download is a conditional GET:
+  the cache file's ETag is saved with it, and an unchanged upstream answers
+  HTTP 304 — the weekly clock advances without the multi-MB body.
+- The auto-refresh is Wi-Fi/unmetered only (`allowsExpensiveNetworkAccess
+  = false`, same etiquette as GooglePlaceResolver — a multi-MB body nobody
+  asked for right now); Settings → Refresh now keeps full network access.
+- Refresh failures: every attempt stamps `lastRemoteAttempt`, and the app's
+  staleness gate retries at most hourly (`remoteRetryBackoff`) — a stale
+  dataset + no network must not re-attempt per foreground return. When the
+  store already holds guide rows the gate also passes
+  `fallsBackToLocal: false`: the failure throws into SyncStatus instead of
+  re-parsing/re-merging ~19k unchanged local rows. The local fallback stays
+  on only for seeding an empty store (first launch, store restore).
+  Settings → Refresh now bypasses the backoff entirely (forceRemote).
 - All award tiers parse (`Selected Restaurants` included since v2).
 - After the current list loads, `applyHistoryOverlay` merges
   `michelin_history.csv`: rows with `Current=1` attach `Years` to matching
@@ -341,7 +393,10 @@ tests pass with an updated *synthetic* fixture.
 | App Group `group.com.yuyu.FeedYu` | `pendingSharedListURLs` | share-extension inbox |
 | UserDefaults | `languageChoice` + `AppleLanguages` | UI language override |
 | UserDefaults | `michelinNameLanguage` | local/en/zh/ja, default local |
-| UserDefaults | `michelinLastRemoteRefresh` | weekly refresh clock |
+| UserDefaults | `michelinLastRemoteRefresh` | weekly refresh clock (advances on success/304) |
+| UserDefaults | `michelinLastRemoteAttempt` | failure-backoff clock (hourly retries) |
+| UserDefaults | `michelinCacheETag` | ETag of michelin-cache.csv (conditional GET) |
+| UserDefaults | `michelinPriceBands` / `michelinAwardFilters` | Michelin tab filter chips (persisted) |
 | App Support/FeedYu | `store.json` | the entire restaurant store |
 | App Support/FeedYu | `michelin-cache.csv` | last downloaded dataset |
 

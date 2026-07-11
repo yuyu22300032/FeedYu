@@ -47,6 +47,8 @@ final class AppSettings: ObservableObject {
     private static let importedListsKey = "importedListConfigs"
     private static let languageChoiceKey = "languageChoice"
     private static let michelinNameLanguageKey = "michelinNameLanguage"
+    private static let michelinPriceBandsKey = "michelinPriceBands"
+    private static let michelinAwardsKey = "michelinAwardFilters"
     private static let hasSeenOnboardingKey = "hasSeenOnboarding"
 
     /// Hard cap on user lists (shared links + Takeout imports combined).
@@ -69,6 +71,19 @@ final class AppSettings: ObservableObject {
     /// restaurant names in. Local = the restaurant's own country's edition.
     @Published var michelinNameLanguage: String {
         didSet { UserDefaults.standard.set(michelinNameLanguage, forKey: Self.michelinNameLanguageKey) }
+    }
+
+    /// Michelin tab price-band filter, 1–4 = $–$$$$ (empty = any price).
+    /// Persisted: as view @State these silently reset to the defaults on
+    /// every launch. Stored as a sorted array — Set isn't plist-friendly.
+    @Published var michelinPriceBands: Set<Int> {
+        didSet { UserDefaults.standard.set(michelinPriceBands.sorted(), forKey: Self.michelinPriceBandsKey) }
+    }
+
+    /// Michelin tab award filter (empty = the user deselected everything;
+    /// kept as left — the chips make the state obvious).
+    @Published var michelinAwards: Set<MichelinAward> {
+        didSet { UserDefaults.standard.set(michelinAwards.map(\.rawValue).sorted(), forKey: Self.michelinAwardsKey) }
     }
 
     /// First-launch onboarding: false until the walkthrough is dismissed
@@ -170,6 +185,19 @@ final class AppSettings: ObservableObject {
         languageChoice = storedChoice
         languageChoiceAtLaunch = storedChoice
         michelinNameLanguage = UserDefaults.standard.string(forKey: Self.michelinNameLanguageKey) ?? "local"
+        // A stored empty array is a real choice ("any price" / "no awards");
+        // only a missing key gets the defaults. Unknown award raw values
+        // (from a future version) are dropped, not crashed on.
+        if let bands = UserDefaults.standard.array(forKey: Self.michelinPriceBandsKey) as? [Int] {
+            michelinPriceBands = Set(bands)
+        } else {
+            michelinPriceBands = [1, 2]
+        }
+        if let awards = UserDefaults.standard.array(forKey: Self.michelinAwardsKey) as? [String] {
+            michelinAwards = Set(awards.compactMap(MichelinAward.init(rawValue:)))
+        } else {
+            michelinAwards = [.selected, .bibGourmand]
+        }
         hasSeenOnboarding = UserDefaults.standard.bool(forKey: Self.hasSeenOnboardingKey)
         // Legacy single budget (validated) seeds both pages on upgrade.
         let storedBudget = UserDefaults.standard.integer(forKey: Self.budgetKey)

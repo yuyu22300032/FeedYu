@@ -52,11 +52,16 @@ final class UberEatsChecker: ObservableObject {
         return now.timeIntervalSince(checkedAt) < notFoundCooldownSeconds
     }
 
-    /// Session cache keyed by normalized name. notFound/unknown last the
-    /// session (existence rarely changes); `.available` expires after
-    /// `openStateTTL` (10 min — cheap to recheck, and a store open at noon may
-    /// be closed when the user returns); `.closedNow` self-expires at reopen.
-    private var cache: [String: (result: Availability, at: Date)] = [:]
+    /// Session cache keyed by restaurant id — NOT by name: two same-named
+    /// branches of a chain would share a verdict, and the first branch's
+    /// verified store URL would get persisted onto the other (the engine's
+    /// availabilityCheck writes `.available` URLs to the store). notFound/
+    /// unknown last the session (existence rarely changes); `.available`
+    /// (search-pipeline verdicts, URL-less flow only) expires after
+    /// `openStateTTL`; `.closedNow` self-expires at Uber's own reopen time.
+    /// Known stores are deliberately NOT served a cached "open" — see
+    /// `availability(for:near:)`.
+    private var cache: [UUID: (result: Availability, at: Date)] = [:]
     nonisolated static let openStateTTL: TimeInterval = 10 * 60
 
     /// Pure freshness rule (testable): is a cached verdict still valid?
@@ -69,25 +74,44 @@ final class UberEatsChecker: ObservableObject {
     }
 
     func availability(for restaurant: Restaurant, near origin: CLLocation?) async -> Availability {
-        let key = restaurant.normalizedName
+        let key = restaurant.id
+        if let url = restaurant.uberEatsURL {
+            // Known store: existence is settled, so only the open-now
+            // question remains — and it is answered LIVE on every
+            // suggestion, DELIBERATELY uncached (product decision, don't
+            // "optimize"): the card is the moment before the user taps
+            // "order", and a cached "open" from even 10 minutes ago can be
+            // a closed store by now. One getStoreV1 JSON call per shown
+            // suggestion is the price of the button always landing on an
+            // orderable page. Only a still-fresh closedNow short-circuits
+            // — it self-expires at Uber's own reopen time, so it can't go
+            // stale in the wrong direction.
+            if let cached = cache[key], case .closedNow = cached.result {
+                if Self.isFresh(cached.result, checkedAt: cached.at) { return cached.result }
+                cache[key] = nil
+            }
+            let region = (Locale.current.region?.identifier ?? "US").lowercased()
+            if let uuid = Self.storeUUID(fromStoreURL: url) {
+                if let reopens = await Self.fetchNextOpenTime(storeUuid: uuid, region: region) {
+                    if reopens > Date() {
+                        let result = Availability.closedNow(url, reopens: reopens)
+                        cache[key] = (result, Date())
+                        return result
+                    }
+                } else {
+                    // Fail OPEN, deliberately: a persistent bot wall must
+                    // not make the user's whole verified neighborhood
+                    // vanish. The cold-start retry above makes this path
+                    // rare; log it so device consoles show when the open
+                    // guarantee couldn't be honored.
+                    Self.debugLog("open-check unavailable for known store '\(restaurant.name)' — failing open")
+                }
+            }
+            return .available(url)
+        }
         if let cached = cache[key] {
             if Self.isFresh(cached.result, checkedAt: cached.at) { return cached.result }
             cache[key] = nil // stale open-state — recheck below
-        }
-        if let url = restaurant.uberEatsURL {
-            // Known store: only the open-now question remains. A closed
-            // store keeps its URL (existence is durable) but is skipped
-            // until it reopens — tapping through to Uber's "closed right
-            // now" page is the exact annoyance this avoids.
-            let region = (Locale.current.region?.identifier ?? "US").lowercased()
-            if let uuid = Self.storeUUID(fromStoreURL: url),
-               let reopens = await Self.fetchNextOpenTime(storeUuid: uuid, region: region),
-               reopens > Date() {
-                let result = Availability.closedNow(url, reopens: reopens)
-                cache[key] = (result, Date())
-                return result
-            }
-            return .available(url)
         }
         if Self.isInNotFoundCooldown(restaurant) { return .notFound }
         let result = await Self.fetchAvailability(name: restaurant.name,
@@ -147,11 +171,11 @@ final class UberEatsChecker: ObservableObject {
             "region": region,
         ]
         let host = URL(string: "https://www.ubereats.com/")!
-        var response = await WebPageFetcher.shared.callJS(script, arguments: arguments, onHost: host)
+        var response = await Self.runJS(script, arguments, host)
         if response == nil || response!.hasPrefix("0|") {
             // First call after a cold page load occasionally throws — retry once.
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
-            response = await WebPageFetcher.shared.callJS(script, arguments: arguments, onHost: host)
+            try? await Task.sleep(nanoseconds: openCheckRetryDelayNanoseconds)
+            response = await Self.runJS(script, arguments, host)
         }
         guard let response else {
             debugLog("search '\(name)': API call failed")
@@ -243,6 +267,18 @@ final class UberEatsChecker: ObservableObject {
         return .unknown
     }
 
+    /// Transport for the same-origin JS calls — injectable for tests: the
+    /// WebView needs a real app and ubereats.com bot-walls anything that
+    /// isn't one, so unit tests stub this and feed fixture JSON through
+    /// the REAL retry/verdict logic (the same seam as the engine's
+    /// etaProvider). Production runs the shared bot-cleared WKWebView.
+    static var runJS: (_ script: String, _ arguments: [String: Any], _ hostPage: URL) async -> String? = { script, arguments, hostPage in
+        await WebPageFetcher.shared.callJS(script, arguments: arguments, onHost: hostPage)
+    }
+
+    /// Cold-start retry pause; tests set 0 so retries don't slow the suite.
+    static var openCheckRetryDelayNanoseconds: UInt64 = 1_000_000_000
+
     /// getStoreV1 JSON via a same-origin fetch (same transport as search).
     static func fetchStoreBody(storeUuid: String, region: String) async -> String? {
         let script = """
@@ -259,9 +295,8 @@ final class UberEatsChecker: ObservableObject {
         }
         """
         let host = URL(string: "https://www.ubereats.com/")!
-        guard let response = await WebPageFetcher.shared.callJS(script, arguments: [
-            "uuid": storeUuid, "region": region,
-        ], onHost: host), response.hasPrefix("200|") else { return nil }
+        guard let response = await Self.runJS(script, ["uuid": storeUuid, "region": region], host),
+              response.hasPrefix("200|") else { return nil }
         return String(response.dropFirst(4))
     }
 
@@ -272,7 +307,18 @@ final class UberEatsChecker: ObservableObject {
     /// recent opening time (past). `isOpen`/`isOrderable` are NOT open-now
     /// flags — they were true for verifiably closed stores.
     static func fetchNextOpenTime(storeUuid: String, region: String) async -> Date? {
-        guard let body = await fetchStoreBody(storeUuid: storeUuid, region: region) else { return nil }
+        var body = await fetchStoreBody(storeUuid: storeUuid, region: region)
+        if body == nil {
+            // Cold-start etiquette copied from fetchAvailability: the first
+            // WebView call after a page load occasionally throws — and at
+            // app launch the Uber tab's auto-roll makes THIS the app's
+            // very first call whenever the top candidate is a known store.
+            // Single-shot, the open check failed open and the initial card
+            // could be a store that is closed right now (shipped once).
+            try? await Task.sleep(nanoseconds: openCheckRetryDelayNanoseconds)
+            body = await fetchStoreBody(storeUuid: storeUuid, region: region)
+        }
+        guard let body else { return nil }
         return parseNextOpenTime(fromStoreJSON: body)
     }
 

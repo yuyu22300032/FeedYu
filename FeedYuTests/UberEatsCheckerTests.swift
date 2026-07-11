@@ -152,3 +152,106 @@ final class UberEatsCheckerTests: XCTestCase {
         XCTAssertLessThan(UberEatsChecker.similarity("kfc", "pizzahut"), 0.3)
     }
 }
+
+/// End-to-end availability flow through the REAL retry/verdict logic, with
+/// the WebView transport stubbed (UberEatsChecker.runJS) — the seam that
+/// makes the open-check contracts machine-checkable instead of
+/// device-testing folklore. See docs/REQUIREMENTS.md "Uber Eats".
+@MainActor
+final class UberEatsAvailabilityFlowTests: XCTestCase {
+    private var checker: UberEatsChecker!
+
+    override func setUp() async throws {
+        checker = UberEatsChecker()
+        UberEatsChecker.openCheckRetryDelayNanoseconds = 0
+    }
+
+    override func tearDown() async throws {
+        UberEatsChecker.runJS = { script, arguments, hostPage in
+            await WebPageFetcher.shared.callJS(script, arguments: arguments, onHost: hostPage)
+        }
+        UberEatsChecker.openCheckRetryDelayNanoseconds = 1_000_000_000
+    }
+
+    private func knownStore(name: String = "Known Store") -> Restaurant {
+        var restaurant = Restaurant(name: name)
+        restaurant.latitude = 25.03
+        restaurant.longitude = 121.56
+        restaurant.uberEatsURL = URL(string:
+            "https://www.ubereats.com/store-browse-uuid/aaaaaaaa-bbbb-cccc-dddd-eeeeffff0000?diningMode=DELIVERY")
+        return restaurant
+    }
+
+    private static func storeJSON(nextOpenTime: Date) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return #"200|{"data":{"orderForLaterInfo":{"nextOpenTime":"\#(formatter.string(from: nextOpenTime))"}}}"#
+    }
+
+    func testColdStartRetryRecoversTheOpenCheck() async {
+        // REGRESSION (shipped): the Uber tab auto-rolls at launch, making
+        // the open check the app's very FIRST WebView call — which
+        // occasionally throws cold. Single-shot, the check failed open and
+        // the initial card could be a store that is closed right now.
+        var calls = 0
+        let reopens = Date().addingTimeInterval(3 * 3600)
+        UberEatsChecker.runJS = { _, _, _ in
+            calls += 1
+            return calls == 1 ? nil : Self.storeJSON(nextOpenTime: reopens)
+        }
+        let result = await checker.availability(for: knownStore(), near: nil)
+        XCTAssertEqual(calls, 2, "first (cold) call failed — exactly one retry")
+        guard case .closedNow(_, let cachedReopens) = result else {
+            return XCTFail("closed store must be skipped, got \(result)")
+        }
+        XCTAssertEqual(cachedReopens.map { Int($0.timeIntervalSince1970) },
+                       Int(reopens.timeIntervalSince1970))
+    }
+
+    func testClosedVerdictIsCachedUntilReopenTime() async {
+        var calls = 0
+        let reopens = Date().addingTimeInterval(3600)
+        UberEatsChecker.runJS = { _, _, _ in
+            calls += 1
+            return Self.storeJSON(nextOpenTime: reopens)
+        }
+        let store = knownStore()
+        _ = await checker.availability(for: store, near: nil)
+        let second = await checker.availability(for: store, near: nil)
+        XCTAssertEqual(calls, 1, "closed-until-a-known-time is not re-fetched before then")
+        guard case .closedNow = second else { return XCTFail("still closed") }
+    }
+
+    func testOpenVerdictIsNeverCachedForKnownStores() async {
+        // PRODUCT DECISION (do not "optimize" away): the card is the moment
+        // before the user taps Order — a known store's OPEN state is
+        // re-verified live on every suggestion, never served from a cache.
+        var calls = 0
+        let openedAt = Date().addingTimeInterval(-3600) // past = open now
+        UberEatsChecker.runJS = { _, _, _ in
+            calls += 1
+            return Self.storeJSON(nextOpenTime: openedAt)
+        }
+        let store = knownStore()
+        guard case .available = await checker.availability(for: store, near: nil) else {
+            return XCTFail("open store is available")
+        }
+        guard case .available = await checker.availability(for: store, near: nil) else {
+            return XCTFail("open store is available")
+        }
+        XCTAssertEqual(calls, 2, "open state re-checked on every call")
+    }
+
+    func testFailsOpenOnlyAfterRetryAlsoFails() async {
+        // A persistent bot wall must not hide the user's whole verified
+        // neighborhood — but the verdict is only surrendered after the
+        // retry, not on the first cold hiccup.
+        var calls = 0
+        UberEatsChecker.runJS = { _, _, _ in calls += 1; return nil }
+        let result = await checker.availability(for: knownStore(), near: nil)
+        XCTAssertEqual(calls, 2, "both attempts spent before failing open")
+        guard case .available = result else {
+            return XCTFail("fail-open keeps the store visible, got \(result)")
+        }
+    }
+}

@@ -152,9 +152,11 @@ final class SuggestionEngineTests: XCTestCase {
     }
 
     func testUncappedBudgetChecksEveryPlaceInOneRefresh() async {
-        // Uber tab config: distance mode + Int.max budget = keep checking
-        // until something is orderable or the whole pool was checked — no
-        // more "no new places in range, press again" mid-queue give-ups.
+        // Engine capability: with an uncapped budget a single refresh keeps
+        // checking until something is orderable or the whole pool was
+        // checked. (The Uber tab now runs bounded batches of 25 that resume
+        // across presses — see testCappedScanResumesAcrossRefreshes — but
+        // the uncapped behavior must keep working for any budget value.)
         let engine = SuggestionEngine()
         engine.etaProvider = { _, _, _ in XCTFail("distance mode must not request routes"); return 0 }
         engine.maxETAChecksPerRefresh = Int.max
@@ -189,6 +191,87 @@ final class SuggestionEngineTests: XCTestCase {
             XCTAssertEqual(engine.current?.restaurant.name, "OnUber",
                            "refresh #\(attempt) must land on the only orderable place, never give up")
         }
+    }
+
+    func testCappedScanResumesAcrossRefreshes() async {
+        // The Uber tab bounds each refresh to a batch of slow availability
+        // checks. A scan that pauses mid-queue must NOT give up or restart:
+        // the paused candidate is requeued at the front, a status message
+        // says keep looking, and the next press continues from there —
+        // every place still gets checked exactly once.
+        let engine = SuggestionEngine()
+        engine.etaProvider = { _, _, _ in XCTFail("distance mode must not request routes"); return 0 }
+        engine.maxETAChecksPerRefresh = 2
+        var checkedCount = 0
+        engine.availabilityCheck = { checkedCount += 1; return $0.name == "OnUber" }
+        var candidates = (0..<5).map { place("No\($0)", latOffset: Double($0) * 0.0001) }
+        // Alone in the outermost distance ring → guaranteed last in queue.
+        candidates.append(place("OnUber", latOffset: 0.004))
+
+        for press in 0..<2 {
+            await engine.refreshSuggestion(candidates: candidates, origin: origin,
+                                           budget: TravelBudget(mode: .distance, value: 500))
+            XCTAssertNil(engine.current, "press #\(press) pauses mid-queue")
+            XCTAssertNotNil(engine.statusMessage, "paused scan invites another press")
+        }
+        await engine.refreshSuggestion(candidates: candidates, origin: origin,
+                                       budget: TravelBudget(mode: .distance, value: 500))
+        XCTAssertEqual(engine.current?.restaurant.name, "OnUber",
+                       "third press resumes the queue and reaches the orderable place")
+        XCTAssertEqual(checkedCount, 6, "no place was re-checked while resuming")
+    }
+
+    func testCancelledRefreshStopsScanning() async {
+        // Leaving the tab cancels the search task; the engine must stop
+        // burning availability checks for a card nobody is looking at.
+        let engine = SuggestionEngine()
+        engine.etaProvider = { _, _, _ in XCTFail("distance mode must not request routes"); return 0 }
+        var checkedCount = 0
+        engine.availabilityCheck = { _ in checkedCount += 1; return false }
+        let candidates = (0..<10).map { place("No\($0)", latOffset: Double($0) * 0.0001) }
+
+        let search = Task { @MainActor in
+            await engine.refreshSuggestion(candidates: candidates, origin: origin,
+                                           budget: TravelBudget(mode: .distance, value: 500))
+        }
+        search.cancel() // lands before the MainActor task body runs
+        await search.value
+        XCTAssertEqual(checkedCount, 0, "a cancelled refresh checks nothing")
+        XCTAssertFalse(engine.isSearching)
+
+        // The queue survived the cancellation — the next (uncancelled)
+        // refresh scans it normally.
+        await engine.refreshSuggestion(candidates: candidates, origin: origin,
+                                       budget: TravelBudget(mode: .distance, value: 500))
+        XCTAssertEqual(checkedCount, 10, "resumed refresh checks the full pool")
+    }
+
+    func testCancellationDuringETAIsSilentAndKeepsTheCandidate() async {
+        // A cancellation that lands while awaiting a route check surfaces
+        // as a thrown error — it must not be blamed on the network, and
+        // the unverdicted candidate must keep its queue position.
+        let engine = SuggestionEngine()
+        var etaCalls = 0
+        var search: Task<Void, Never>?
+        engine.etaProvider = { _, _, _ in
+            etaCalls += 1
+            search?.cancel() // cancellation lands mid-await
+            throw CancellationError()
+        }
+        let candidates = [place("A", latOffset: 0.001), place("B", latOffset: 0.002)]
+        search = Task { @MainActor in
+            await engine.refreshSuggestion(candidates: candidates, origin: origin, budget: drive(30))
+        }
+        await search?.value
+        XCTAssertNil(engine.current)
+        XCTAssertNil(engine.statusMessage, "a deliberate cancel is not a network error")
+        XCTAssertEqual(etaCalls, 1)
+
+        // Next refresh finds the requeued candidate still first in line.
+        engine.etaProvider = { _, _, _ in etaCalls += 1; return 10 * 60 }
+        await engine.refreshSuggestion(candidates: candidates, origin: origin, budget: drive(30))
+        XCTAssertNotNil(engine.current)
+        XCTAssertEqual(etaCalls, 2, "no candidate was lost to the cancelled check")
     }
 
     func testQuickRejectIsFreeAndDoesNotExhaustBudget() async {

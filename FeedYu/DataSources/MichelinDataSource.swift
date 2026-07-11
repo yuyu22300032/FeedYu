@@ -9,14 +9,31 @@ final class MichelinDataSource: RestaurantDataSource {
     static let remoteURL = URL(string: "https://raw.githubusercontent.com/ngshiheng/michelin-my-maps/main/data/michelin_my_maps.csv")!
     static let bundledSnapshotDate = "2026-07-05"
     static let refreshInterval: TimeInterval = 7 * 24 * 3600
+    /// Failure backoff: once the dataset is stale, a refresh that keeps
+    /// failing (offline, GitHub unreachable) is re-attempted at most this
+    /// often. Callers gate on `lastRemoteAttempt` — without it, every
+    /// foreground return re-attempted the multi-MB download and re-parsed
+    /// the local CSVs, for weeks if the network never came back.
+    static let remoteRetryBackoff: TimeInterval = 3600
     private static let lastRefreshKey = "michelinLastRemoteRefresh"
+    private static let lastAttemptKey = "michelinLastRemoteAttempt"
+    private static let etagKey = "michelinCacheETag"
 
     let id = "michelin"
     let displayName = "Michelin Guide"
     private let forceRemote: Bool
+    private let fallsBackToLocal: Bool
 
-    init(forceRemote: Bool = false) {
+    /// `fallsBackToLocal: false` makes a failed remote refresh throw instead
+    /// of re-parsing the cached/bundled CSV. Callers whose store already
+    /// holds guide data pass false: the fallback would re-parse and re-merge
+    /// ~19k identical rows (seconds of CPU) just to change nothing, while
+    /// the thrown error surfaces honestly in the source's SyncStatus.
+    /// The default (true) is for seeding an empty store — first launch,
+    /// store restore — where local data is better than none.
+    init(forceRemote: Bool = false, fallsBackToLocal: Bool = true) {
         self.forceRemote = forceRemote
+        self.fallsBackToLocal = fallsBackToLocal
     }
 
     nonisolated static var cachedFileURL: URL {
@@ -31,6 +48,20 @@ final class MichelinDataSource: RestaurantDataSource {
         set { UserDefaults.standard.set(newValue, forKey: lastRefreshKey) }
     }
 
+    /// Stamped on every remote attempt (success or not) — the retry-backoff
+    /// clock. `lastRemoteRefresh` above only advances on success.
+    static var lastRemoteAttempt: Date? {
+        get { UserDefaults.standard.object(forKey: lastAttemptKey) as? Date }
+        set { UserDefaults.standard.set(newValue, forKey: lastAttemptKey) }
+    }
+
+    /// ETag of the CSV currently in `cachedFileURL` — written together with
+    /// the file so the two can't drift apart.
+    private static var cachedETag: String? {
+        get { UserDefaults.standard.string(forKey: etagKey) }
+        set { UserDefaults.standard.set(newValue, forKey: etagKey) }
+    }
+
     static var datasetDateDescription: String {
         if let refreshed = lastRemoteRefresh {
             return refreshed.formatted(date: .abbreviated, time: .omitted)
@@ -41,11 +72,17 @@ final class MichelinDataSource: RestaurantDataSource {
     func fetch() async throws -> [Restaurant] {
         let current: [Restaurant]
         if forceRemote {
-            current = try await refreshFromRemote()
+            // nil = HTTP 304, the disk cache is already the current dataset.
+            current = try await refreshFromRemote() ?? loadLocal()
         } else {
             let isStale = (Self.lastRemoteRefresh.map { Date().timeIntervalSince($0) > Self.refreshInterval }) ?? true
-            if isStale, let fresh = try? await refreshFromRemote() {
-                current = fresh
+            if isStale {
+                do {
+                    current = try await refreshFromRemote() ?? loadLocal()
+                } catch {
+                    guard fallsBackToLocal else { throw error }
+                    current = try loadLocal()
+                }
             } else {
                 current = try loadLocal()
             }
@@ -115,18 +152,53 @@ final class MichelinDataSource: RestaurantDataSource {
         return parsed
     }
 
-    private func refreshFromRemote() async throws -> [Restaurant] {
+    /// Returns nil on HTTP 304: the saved ETag matched, so the cached file
+    /// is already the current dataset and the multi-MB download was skipped
+    /// (the weekly clock still advances — "unchanged upstream" is a
+    /// successful refresh).
+    private func refreshFromRemote() async throws -> [Restaurant]? {
+        Self.lastRemoteAttempt = Date()
         var request = URLRequest(url: Self.remoteURL)
         request.timeoutInterval = 60
+        // Speculative-download etiquette (same pattern as
+        // GooglePlaceResolver): the weekly AUTO refresh is a multi-MB body
+        // nobody asked for right now — skip it on cellular and in Low Data
+        // Mode. It fails fast, lands in SyncStatus, and retries on the
+        // hourly backoff; the store keeps serving its data meanwhile.
+        // Settings → "Refresh from GitHub now" (forceRemote) is an explicit
+        // ask and keeps full network access.
+        if !forceRemote {
+            request.allowsExpensiveNetworkAccess = false
+            request.allowsConstrainedNetworkAccess = false
+        }
+        // Conditional GET — the upstream dataset changes far less often than
+        // the weekly check. Only sent when the cached copy the ETag describes
+        // is actually on disk; bypass URLSession's own cache so the 304
+        // reaches us instead of being transparently replayed.
+        if let etag = Self.cachedETag,
+           FileManager.default.fileExists(atPath: Self.cachedFileURL.path) {
+            request.setValue(etag, forHTTPHeaderField: "If-None-Match")
+            request.cachePolicy = .reloadIgnoringLocalCacheData
+        }
         let (data, response) = try await URLSession.shared.data(for: request)
-        if let http = response as? HTTPURLResponse, http.statusCode != 200 {
+        let http = response as? HTTPURLResponse
+        if http?.statusCode == 304 {
+            Self.lastRemoteRefresh = Date()
+            return nil
+        }
+        if let http, http.statusCode != 200 {
             throw SourceError.httpStatus(http.statusCode)
         }
         let parsed = Self.parseCSV(String(decoding: data, as: UTF8.self))
         guard parsed.count > 100 else {
             throw SourceError.parseFailed(String(localized: "Remote Michelin CSV parsed to only \(parsed.count) rows — format may have changed."))
         }
-        try? data.write(to: Self.cachedFileURL, options: .atomic)
+        do {
+            try data.write(to: Self.cachedFileURL, options: .atomic)
+            Self.cachedETag = http?.value(forHTTPHeaderField: "ETag")
+        } catch {
+            Self.cachedETag = nil // the ETag must describe the file on disk
+        }
         Self.lastRemoteRefresh = Date()
         return parsed
     }
