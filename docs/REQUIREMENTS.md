@@ -8,17 +8,28 @@ initial Uber card skipped the open check). That must not happen again.
 **The rule: a PR that changes behavior updates the contract here AND its
 enforcing test in the same PR.** A contract without a unit test says
 explicitly how it IS verified — "sim recipe" means the `verify` skill's
-simulator walkthrough; "device" means it needs the real phone. Those tiers
-are debt: the backlog item "UI-test harness" (DEVELOPMENT.md) is the plan
-to move view-wiring contracts into the machine-checked tier.
+simulator walkthrough; "device" means it needs the real phone. Those
+tiers are debt.
+
+View-wiring contracts run as XCUITests (`SuggestionContractUITests`,
+backed by the DEBUG `-uiTestSeed` hook in `UITestSeed.swift` — synthetic
+store, fixed location, no network in assertions). Slower than the unit
+suite, so they live in the UI-test scheme:
+
+```sh
+xcodebuild test -project FeedYu.xcodeproj -scheme FeedYuDemo \
+  -only-testing:FeedYuUITests/SuggestionContractUITests \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+```
 
 ## Suggestion pipeline (Tonight · Michelin · Uber Eats)
 
 | Contract | Enforced by |
 |---|---|
-| **Panes are eager.** Opening the app or a tab with no card up auto-rolls one as soon as the store is loaded and location is known. Never gate the auto-roll on leftover UI state (`statusMessage` gating shipped the dead-pane regression). | sim recipe (cold-launch lands on a card, zero presses); UI-harness backlog |
-| Changing any constraint (budget, price/award filters, former-toggle) revalidates a current card — it stays if it still fits (traffic minutes refreshed in place), is replaced if not — and with NO card up, rolls a fresh one immediately. | engine: `testRevalidateKeepsFittingPickAndRefreshesTraffic`, `testRevalidateReplacesWhenCurrentLeavesCandidateSet`, `testRevalidateRollsReplacementWhenOverBudget`, `testRevalidateSwitchesTravelLineWithTheMode`; view wiring: sim recipe |
-| Hiding a restaurant replaces the current card immediately (card context menu, Michelin rows); hides from Manage are caught on tab return. | engine: `testRevalidateReplacesWhenCurrentLeavesCandidateSet`; view wiring: sim recipe |
+| **Panes are eager.** Opening the app or a tab with no card up auto-rolls one as soon as the store is loaded and location is known. Never gate the auto-roll on leftover UI state (`statusMessage` gating shipped the dead-pane regression). | UI: `testColdLaunchLandsOnACardWithZeroTaps` |
+| Changing any constraint (budget, price/award filters, former-toggle) revalidates a current card — it stays if it still fits (traffic minutes refreshed in place), is replaced if not — and with NO card up, rolls a fresh one immediately. | engine: `testRevalidateKeepsFittingPickAndRefreshesTraffic`, `testRevalidateReplacesWhenCurrentLeavesCandidateSet`, `testRevalidateRollsReplacementWhenOverBudget`, `testRevalidateSwitchesTravelLineWithTheMode`; UI: `testBudgetChangeWithNoCardRollsOne` |
+| Hiding a restaurant replaces the current card immediately (card context menu, Michelin rows); hides from Manage are caught on tab return. | engine: `testRevalidateReplacesWhenCurrentLeavesCandidateSet`; UI: `testHideReplacesTheCardImmediately` |
+| **The card's photo and description always belong to the restaurant shown.** In-place replacements must not reuse the previous card's state, and a replaced card's in-flight fetch must never land its result (shipped: a curry place wearing a mochi shop's photo after a budget change). | structural: per-restaurant view identity (`.id(suggestion.id)`) + `Task.isCancelled` guard in `RestaurantCard`; visual tier: sim recipe (image content isn't XCUITest-assertable) |
 | No repeats until the in-range pool is exhausted; a drained queue wraps the rotation in place rather than demanding an extra press. | `testNoRepeatsUntilPoolExhausted`, `testRotationWrapsInsteadOfDemandingAnExtraPress` |
 | Distance mode performs zero route lookups and is exact; walk/drive verify routes one candidate at a time, never batched (MapKit throttles). | `testDistanceModeMakesNoRouteCalls`, `testDistanceModeIsExact`, `testWalkingModeVerifiesWithWalkingRoutes`, `testStraightLinePrefilterExcludesHopelesslyFar` |
 | Uber scans run in bounded batches (25 slow checks per press) that RESUME mid-queue; a pause says "Checked many stores — refresh to keep looking" and the tab never claims "no results" while unchecked candidates sit in the queue. Known-notFound places are skipped for free. | `testCappedScanResumesAcrossRefreshes`, `testUncappedBudgetChecksEveryPlaceInOneRefresh`, `testQuickRejectIsFreeAndDoesNotExhaustBudget` |
@@ -60,6 +71,6 @@ to move view-wiring contracts into the machine-checked tier.
 
 | Contract | Enforced by |
 |---|---|
-| Michelin price/award filters persist across launches (empty = a real choice); `includeFormer` is session-scoped. | sim recipe (relaunch round-trip verified 2026-07-11); unit test via injected `UserDefaults` suite — backlog |
+| Michelin price/award filters persist across launches (empty = a real choice); `includeFormer` is session-scoped. | UI: `testMichelinFiltersPersistAcrossRelaunch`; unit test via injected `UserDefaults` suite — backlog |
 | Page budgets are independent per tab; each mode remembers its own value. | `AppSettingsTests` |
 | Every user-facing string outside a SwiftUI view literal uses `String(localized:)` with en/zh-Hant/ja entries in the catalog. | `LocalizationCatalogTests.testEveryKeyHasAllLanguages` |

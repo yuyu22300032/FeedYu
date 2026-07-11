@@ -103,6 +103,12 @@ struct TonightView: View {
                                     Label("Hide this restaurant", systemImage: "eye.slash")
                                 }
                             }
+                            // Identity per restaurant: an in-place
+                            // replacement (budget revalidation) must not
+                            // reuse the previous card's @State — its
+                            // in-flight photo fetch wrote the OLD
+                            // restaurant's image onto the new card.
+                            .id(suggestion.id)
                     } else if engine.isSearching {
                         // Illustrated placeholder, not a bare spinner — Uber
                         // checks especially run for seconds and a blank page
