@@ -211,7 +211,11 @@ store URL still persists (existence is durable, closedness isn't). The
 OPEN state of a known store is deliberately never cached — each shown
 suggestion re-verifies live, so the order button can't land on a store
 that closed minutes after an earlier check. Don't "optimize" that call
-away; it is the product's freshness guarantee.
+away; it is the product's freshness guarantee. The check retries once on
+a cold transport (launch auto-roll makes it the app's first WebView call)
+and only then fails open, logging
+`open-check unavailable for known store '…' — failing open` — grep the
+device console for that line when a closed store slips through.
 
 ### "Uber Eats tab says no results, but refreshing finds one"
 

@@ -237,7 +237,15 @@ screenshots out of git — they show personal lists.
 
 ## Enhancement backlog (known gaps, in rough priority)
 
-1. Cross-script dedupe: 鮨さいとう (from Google) vs Sushi Saito (Michelin)
+1. **UI-test harness for view-wiring contracts** (docs/REQUIREMENTS.md
+   marks these "sim recipe" — the tier where the 2026-07-11 regressions
+   hid): a DEBUG-only launch hook that seeds a synthetic store + fake
+   location, plus XCUITests asserting (a) cold launch lands on a
+   suggestion card with zero taps, (b) a budget change with no card rolls
+   one, (c) hide replaces the card, (d) Michelin filters survive relaunch.
+   Also: a UserDefaults-suite-injected unit test for AppSettings
+   persistence, and a deterministic test for save-write serialization.
+2. Cross-script dedupe: 鮨さいとう (from Google) vs Sushi Saito (Michelin)
    don't merge — see ARCHITECTURE.md "Store" for constraints and ideas.
 2. Open-hours checking (needs Places API or scraping; deliberately punted).
 3. Zip import for Takeout (needs a minizip dependency or iOS gaining an API).

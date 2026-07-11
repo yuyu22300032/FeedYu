@@ -266,7 +266,13 @@ Michelin fields, never clear anything, never touch `isHidden`.
   user taps "order", so open-now is re-verified LIVE per shown suggestion
   (one getStoreV1 JSON call); a 10-minute-old "open" can be a closed store
   by now. Only `closedNow` short-circuits — it self-expires at Uber's own
-  reopen time, so it can't go stale in the wrong direction. A verified
+  reopen time, so it can't go stale in the wrong direction. The check
+  retries once on transport failure (the Uber tab auto-rolls at launch,
+  making this the app's FIRST WebView call — cold calls throw; single-shot
+  it failed open and the initial card could be a closed store), then fails
+  open with a debugLog. The transport is injectable
+  (`UberEatsChecker.runJS`) so these contracts are unit-tested — see
+  docs/REQUIREMENTS.md "Uber Eats". A verified
   notFound persists with a week's cooldown (skipped free via quickReject);
   `unknown` (bot wall) is never persisted. (v1 name-only URLs were wiped
   once via the `uberEatsURLsResetV2` flag.)

@@ -20,6 +20,10 @@ MIT licensed.
 - `docs/FEATURES.md` — page-by-page behavior, the layered suggestion
   pipeline, lazy-loading/cache strategy, and the Google Maps / Apple Maps /
   Michelin / Uber Eats integration contracts.
+- `docs/REQUIREMENTS.md` — **behavior contracts mapped to their enforcing
+  tests**. A PR that changes behavior updates the contract AND its test in
+  the same PR; regressions found by human testing mean this file failed —
+  fix the gap here too.
 - `docs/DEVELOPMENT.md` — build/test/deploy commands, device data-container
   recipes, data pipeline, fixture policy, backlog.
 - `PLAN.md` — original spec (historical; uses the old DinePick name).
