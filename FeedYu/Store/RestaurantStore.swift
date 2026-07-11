@@ -43,15 +43,31 @@ final class RestaurantStore: ObservableObject {
         defer { isLoaded = true }
         let url = Self.storeFileURL
         let snapshot: Snapshot? = await Task.detached(priority: .userInitiated) {
-            guard let data = try? Data(contentsOf: url) else { return nil }
-            let decoder = JSONDecoder()
-            decoder.dateDecodingStrategy = .iso8601
-            return try? decoder.decode(Snapshot.self, from: data)
+            Self.loadSnapshot(from: url)
         }.value
         if let snapshot {
             restaurants = snapshot.restaurants
             syncStatuses = snapshot.syncStatuses
         }
+    }
+
+    /// Reads and decodes the store file. A file that EXISTS but fails to
+    /// decode is set aside as `store.json.corrupt` before returning nil —
+    /// the app then starts empty and the next save would otherwise
+    /// overwrite the user's only copy. The set-aside file is recoverable
+    /// via the container-surgery recipe (see MAINTENANCE.md "All my
+    /// restaurants disappeared"); only the newest corrupt copy is kept.
+    nonisolated static func loadSnapshot(from url: URL) -> Snapshot? {
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        if let snapshot = try? decoder.decode(Snapshot.self, from: data) {
+            return snapshot
+        }
+        let corrupt = url.appendingPathExtension("corrupt")
+        try? FileManager.default.removeItem(at: corrupt)
+        try? FileManager.default.moveItem(at: url, to: corrupt)
+        return nil
     }
 
     /// Debounce with a deadline: each mutation restarts a 3 s timer (one
@@ -60,6 +76,7 @@ final class RestaurantStore: ObservableObject {
     /// disk past 20 s, bounding what a force-quit mid-burst could lose.
     private func scheduleSave() {
         saveTask?.cancel()
+        let previous = saveTask
         let snapshot = Snapshot(restaurants: restaurants, syncStatuses: syncStatuses)
         let now = Date()
         let deadline = saveDeadline ?? now.addingTimeInterval(20)
@@ -68,6 +85,12 @@ final class RestaurantStore: ObservableObject {
         saveTask = Task.detached(priority: .utility) {
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             guard !Task.isCancelled else { return }
+            // Serialize behind a save already past ITS cancellation check:
+            // the deadline path schedules with zero delay, and two
+            // concurrent multi-MB .atomic writes can land out of order —
+            // the OLDER snapshot winning the rename. (Cancelled-in-sleep
+            // predecessors return immediately; the chain never stacks.)
+            await previous?.value
             await MainActor.run { self.saveDeadline = nil }
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601

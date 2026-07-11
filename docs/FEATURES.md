@@ -20,11 +20,12 @@ On every launch (and whenever the app returns to the foreground) the app:
    re-request only when the last fix is **older than 30 minutes**,
 4. syncs the Michelin dataset when its weekly refresh clock is stale (or
    the store has no Michelin rows) — a fresh dataset skips the CSV
-   re-parse entirely; an unchanged upstream answers a cheap HTTP 304
-   (saved ETag) instead of re-downloading; a *failing* refresh (offline)
-   backs off and retries **hourly at most**, without re-parsing local
-   CSVs; first run uses the bundled snapshot so the tab works
-   offline/instantly,
+   re-parse entirely; the auto-download runs on Wi-Fi/unmetered only
+   (Settings' manual refresh works anywhere); an unchanged upstream
+   answers a cheap HTTP 304 (saved ETag) instead of re-downloading; a
+   *failing* refresh (offline, cellular-only) backs off and retries
+   **hourly at most**, without re-parsing local CSVs; first run uses the
+   bundled snapshot so the tab works offline/instantly,
 5. re-syncs any enabled Google list whose last successful sync is **older
    than 7 days**, with the same hourly failure backoff (manual "Sync now"
    in Settings is always available and skips both gates).
@@ -115,10 +116,14 @@ independent Tonight and Uber Eats switches), with two differences:
    [Uber Eats integration](#uber-eats)). Not on the platform → the engine
    silently rolls another. Non-restaurants saved in your lists (shops etc.)
    fall out naturally here. Each press runs at most 25 of these slow
-   verifications; a scan that pauses mid-queue says "refresh to keep
-   looking" and the next press resumes exactly where it stopped. Verified
-   not-founds cool down for a week, so a neighborhood is mapped out after
-   a press or two and later refreshes are near-instant.
+   verifications; a scan that pauses mid-queue says how far it got
+   ("Checked 25 stores — refresh to keep looking") and the next press
+   resumes exactly where it stopped. Verified not-founds cool down for a
+   week, so a neighborhood is mapped out after a press or two and later
+   refreshes are near-instant. A store the app already knows is
+   re-verified **open right now** each time it's suggested — deliberately
+   never a cached verdict, so the order button doesn't land on a store
+   that closed minutes after an earlier check.
 
 The card keeps the photo→Google-Maps behavior (reviews/info) and adds a
 green **Order on Uber Eats** button that deep-links into the Uber Eats app,
@@ -238,7 +243,10 @@ distance against the (possibly moved) origin, and Uber open-hours (a
 store may have opened while you browsed Michelin — or closed). A pick
 that still fits survives, with its traffic minutes refreshed in place; a
 pick that no longer fits is silently replaced. Cheap when caches are
-fresh (ETA cache 10 min; Uber open-state verdicts 10 min).
+fresh (ETA cache 10 min; Uber closed-until-reopen verdicts cached until
+the store reopens) — except a known Uber store's OPEN state, which is
+re-verified live on purpose: the order button is a promise (see
+[Uber Eats integration](#uber-eats)).
 
 ## Lazy loading & caching
 
@@ -251,9 +259,9 @@ narrowest sensible scope:
 | In-range pool | once per engine session | lives for the session (origin/budget/candidate change rebuilds) |
 | Cover photo + description | first time a place's card is shown | persisted to the store (fill-only — never overwrites source data); failures retried once per app run |
 | Michelin local-script names | per Michelin-tab visit, visible rows first | persisted forever; ≤40 fetches/visit, 0.4 s apart; failures negatively cached per session |
-| Uber Eats availability | per candidate, Uber tab only | verified store URL persisted to the store (next suggestion skips the check); a *verified* not-found persists with a **1-week cooldown** and is skipped for free via `quickReject`; `unknown` (bot wall) is never persisted |
+| Uber Eats availability | per candidate, Uber tab only | verified store URL persisted to the store (next suggestion skips the *search*; the open-now check stays live by design); a *verified* not-found persists with a **1-week cooldown** and is skipped for free via `quickReject`; `unknown` (bot wall) is never persisted |
 | Maps cid resolution no-match | per card display / tap | definitive no-match persists with a **30-day cooldown**, keyed by search name (a newly localized name retries sooner); transient failures never persist |
-| Michelin dataset | bundled CSV instantly; GitHub refresh weekly (checked at launch and on foreground return; failed attempts back off, retrying hourly at most) | downloaded copy cached on disk (`michelin-cache.csv`) with its ETag — an unchanged upstream answers 304 instead of the multi-MB body; offline the store keeps serving its data |
+| Michelin dataset | bundled CSV instantly; GitHub refresh weekly (checked at launch and on foreground return; Wi-Fi/unmetered only; failed attempts back off, retrying hourly at most) | downloaded copy cached on disk (`michelin-cache.csv`) with its ETag — an unchanged upstream answers 304 instead of the multi-MB body; offline the store keeps serving its data |
 | Google list sync | on add, on demand, and weekly per enabled list | merged into the store; a failed sync keeps the previous data; a *successful* sync also removes places deleted from the list upstream (skipped as a safety guard when the parse returns less than half the previous count — a format drift must not mass-delete) |
 | The store itself | — | single JSON file, saved off-main with a 3 s debounce + 20 s deadline (bursts coalesce); loads off-main at launch |
 | Uber bot-wall clearance | first Uber check of a session | WKWebView default cookie store, persists across launches |

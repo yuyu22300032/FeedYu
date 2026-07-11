@@ -147,9 +147,11 @@ also excludes *hidden* places). Causes seen in the wild, most first:
 
 Almost certainly invariant #1 (a non-optional stored property was added to
 `Restaurant`). Make the property `Optional` and ship a fix. The user's old
-`store.json` is still on disk — decode failure doesn't delete the file
-(verify current code kept it that way: `RestaurantStore` load path). It can
-be recovered with the container-surgery recipe once the decode is fixed.
+data is preserved: a store file that fails to decode is moved to
+`store.json.corrupt` (`RestaurantStore.loadSnapshot`) so the next debounced
+save can't overwrite the only copy — only the newest corrupt copy is kept.
+Recover it with the container-surgery recipe once the decode is fixed
+(rename it back to `store.json`).
 
 ### "Michelin tab is empty / stale"
 
@@ -164,10 +166,12 @@ be recovered with the container-surgery recipe once the decode is fixed.
   `scripts/preprocess_michelin.py` needs its history source updated.
 - Stale and "not even trying" → the failure backoff is working as designed:
   a stale dataset re-attempts the download at most hourly
-  (`michelinLastRemoteAttempt`), an unchanged upstream answers 304 to the
-  saved ETag (`michelinCacheETag`), and a failed retry surfaces in the
-  source's SyncStatus instead of re-parsing local CSVs. Settings →
-  "Refresh from GitHub now" bypasses all of it (forceRemote).
+  (`michelinLastRemoteAttempt`), the auto-download is Wi-Fi/unmetered only
+  (cellular-only users see a persistent sync error — expected), an
+  unchanged upstream answers 304 to the saved ETag (`michelinCacheETag`),
+  and a failed retry surfaces in the source's SyncStatus instead of
+  re-parsing local CSVs. Settings → "Refresh from GitHub now" bypasses all
+  of it (forceRemote, full network access).
 - Award tier names changed upstream → `MichelinAward(datasetValue:)`.
 
 ### "Local-language names aren't appearing"
@@ -203,7 +207,11 @@ a FUTURE value = closed now (accepts scheduled orders only — Uber's
 time (past). **`isOpen` and `isOrderable` are NOT open-now flags** — both
 were `true` for verifiably closed stores (checked live 2026-07-10).
 Closed results cache per session and self-expire at the reopen time; the
-store URL still persists (existence is durable, closedness isn't).
+store URL still persists (existence is durable, closedness isn't). The
+OPEN state of a known store is deliberately never cached — each shown
+suggestion re-verifies live, so the order button can't land on a store
+that closed minutes after an earlier check. Don't "optimize" that call
+away; it is the product's freshness guarantee.
 
 ### "Uber Eats tab says no results, but refreshing finds one"
 
@@ -211,8 +219,8 @@ Historical bug, fixed with these mechanisms — don't regress them:
 (1) the Uber tab scans in **resumable batches** (`maxETAChecksPerRefresh
 = 25` slow WebView checks per press — the earlier unbounded scan ran for
 minutes of network on one press): a paused scan requeues the current
-candidate and says "refresh to keep looking", and the next press resumes
-mid-queue. The invariant is honesty, not exhaustiveness: the tab must
+candidate and says "Checked N stores — refresh to keep looking", and the
+next press resumes mid-queue. The invariant is honesty, not exhaustiveness: the tab must
 never *claim* "no results" while an unchecked candidate sits in the queue
 (the historic bug was a tiny cap with the cooldown skips counted against
 it, which turned pauses into false no-results); (2) a *verified* notFound

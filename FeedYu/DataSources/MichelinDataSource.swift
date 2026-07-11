@@ -160,6 +160,17 @@ final class MichelinDataSource: RestaurantDataSource {
         Self.lastRemoteAttempt = Date()
         var request = URLRequest(url: Self.remoteURL)
         request.timeoutInterval = 60
+        // Speculative-download etiquette (same pattern as
+        // GooglePlaceResolver): the weekly AUTO refresh is a multi-MB body
+        // nobody asked for right now — skip it on cellular and in Low Data
+        // Mode. It fails fast, lands in SyncStatus, and retries on the
+        // hourly backoff; the store keeps serving its data meanwhile.
+        // Settings → "Refresh from GitHub now" (forceRemote) is an explicit
+        // ask and keeps full network access.
+        if !forceRemote {
+            request.allowsExpensiveNetworkAccess = false
+            request.allowsConstrainedNetworkAccess = false
+        }
         // Conditional GET — the upstream dataset changes far less often than
         // the weekly check. Only sent when the cached copy the ETag describes
         // is actually on disk; bypass URLSession's own cache so the 304

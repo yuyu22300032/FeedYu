@@ -158,7 +158,13 @@ Michelin fields, never clear anything, never touch `isHidden`.
   detached task with a 3 s debounce + 20 s deadline — mutation bursts (a
   localizer fill run lands ~40 names seconds apart) coalesce into a few
   multi-MB rewrites instead of one per mutation, while the deadline bounds
-  force-quit loss. ~25k restaurants ≈ 15 MB; loads off-main.
+  force-quit loss. Writes are serialized (each save awaits its
+  predecessor): the deadline path schedules at zero delay, and two
+  overlapping atomic writes could land the OLDER snapshot last. ~25k
+  restaurants ≈ 15 MB; loads off-main. A store file that exists but fails
+  to decode is set aside as `store.json.corrupt` (newest copy kept) before
+  the app continues empty — the next save must not overwrite the user's
+  only copy.
 - `version` (bumped in the `restaurants` didSet) keys the views' memoized
   derived collections; `indexByID` (rebuilt there too) backs O(1)
   `restaurant(withID:)` lookups — per-mutation O(n) rebuild traded for
@@ -214,9 +220,10 @@ Michelin fields, never clear anything, never touch `isHidden`.
   a ~500 m grid. Max 12 ETA checks per refresh on walk/drive; the Uber tab
   caps at 25 slow WebView availability checks per refresh (an unbounded
   first scan of a dense area ran for minutes on one press). A paused scan
-  requeues where it stopped and says "refresh to keep looking" — the next
-  press resumes mid-queue, and `quickReject` + persisted notFound cooldowns
-  keep re-walks free, so the tab still never falsely claims "no results".
+  requeues where it stopped and says "Checked N stores — refresh to keep
+  looking" — the next press resumes mid-queue, and `quickReject` +
+  persisted notFound cooldowns keep re-walks free, so the tab still never
+  falsely claims "no results".
   A cancelled refresh (leaving the tab cancels the search task; the
   auto-suggest .task cancels with the view) stops at the next candidate,
   keeping queue position. A drained queue wraps the rotation once in-place
@@ -250,11 +257,15 @@ Michelin fields, never clear anything, never touch `isHidden`.
   per-refresh budget (25 on this tab); verdicts session-cached by
   restaurant id — NOT by name: same-named chain branches must not share a
   verdict, or one branch's verified store URL gets persisted onto the
-  other. Known-store open-state answers cache for 10 min (`openStateTTL`,
-  both open and closed) — uncached, every tab return re-ran a WebView
-  getStoreV1 fetch. A verified notFound persists with a week's cooldown
-  (skipped free via quickReject); `unknown` (bot wall) is never persisted.
-  (v1 name-only URLs were wiped once via the `uberEatsURLsResetV2` flag.)
+  other. A known store's OPEN state is deliberately NOT cached (product
+  decision — don't "optimize" it back): the card is the moment before the
+  user taps "order", so open-now is re-verified LIVE per shown suggestion
+  (one getStoreV1 JSON call); a 10-minute-old "open" can be a closed store
+  by now. Only `closedNow` short-circuits — it self-expires at Uber's own
+  reopen time, so it can't go stale in the wrong direction. A verified
+  notFound persists with a week's cooldown (skipped free via quickReject);
+  `unknown` (bot wall) is never persisted. (v1 name-only URLs were wiped
+  once via the `uberEatsURLsResetV2` flag.)
 - No repeats until the in-range pool is exhausted, then reshuffle (avoiding
   an immediate repeat of the current card).
 - `etaProvider` is an injectable closure — tests (and any future routing
@@ -300,6 +311,9 @@ tests pass with an updated *synthetic* fixture.
   URL (or on Settings → Refresh now). The download is a conditional GET:
   the cache file's ETag is saved with it, and an unchanged upstream answers
   HTTP 304 — the weekly clock advances without the multi-MB body.
+- The auto-refresh is Wi-Fi/unmetered only (`allowsExpensiveNetworkAccess
+  = false`, same etiquette as GooglePlaceResolver — a multi-MB body nobody
+  asked for right now); Settings → Refresh now keeps full network access.
 - Refresh failures: every attempt stamps `lastRemoteAttempt`, and the app's
   staleness gate retries at most hourly (`remoteRetryBackoff`) — a stale
   dataset + no network must not re-attempt per foreground return. When the

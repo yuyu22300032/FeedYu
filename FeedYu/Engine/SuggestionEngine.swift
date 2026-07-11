@@ -114,6 +114,7 @@ final class SuggestionEngine: ObservableObject {
                     if let availabilityCheck {
                         guard checks < maxETAChecksPerRefresh else {
                             queue.insert(candidate, at: 0)
+                            pauseForCheckBudget(checked: checks)
                             break search
                         }
                         checks += 1
@@ -125,6 +126,7 @@ final class SuggestionEngine: ObservableObject {
 
                 guard checks < maxETAChecksPerRefresh else {
                     queue.insert(candidate, at: 0)
+                    pauseForCheckBudget(checked: checks)
                     break search
                 }
                 checks += 1
@@ -214,6 +216,16 @@ final class SuggestionEngine: ObservableObject {
             // not the stale "5 min in current traffic".
             accept(suggestion.restaurant, etaSeconds: nil, origin: origin, mode: budget.mode)
         }
+    }
+
+    /// Batch paused mid-queue (check budget spent, more candidates left):
+    /// say exactly what happened and invite continuation. The Uber tab's
+    /// bounded scans hit this on every pass through a dense unchecked area
+    /// — the generic "nothing new" line read as a dead end there.
+    private func pauseForCheckBudget(checked: Int) {
+        statusMessage = availabilityCheck != nil
+            ? String(localized: "Checked \(checked) stores — refresh to keep looking.")
+            : String(localized: "Checked \(checked) places — refresh to keep looking.")
     }
 
     /// Rotation exhausted: reshuffle the whole pool, avoiding an immediate

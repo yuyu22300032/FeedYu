@@ -417,6 +417,38 @@
         }
       }
     },
+    "Checked %lld places — refresh to keep looking." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 件の場所をチェックしました。更新して探し続けてください。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已檢查 %lld 個地點——再按一次繼續找。"
+          }
+        }
+      }
+    },
+    "Checked %lld stores — refresh to keep looking." : {
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 店舗をチェックしました。更新して探し続けてください。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已檢查 %lld 間店家——再按一次繼續找。"
+          }
+        }
+      }
+    },
     "Checking Uber Eats availability…" : {
       "localizations" : {
         "ja" : {

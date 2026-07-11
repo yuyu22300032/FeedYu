@@ -57,9 +57,10 @@ final class UberEatsChecker: ObservableObject {
     /// verified store URL would get persisted onto the other (the engine's
     /// availabilityCheck writes `.available` URLs to the store). notFound/
     /// unknown last the session (existence rarely changes); `.available`
-    /// expires after `openStateTTL` (10 min — cheap to recheck, and a store
-    /// open at noon may be closed when the user returns); `.closedNow`
-    /// self-expires at reopen.
+    /// (search-pipeline verdicts, URL-less flow only) expires after
+    /// `openStateTTL`; `.closedNow` self-expires at Uber's own reopen time.
+    /// Known stores are deliberately NOT served a cached "open" — see
+    /// `availability(for:near:)`.
     private var cache: [UUID: (result: Availability, at: Date)] = [:]
     nonisolated static let openStateTTL: TimeInterval = 10 * 60
 
@@ -74,15 +75,21 @@ final class UberEatsChecker: ObservableObject {
 
     func availability(for restaurant: Restaurant, near origin: CLLocation?) async -> Availability {
         let key = restaurant.id
-        if let cached = cache[key] {
-            if Self.isFresh(cached.result, checkedAt: cached.at) { return cached.result }
-            cache[key] = nil // stale open-state — recheck below
-        }
         if let url = restaurant.uberEatsURL {
-            // Known store: only the open-now question remains. A closed
-            // store keeps its URL (existence is durable) but is skipped
-            // until it reopens — tapping through to Uber's "closed right
-            // now" page is the exact annoyance this avoids.
+            // Known store: existence is settled, so only the open-now
+            // question remains — and it is answered LIVE on every
+            // suggestion, DELIBERATELY uncached (product decision, don't
+            // "optimize"): the card is the moment before the user taps
+            // "order", and a cached "open" from even 10 minutes ago can be
+            // a closed store by now. One getStoreV1 JSON call per shown
+            // suggestion is the price of the button always landing on an
+            // orderable page. Only a still-fresh closedNow short-circuits
+            // — it self-expires at Uber's own reopen time, so it can't go
+            // stale in the wrong direction.
+            if let cached = cache[key], case .closedNow = cached.result {
+                if Self.isFresh(cached.result, checkedAt: cached.at) { return cached.result }
+                cache[key] = nil
+            }
             let region = (Locale.current.region?.identifier ?? "US").lowercased()
             if let uuid = Self.storeUUID(fromStoreURL: url),
                let reopens = await Self.fetchNextOpenTime(storeUuid: uuid, region: region),
@@ -91,13 +98,11 @@ final class UberEatsChecker: ObservableObject {
                 cache[key] = (result, Date())
                 return result
             }
-            // Cache the open verdict too — every uncached call here costs a
-            // WebView getStoreV1 fetch (plus a full ubereats.com page load
-            // when the idle webview was torn down), and revalidation runs on
-            // every tab appearance and foreground return.
-            let result = Availability.available(url)
-            cache[key] = (result, Date())
-            return result
+            return .available(url)
+        }
+        if let cached = cache[key] {
+            if Self.isFresh(cached.result, checkedAt: cached.at) { return cached.result }
+            cache[key] = nil // stale open-state — recheck below
         }
         if Self.isInNotFoundCooldown(restaurant) { return .notFound }
         let result = await Self.fetchAvailability(name: restaurant.name,

@@ -64,6 +64,7 @@
 		EFC8300B3021AAD38F649CF6 /* GooglePlaceResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E27C083663865EE9599BA70 /* GooglePlaceResolverTests.swift */; };
 		FBB0AC0BF7F7A359251A06DB /* TonightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3BCD75B1D89C6B67869D417 /* TonightView.swift */; };
 		FC5CD2E5B6FDF50421E2CDE0 /* MichelinNameLocalizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E34DEB9870F10C198917A9EF /* MichelinNameLocalizerTests.swift */; };
+		FDBBA8816ABFB1E7EB1B0C0E /* RestaurantStorePersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84D124C6E14619ED159E5C0B /* RestaurantStorePersistenceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -138,6 +139,7 @@
 		7B19191B684F5A7115F8C2DE /* UberEatsChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UberEatsChecker.swift; sourceTree = "<group>"; };
 		7F1D491751B526F5A7C6D90C /* GoogleMapsOpenerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleMapsOpenerTests.swift; sourceTree = "<group>"; };
 		8197B4B26A5F4B139C77A287 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		84D124C6E14619ED159E5C0B /* RestaurantStorePersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantStorePersistenceTests.swift; sourceTree = "<group>"; };
 		868FDC93F30440F46EF17705 /* michelin_history.csv */ = {isa = PBXFileReference; path = michelin_history.csv; sourceTree = "<group>"; };
 		86B4F9280933BB1481377E91 /* GoogleMapsOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleMapsOpener.swift; sourceTree = "<group>"; };
 		9013BBD3A3C8E4EEF4F509CA /* FeedYuShare.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = FeedYuShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -267,6 +269,7 @@
 				AACDF96AEA6F672396F0978F /* MichelinDataSourceTests.swift */,
 				E34DEB9870F10C198917A9EF /* MichelinNameLocalizerTests.swift */,
 				FC06CBC112A0920428803DD6 /* PlaceInfoParserTests.swift */,
+				84D124C6E14619ED159E5C0B /* RestaurantStorePersistenceTests.swift */,
 				EC4FB93CA23818F3EFA90FA9 /* SpatialGridTests.swift */,
 				34B6065279F321F9CFCCEE66 /* StoreMergeTests.swift */,
 				06BC1CCFBB9E4A24509799E0 /* SuggestionEngineTests.swift */,
@@ -517,6 +520,7 @@
 				9381B7AA377E5C4F3FBC58B5 /* MichelinDataSourceTests.swift in Sources */,
 				FC5CD2E5B6FDF50421E2CDE0 /* MichelinNameLocalizerTests.swift in Sources */,
 				485758D4AF1D01709B6F1BDA /* PlaceInfoParserTests.swift in Sources */,
+				FDBBA8816ABFB1E7EB1B0C0E /* RestaurantStorePersistenceTests.swift in Sources */,
 				2A4F51A6244E0A599D08815F /* SpatialGridTests.swift in Sources */,
 				B013A9E8339B4C26BC80DB27 /* StoreMergeTests.swift in Sources */,
 				3BBAED62166C4A9D7EB4640A /* SuggestionEngineTests.swift in Sources */,
