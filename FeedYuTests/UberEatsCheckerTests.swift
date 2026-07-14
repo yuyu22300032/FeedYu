@@ -254,6 +254,30 @@ final class UberEatsAvailabilityFlowTests: XCTestCase {
             return XCTFail("fail-open keeps the store visible, got \(result)")
         }
     }
+
+    func testKnownStoreOpenCheckSendsTheLocation() async {
+        // REGRESSION (shipped 2026-07-14): only the search pipeline set the
+        // uev2.loc cookie, and it's session-scoped — so a cold launch's
+        // known-store checks ran location-blind until some search happened
+        // to run first. Without a location, getStoreV1 masks schedule
+        // closure behind TOO_FAR_TO_DELIVER with a null nextOpenTime
+        // (verified live against the shipped store): both closed signals
+        // vanish, the check fails open, and a store that opens at 22:00
+        // reached the lunch card.
+        var capturedScript: String?
+        var capturedLocJSON: String?
+        UberEatsChecker.runJS = { script, arguments, _ in
+            capturedScript = script
+            capturedLocJSON = arguments["locJSON"] as? String
+            return Self.storeJSON(nextOpenTime: Date().addingTimeInterval(-3600))
+        }
+        let origin = CLLocation(latitude: 25.0412825, longitude: 121.5678138)
+        _ = await checker.availability(for: knownStore(), near: origin)
+        XCTAssertEqual(capturedLocJSON, UberEatsChecker.locationJSON(for: origin),
+                       "the open check must send the same location payload as the search pipeline")
+        XCTAssertTrue(capturedScript?.contains("uev2.loc") == true,
+                      "the open-check script must set the location cookie from locJSON")
+    }
 }
 
 extension UberEatsAvailabilityFlowTests {

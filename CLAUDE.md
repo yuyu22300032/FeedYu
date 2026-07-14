@@ -67,4 +67,5 @@ Device deploy + app-container data surgery: see docs/DEVELOPMENT.md.
 4. Every user-facing string outside a SwiftUI view literal needs
    `String(localized:)` + entries in `Localizable.xcstrings` (en/zh-Hant/ja).
 5. Scraper user-agents are load-bearing (michelin.com → mobile Safari UA;
-   goo.gl links → append `?_imcp=1`). Don't "clean them up".
+   goo.gl links → append `?_imcp=1`; ubereats.com getStoreV1 → `uev2.loc`
+   location cookie, else closed stores read as open). Don't "clean them up".

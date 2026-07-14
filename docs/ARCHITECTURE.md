@@ -494,3 +494,12 @@ tests pass with an updated *synthetic* fixture.
     Cards get per-restaurant identity (`.id(suggestion.id)`) AND the
     fetch task checks `Task.isCancelled` before writing — a cancelled
     Swift task keeps executing past its awaits unless it checks.
+16. **Uber's getStoreV1 hides closure from location-less requests.** The
+    open check's two closed signals (state deny-list, `nextOpenTime`)
+    only appear when the call carries the `uev2.loc` cookie; without it
+    a closed store reports `TOO_FAR_TO_DELIVER` + `nextOpenTime: null`
+    and fails open. The cookie is session-scoped and was only set by the
+    search pipeline, so every cold launch's known-store checks ran blind
+    until some search happened to run first — a 22:00-opening steakhouse
+    reached the lunch card that way (2026-07-14). `fetchStoreBody` now
+    sets the cookie on every call; keep it.
