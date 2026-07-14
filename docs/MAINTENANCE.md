@@ -221,6 +221,23 @@ a DENY-list of the two unambiguous ones; anything else fails open and
 DEBUG builds log `storeAvailablityStatus '…' not in the deny-list` —
 grep device consoles for that line to collect the missing vocabulary
 before extending the list.
+
+**Both signals require the request to carry the user's location.**
+Verified live 2026-07-14 against a store inside its closed window: with
+the `uev2.loc` cookie, getStoreV1 said `STORE_CLOSED` + a real
+`nextOpenTime`; without it, the SAME store at the SAME moment said
+`TOO_FAR_TO_DELIVER` (not in the deny-list) with `nextOpenTime: null` —
+no closed signal survives, the check fails open, and a closed store
+reaches the card. The cookie is session-scoped, so "a search ran earlier
+and set it" is not durable across launches; `fetchStoreBody` sets it on
+every call. Don't clean that up. Note the vocabulary implication:
+`TOO_FAR_TO_DELIVER` alongside a REAL location means "can't deliver to
+you" — still deliberately fail-open (not deny-listed) as of 2026-07-14.
+
+(That probe also showed the register's old "Uber 403s bare CLI clients"
+assumption has drifted: `getStoreV1` answered plain `curl` with a mobile
+Safari UA on 2026-07-14 — handy for comparing payload shapes from a dev
+machine. The in-app WebView path stays, HTML surfaces still bot-wall.)
 Closed results persist as `uberEatsClosedUntil` (self-expiring at Uber's
 reopen time, 10-min fallback when none) so relaunches skip known-closed
 stores for free — suppress-only: past the stamp, the live check decides
@@ -290,7 +307,7 @@ encoded. When a feature degrades with no code change — check here first.
 | guide.michelin.com | mobile Safari UA passes bot filter; locale editions share slugs; `<title>` = "Name – City …" | `MichelinNameLocalizer`, `PlaceInfoFetcher` | no local names / no Michelin photos |
 | michelin-my-maps (GitHub raw CSV) | column names (Name/Award/Latitude/…); >100 rows | `MichelinDataSource` | dataset stales silently (falls back to cache) |
 | ubereats.com same-origin APIs | `getSearchSuggestionsV1` (storeUuid+title+geo per store object) and `getStoreV1` callable from a bot-cleared WKWebView page | `UberEatsChecker` + `WebPageFetcher` | order button degrades to search; open checks fail open |
-| getStoreV1 availability signals | `storeAvailablityStatus.state` vocabulary (NOT_ACCEPTING_ORDERS / STORE_CLOSED — note Uber's "Availablity" typo) and `orderForLaterInfo.nextOpenTime` semantics; `isOpen`/`isOrderable`/`isAvailable` stay useless | `UberEatsChecker.parseClosedInfo` + `notOrderableStates` | closed/paused stores get suggested again, or (if states are renamed) never skipped |
+| getStoreV1 availability signals | `storeAvailablityStatus.state` vocabulary (NOT_ACCEPTING_ORDERS / STORE_CLOSED — note Uber's "Availablity" typo) and `orderForLaterInfo.nextOpenTime` semantics; `isOpen`/`isOrderable`/`isAvailable` stay useless; **signals only present when the request carries the `uev2.loc` cookie** — location-less responses mask closure as TOO_FAR_TO_DELIVER + null nextOpenTime | `UberEatsChecker.parseClosedInfo` + `notOrderableStates`; cookie set in `fetchStoreBody` | closed/paused stores get suggested again, or (if states are renamed) never skipped |
 | Uber Eats store pages | store links/JSON-LD geo for candidates without feed geo | `UberEatsChecker.parseStorePage` | geo verification falls back to strict name-only |
 | MKDirections | throttled but free | `SuggestionEngine` | ETAs slow/missing if abused |
 

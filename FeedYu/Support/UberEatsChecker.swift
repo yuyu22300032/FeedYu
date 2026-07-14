@@ -112,7 +112,7 @@ final class UberEatsChecker: ObservableObject {
             }
             let region = (Locale.current.region?.identifier ?? "US").lowercased()
             if let uuid = Self.storeUUID(fromStoreURL: url) {
-                if let info = await Self.fetchClosedInfo(storeUuid: uuid, region: region) {
+                if let info = await Self.fetchClosedInfo(storeUuid: uuid, region: region, origin: origin) {
                     if info.closed {
                         let result = Availability.closedNow(url, reopens: info.reopens)
                         cache[key] = (result, Date())
@@ -235,7 +235,7 @@ final class UberEatsChecker: ObservableObject {
                 if distance <= matchRadiusMeters, entry.score >= 0.5 {
                     debugLog("verified '\(name)' → \(entry.candidate.url.path)")
                     if let uuid = entry.candidate.uuid,
-                       let info = await fetchClosedInfo(storeUuid: uuid, region: region),
+                       let info = await fetchClosedInfo(storeUuid: uuid, region: region, origin: origin),
                        info.closed {
                         debugLog("'\(name)' is closed (reopens: \(info.reopens.map(String.init(describing:)) ?? "unknown"))")
                         return .closedNow(entry.candidate.url, reopens: info.reopens)
@@ -251,7 +251,7 @@ final class UberEatsChecker: ObservableObject {
         var verifiedAny = false
         for entry in unlocated.prefix(maxStorePageFetches) {
             guard let uuid = entry.candidate.uuid,
-                  let storeBody = await fetchStoreBody(storeUuid: uuid, region: region) else {
+                  let storeBody = await fetchStoreBody(storeUuid: uuid, region: region, origin: origin) else {
                 debugLog("store lookup failed for '\(entry.candidate.slug)'")
                 continue
             }
@@ -302,9 +302,19 @@ final class UberEatsChecker: ObservableObject {
     static var openCheckRetryDelayNanoseconds: UInt64 = 1_000_000_000
 
     /// getStoreV1 JSON via a same-origin fetch (same transport as search).
-    static func fetchStoreBody(storeUuid: String, region: String) async -> String? {
+    /// The uev2.loc cookie is load-bearing here too, verified live
+    /// 2026-07-14: WITHOUT a location, getStoreV1 masks schedule closure
+    /// behind TOO_FAR_TO_DELIVER and nulls nextOpenTime — BOTH closed
+    /// signals vanish and a closed store reads as orderable. The cookie is
+    /// session-scoped, so before this line every cold launch's known-store
+    /// checks ran location-blind until a search-pipeline call happened to
+    /// set it (a 22:00-opening steakhouse reached the lunch card this way).
+    static func fetchStoreBody(storeUuid: String, region: String, origin: CLLocation?) async -> String? {
         let script = """
         try {
+            if (locJSON.length > 0) {
+                document.cookie = "uev2.loc=" + encodeURIComponent(locJSON) + "; path=/";
+            }
             const res = await fetch("/api/getStoreV1?localeCode=" + region, {
                 method: "POST",
                 headers: {"content-type": "application/json", "x-csrf-token": "x"},
@@ -317,7 +327,12 @@ final class UberEatsChecker: ObservableObject {
         }
         """
         let host = URL(string: "https://www.ubereats.com/")!
-        guard let response = await Self.runJS(script, ["uuid": storeUuid, "region": region], host),
+        let arguments: [String: Any] = [
+            "uuid": storeUuid,
+            "region": region,
+            "locJSON": locationJSON(for: origin),
+        ]
+        guard let response = await Self.runJS(script, arguments, host),
               response.hasPrefix("200|") else { return nil }
         return String(response.dropFirst(4))
     }
@@ -348,8 +363,8 @@ final class UberEatsChecker: ObservableObject {
     /// not orderable; reopens is Uber's schedule moment when there is one
     /// — merchant pauses have none, and callers apply the 10-minute
     /// recheck fallback.
-    static func fetchClosedInfo(storeUuid: String, region: String) async -> (closed: Bool, reopens: Date?)? {
-        var body = await fetchStoreBody(storeUuid: storeUuid, region: region)
+    static func fetchClosedInfo(storeUuid: String, region: String, origin: CLLocation?) async -> (closed: Bool, reopens: Date?)? {
+        var body = await fetchStoreBody(storeUuid: storeUuid, region: region, origin: origin)
         if body == nil {
             // Cold-start etiquette copied from fetchAvailability: the first
             // WebView call after a page load occasionally throws — and at
@@ -358,7 +373,7 @@ final class UberEatsChecker: ObservableObject {
             // Single-shot, the open check failed open and the initial card
             // could be a store that is closed right now (shipped once).
             try? await Task.sleep(nanoseconds: openCheckRetryDelayNanoseconds)
-            body = await fetchStoreBody(storeUuid: storeUuid, region: region)
+            body = await fetchStoreBody(storeUuid: storeUuid, region: region, origin: origin)
         }
         guard let body else { return nil }
         return parseClosedInfo(fromStoreJSON: body)
@@ -605,9 +620,12 @@ final class UberEatsChecker: ObservableObject {
         return previous[b.count]
     }
 
-    /// Visible via `devicectl device process launch --console` — the checker
-    /// is unverifiable from a dev machine (Uber 403s CLI clients), so the
-    /// device build has to tell us what actually happened.
+    /// Visible via `devicectl device process launch --console` — the WebView
+    /// flow only runs in a real app, so the device build has to tell us what
+    /// actually happened. (The JSON APIs themselves answered plain curl with
+    /// a mobile Safari UA as of 2026-07-14 — see docs/MAINTENANCE.md for the
+    /// payload-probe recipe — but the bot wall's behavior drifts; the console
+    /// is ground truth for what the app saw.)
     nonisolated static func debugLog(_ message: String) {
         #if DEBUG
         print("[UberEats] \(message)")
