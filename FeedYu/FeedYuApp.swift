@@ -6,6 +6,16 @@ struct FeedYuApp: App {
     @StateObject private var settings = AppSettings()
     @StateObject private var locationProvider = LocationProvider()
 
+    init() {
+        // UI-test harness (DEBUG no-op otherwise). MUST run before the
+        // @StateObjects above are first evaluated: AppSettings reads
+        // UserDefaults in its init, so seeding from bootstrap()'s .task
+        // was one launch STALE — each test launch read the PREVIOUS
+        // launch's seeded budget (a fresh simulator read nothing at all),
+        // and the budget contract test only passed by launch-history luck.
+        UITestSeed.applyIfRequested()
+    }
+
     var body: some Scene {
         WindowGroup {
             RootView()
@@ -150,9 +160,8 @@ struct RootView: View {
     }
 
     private func bootstrap() async {
-        // UI-test harness (DEBUG no-op otherwise): deterministic store +
-        // prefs must land before the load below reads them.
-        UITestSeed.applyIfRequested()
+        // (UI-test seeding happens in FeedYuApp.init — it must beat the
+        // @StateObject graph, not just this load.)
         await store.load()
         // Store URLs saved by the v1 name-only Uber matcher were noisy —
         // clear once so the geo-verified checker re-resolves them.

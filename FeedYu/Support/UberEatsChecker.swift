@@ -16,11 +16,13 @@ import CoreLocation
 /// /store-browse-uuid/<uuid>?diningMode=DELIVERY deep link.
 ///
 /// Outcomes:
-/// - available(storeURL): verified — the order button deep-links to the store.
+/// - available(storeURL): verified to exist AND affirmed open (allow-list;
+///   see `orderableStates`) — the order button deep-links to the store.
 /// - notFound: real results, nothing verified → engine rolls another.
-/// - unknown: challenge never cleared / nothing rendered → treated as
-///   available-enough (button falls back to a search universal link) so the
-///   tab still works when the bot wall wins.
+/// - unknown: cannot affirm (bot wall, transport failure, nothing rendered)
+///   → SKIPPED, never persisted (product call 2026-07-14: only stores known
+///   to be ready get a card; a bot-wall session shows fewer cards instead
+///   of unorderable ones).
 @MainActor
 final class UberEatsChecker: ObservableObject {
     static let shared = UberEatsChecker()
@@ -65,11 +67,13 @@ final class UberEatsChecker: ObservableObject {
     /// Session cache keyed by restaurant id — NOT by name: two same-named
     /// branches of a chain would share a verdict, and the first branch's
     /// verified store URL would get persisted onto the other (the engine's
-    /// availabilityCheck writes `.available` URLs to the store). notFound/
-    /// unknown last the session (existence rarely changes); `.available`
-    /// (search-pipeline verdicts, URL-less flow only) expires after
-    /// `openStateTTL`; `.closedNow` self-expires at Uber's own reopen time.
-    /// Known stores are deliberately NOT served a cached "open" — see
+    /// availabilityCheck writes `.available` URLs to the store). notFound
+    /// lasts the session (existence rarely changes); `.available`
+    /// (search-pipeline verdicts, URL-less flow only) and `unknown` expire
+    /// after `openStateTTL` — unknown now HIDES a store, so a transient bot
+    /// wall at launch must not suppress it all session; `.closedNow`
+    /// self-expires at Uber's own reopen time. Known stores are
+    /// deliberately NOT served a cached "open" — see
     /// `availability(for:near:)`.
     private var cache: [UUID: (result: Availability, at: Date)] = [:]
     nonisolated static let openStateTTL: TimeInterval = 10 * 60
@@ -77,14 +81,14 @@ final class UberEatsChecker: ObservableObject {
     /// Pure freshness rule (testable): is a cached verdict still valid?
     nonisolated static func isFresh(_ result: Availability, checkedAt: Date, now: Date = Date()) -> Bool {
         switch result {
-        case .available: return now.timeIntervalSince(checkedAt) < openStateTTL
+        case .available, .unknown: return now.timeIntervalSince(checkedAt) < openStateTTL
         case .closedNow(_, let reopens):
             // No reopen moment = a merchant pause (not a schedule closure):
             // recheck after openStateTTL, matching the persisted 10-minute
             // fallback — distantFuture would pin it closed all session.
             guard let reopens else { return now.timeIntervalSince(checkedAt) < openStateTTL }
             return now < reopens
-        case .notFound, .unknown: return true
+        case .notFound: return true
         }
     }
 
@@ -111,21 +115,27 @@ final class UberEatsChecker: ObservableObject {
                 cache[key] = nil
             }
             let region = (Locale.current.region?.identifier ?? "US").lowercased()
-            if let uuid = Self.storeUUID(fromStoreURL: url) {
-                if let info = await Self.fetchClosedInfo(storeUuid: uuid, region: region, origin: origin) {
-                    if info.closed {
-                        let result = Availability.closedNow(url, reopens: info.reopens)
-                        cache[key] = (result, Date())
-                        return result
-                    }
-                } else {
-                    // Fail OPEN, deliberately: a persistent bot wall must
-                    // not make the user's whole verified neighborhood
-                    // vanish. The cold-start retry above makes this path
-                    // rare; log it so device consoles show when the open
-                    // guarantee couldn't be honored.
-                    Self.debugLog("open-check unavailable for known store '\(restaurant.name)' — failing open")
-                }
+            guard let uuid = Self.storeUUID(fromStoreURL: url) else {
+                // Only store-browse-uuid links are ever persisted, so this
+                // is theoretical — but an unparseable URL means no open
+                // check can run, and unverifiable stores don't get cards.
+                Self.debugLog("un-parseable store URL for '\(restaurant.name)' — skipping (cannot affirm ready)")
+                return .unknown
+            }
+            guard let info = await Self.fetchClosedInfo(storeUuid: uuid, region: region, origin: origin) else {
+                // Cannot affirm ready (bot wall / transport, already
+                // retried once) → SKIP, deliberately uncached and never
+                // persisted: the failure says nothing about the
+                // restaurant, and the very next roll may reach a warm
+                // WebView. Product call 2026-07-14 — this used to fail
+                // OPEN, and a store Uber couldn't vouch for got a card.
+                Self.debugLog("open-check unavailable for known store '\(restaurant.name)' — skipping (cannot affirm ready)")
+                return .unknown
+            }
+            if info.closed {
+                let result = Availability.closedNow(url, reopens: info.reopens)
+                cache[key] = (result, Date())
+                return result
             }
             return .available(url)
         }
@@ -234,9 +244,16 @@ final class UberEatsChecker: ObservableObject {
                 debugLog("candidate '\(entry.candidate.slug)': \(Int(distance)) m away (feed geo), score \(String(format: "%.2f", entry.score))")
                 if distance <= matchRadiusMeters, entry.score >= 0.5 {
                     debugLog("verified '\(name)' → \(entry.candidate.url.path)")
-                    if let uuid = entry.candidate.uuid,
-                       let info = await fetchClosedInfo(storeUuid: uuid, region: region, origin: origin),
-                       info.closed {
+                    guard let uuid = entry.candidate.uuid,
+                          let info = await fetchClosedInfo(storeUuid: uuid, region: region, origin: origin) else {
+                        // Verified to exist, but the open check couldn't
+                        // run — existence alone no longer earns a card
+                        // (only-known-ready, 2026-07-14). Never persisted,
+                        // 10-min session cache, so it retries soon.
+                        debugLog("'\(name)' verified but open state unaffirmed — skipping")
+                        return .unknown
+                    }
+                    if info.closed {
                         debugLog("'\(name)' is closed (reopens: \(info.reopens.map(String.init(describing:)) ?? "unknown"))")
                         return .closedNow(entry.candidate.url, reopens: info.reopens)
                     }
@@ -337,18 +354,26 @@ final class UberEatsChecker: ObservableObject {
         return String(response.dropFirst(4))
     }
 
-    /// getStoreV1 states that mean "you cannot order right now", verified
-    /// against REAL captures (2026-07-11, synthetic mirrors in tests):
-    /// NOT_ACCEPTING_ORDERS = merchant paused mid-shift ("the store
-    /// indicated they aren't available…", nextOpenTime is null — a taiyaki
-    /// shop shipped through the old schedule-only check this way);
-    /// STORE_CLOSED = outside scheduled hours (nextOpenTime set).
-    /// Deliberately a DENY-list: UNKNOWN and NO_COURIERS_NEARBY were also
-    /// observed but are ambiguous without a confirmed open-state anchor
-    /// (and courier states depend on delivery context we can't reproduce
-    /// off-device) — unrecognized states fail OPEN and are debug-logged so
-    /// device consoles collect the missing vocabulary.
-    nonisolated static let notOrderableStates: Set<String> = ["NOT_ACCEPTING_ORDERS", "STORE_CLOSED"]
+    /// getStoreV1 state vocabulary, verified against REAL captures
+    /// (2026-07-11 and 2026-07-14; synthetic mirrors in tests).
+    ///
+    /// ALLOW-list (product call 2026-07-14: only stores KNOWN to be ready
+    /// get a card): `AVAILABLE` is the one affirmed open state — captured
+    /// live from an orderable store once curl probing became possible.
+    /// Everything else is "not ready": NOT_ACCEPTING_ORDERS = merchant
+    /// paused mid-shift (nextOpenTime null); STORE_CLOSED = outside
+    /// scheduled hours (nextOpenTime set); TOO_FAR_TO_DELIVER /
+    /// NO_COURIERS_NEARBY = Uber won't take the order from here right now;
+    /// UNKNOWN = observed on a store INSIDE its open window that wasn't
+    /// accepting (the exact card the old deny-list shipped). States in
+    /// neither set are debug-logged so device consoles collect vocabulary
+    /// drift — if Uber ever renames AVAILABLE, the tab goes visibly quiet
+    /// until the allow-list is re-captured (see docs/MAINTENANCE.md).
+    nonisolated static let orderableStates: Set<String> = ["AVAILABLE"]
+    /// Known not-ready states, kept ONLY to separate "recognized closed"
+    /// from "new vocabulary" in the debug log — both are skipped.
+    nonisolated static let notOrderableStates: Set<String> =
+        ["NOT_ACCEPTING_ORDERS", "STORE_CLOSED", "TOO_FAR_TO_DELIVER", "NO_COURIERS_NEARBY", "UNKNOWN"]
 
     /// `storeAvailablityStatus.state` — Uber's own "Availablity" typo is
     /// load-bearing; the pattern tolerates both spellings in case they
@@ -359,10 +384,10 @@ final class UberEatsChecker: ObservableObject {
     }
 
     /// The store-level "can you order right now" verdict from getStoreV1.
-    /// nil = transport failure (callers fail open). `(true, reopens)` =
-    /// not orderable; reopens is Uber's schedule moment when there is one
-    /// — merchant pauses have none, and callers apply the 10-minute
-    /// recheck fallback.
+    /// nil = transport failure (callers SKIP — cannot affirm ready — and
+    /// persist nothing). `(true, reopens)` = not orderable; reopens is
+    /// Uber's schedule moment when there is one — merchant pauses have
+    /// none, and callers apply the 10-minute recheck fallback.
     static func fetchClosedInfo(storeUuid: String, region: String, origin: CLLocation?) async -> (closed: Bool, reopens: Date?)? {
         var body = await fetchStoreBody(storeUuid: storeUuid, region: region, origin: origin)
         if body == nil {
@@ -379,23 +404,31 @@ final class UberEatsChecker: ObservableObject {
         return parseClosedInfo(fromStoreJSON: body)
     }
 
-    /// Two independent closed signals, either suffices (redundancy against
-    /// format drift): the availability-state deny-list above, and
-    /// orderForLaterInfo.nextOpenTime — semantics verified live 2026-07-10:
-    /// a FUTURE value means "closed right now, accepts scheduled orders";
-    /// an open store reports its most recent opening time (past).
+    /// ALLOW-list verdict: `closed == false` only when the state is an
+    /// affirmed orderable one (`orderableStates`) AND the schedule doesn't
+    /// contradict it (a FUTURE nextOpenTime means "closed right now,
+    /// accepts scheduled orders" — semantics verified live 2026-07-10).
+    /// A missing state field (format drift), an unrecognized state, or a
+    /// recognized not-ready state all mean "cannot affirm ready" → closed.
+    /// nextOpenTime is kept only for the reopen stamp: an open store may
+    /// report null OR a past value (both observed live), so it can never
+    /// serve as an open signal on its own.
     /// `isOpen`/`isOrderable`/`isAvailable` are NOT open-now flags — all
     /// three were true for verifiably closed AND merchant-paused stores.
     nonisolated static func parseClosedInfo(fromStoreJSON json: String, now: Date = Date()) -> (closed: Bool, reopens: Date?) {
         let reopens = parseNextOpenTime(fromStoreJSON: json)
-        if let state = parseAvailabilityState(fromStoreJSON: json) {
-            if notOrderableStates.contains(state) {
-                return (true, reopens)
-            }
-            debugLog("storeAvailablityStatus '\(state)' not in the deny-list — treating as orderable")
+        guard let state = parseAvailabilityState(fromStoreJSON: json) else {
+            debugLog("storeAvailablityStatus missing — cannot affirm ready")
+            return (true, reopens)
         }
-        if let reopens, reopens > now { return (true, reopens) }
-        return (false, reopens)
+        if orderableStates.contains(state) {
+            if let reopens, reopens > now { return (true, reopens) }
+            return (false, reopens)
+        }
+        if !notOrderableStates.contains(state) {
+            debugLog("storeAvailablityStatus '\(state)' in neither vocabulary set — treating as not ready")
+        }
+        return (true, reopens)
     }
 
     nonisolated static func parseNextOpenTime(fromStoreJSON json: String) -> Date? {

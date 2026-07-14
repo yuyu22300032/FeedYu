@@ -21,7 +21,10 @@ enum UITestSeed {
         UserDefaults.standard.string(forKey: "uiTestSeed") != nil
     }
 
-    /// Runs BEFORE the store loads (first line of bootstrap).
+    /// Runs from FeedYuApp.init — BEFORE the @StateObject graph exists.
+    /// AppSettings reads UserDefaults in its init, so seeding any later
+    /// (it used to run first thing in bootstrap()'s .task) is one launch
+    /// stale: each test launch read the PREVIOUS launch's seeded prefs.
     static func applyIfRequested() {
         guard let scenario = UserDefaults.standard.string(forKey: "uiTestSeed") else { return }
         seedDefaults(scenario: scenario)

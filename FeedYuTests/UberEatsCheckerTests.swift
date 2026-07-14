@@ -87,8 +87,9 @@ final class UberEatsCheckerTests: XCTestCase {
     }
 
     // Synthetic getStoreV1 fragment mirroring the live orderForLaterInfo
-    // shape (semantics verified live 2026-07-10: future nextOpenTime =
-    // closed right now; open stores report their most recent opening).
+    // shape (semantics verified live 2026-07-10/14: future nextOpenTime =
+    // closed right now; open stores report a PAST value or NULL — which is
+    // why the allow-list never reads it as an open signal).
     func testParsesNextOpenTime() {
         let closed = #"{"data":{"title":"X","orderForLaterInfo":{"nextOpenTime":"2030-01-01T03:00:00.000Z","isSchedulable":true}}}"#
         let parsed = UberEatsChecker.parseNextOpenTime(fromStoreJSON: closed)
@@ -118,7 +119,11 @@ final class UberEatsCheckerTests: XCTestCase {
                                                checkedAt: now, now: now))
         // Existence verdicts last the session.
         XCTAssertTrue(UberEatsChecker.isFresh(.notFound, checkedAt: .distantPast, now: now))
-        XCTAssertTrue(UberEatsChecker.isFresh(.unknown, checkedAt: .distantPast, now: now))
+        // unknown now HIDES a store (only-known-ready), so it must expire
+        // like available — a transient bot wall at launch must not
+        // suppress a store for the whole session.
+        XCTAssertTrue(UberEatsChecker.isFresh(.unknown, checkedAt: now.addingTimeInterval(-60), now: now))
+        XCTAssertFalse(UberEatsChecker.isFresh(.unknown, checkedAt: .distantPast, now: now))
     }
 
     func testStoreUUIDExtraction() {
@@ -182,10 +187,15 @@ final class UberEatsAvailabilityFlowTests: XCTestCase {
         return restaurant
     }
 
+    /// Mirrors the live payload shapes (captured 2026-07-14): a closed
+    /// store reports STORE_CLOSED + a future nextOpenTime; an open one
+    /// reports AVAILABLE (its nextOpenTime may be null or past — the state
+    /// is the only open signal the allow-list trusts).
     private static func storeJSON(nextOpenTime: Date) -> String {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return #"200|{"data":{"orderForLaterInfo":{"nextOpenTime":"\#(formatter.string(from: nextOpenTime))"}}}"#
+        let state = nextOpenTime > Date() ? "STORE_CLOSED" : "AVAILABLE"
+        return #"200|{"data":{"storeAvailablityStatus":{"state":"\#(state)"},"orderForLaterInfo":{"nextOpenTime":"\#(formatter.string(from: nextOpenTime))"}}}"#
     }
 
     func testColdStartRetryRecoversTheOpenCheck() async {
@@ -242,16 +252,23 @@ final class UberEatsAvailabilityFlowTests: XCTestCase {
         XCTAssertEqual(calls, 2, "open state re-checked on every call")
     }
 
-    func testFailsOpenOnlyAfterRetryAlsoFails() async {
-        // A persistent bot wall must not hide the user's whole verified
-        // neighborhood — but the verdict is only surrendered after the
-        // retry, not on the first cold hiccup.
+    func testSkipsUnaffirmedStoreOnlyAfterRetryAlsoFails() async {
+        // Only-known-ready (product call 2026-07-14, flipping the old
+        // fail-open): when the open check can't run, the store is SKIPPED
+        // — but only after the retry, not on the first cold hiccup, and
+        // NOTHING is cached or persisted (the failure says nothing about
+        // the restaurant), so the very next roll re-checks live.
         var calls = 0
         UberEatsChecker.runJS = { _, _, _ in calls += 1; return nil }
-        let result = await checker.availability(for: knownStore(), near: nil)
-        XCTAssertEqual(calls, 2, "both attempts spent before failing open")
-        guard case .available = result else {
-            return XCTFail("fail-open keeps the store visible, got \(result)")
+        let first = await checker.availability(for: knownStore(), near: nil)
+        XCTAssertEqual(calls, 2, "both attempts spent before giving a verdict")
+        guard case .unknown = first else {
+            return XCTFail("unverifiable store is skipped, got \(first)")
+        }
+        let second = await checker.availability(for: knownStore(), near: nil)
+        XCTAssertEqual(calls, 4, "transport failure is not cached — the next roll retries")
+        guard case .unknown = second else {
+            return XCTFail("still unverifiable, got \(second)")
         }
     }
 
@@ -259,11 +276,12 @@ final class UberEatsAvailabilityFlowTests: XCTestCase {
         // REGRESSION (shipped 2026-07-14): only the search pipeline set the
         // uev2.loc cookie, and it's session-scoped — so a cold launch's
         // known-store checks ran location-blind until some search happened
-        // to run first. Without a location, getStoreV1 masks schedule
-        // closure behind TOO_FAR_TO_DELIVER with a null nextOpenTime
-        // (verified live against the shipped store): both closed signals
-        // vanish, the check fails open, and a store that opens at 22:00
-        // reached the lunch card.
+        // to run first. Without a location, getStoreV1 answers
+        // TOO_FAR_TO_DELIVER + null nextOpenTime regardless of the real
+        // state (verified live against the shipped store): under the old
+        // deny-list that failed open and a store that opens at 22:00
+        // reached the lunch card; under the allow-list the same omission
+        // would hide OPEN stores instead. Either way: send the location.
         var capturedScript: String?
         var capturedLocJSON: String?
         UberEatsChecker.runJS = { script, arguments, _ in
@@ -317,9 +335,11 @@ extension UberEatsAvailabilityFlowTests {
     }
 }
 
-/// Synthetic mirrors of REAL getStoreV1 captures (2026-07-11): a
-/// merchant-paused taiyaki shop (the shipped miss), two schedule-closed
-/// restaurants, and courier/UNKNOWN states. Real captures stay out of git.
+/// Synthetic mirrors of REAL getStoreV1 captures (2026-07-11 and
+/// 2026-07-14): a merchant-paused taiyaki shop (the first shipped miss),
+/// schedule-closed restaurants, the AVAILABLE open anchor, and the
+/// ambiguous states (TOO_FAR/UNKNOWN — the second shipped miss, a store
+/// suggested at lunch while closed). Real captures stay out of git.
 extension UberEatsCheckerTests {
     func testParsesAvailabilityStateBothSpellings() {
         // Uber's own "Availablity" typo is live today; tolerate the
@@ -349,11 +369,44 @@ extension UberEatsCheckerTests {
         XCTAssertNotNil(info.reopens)
     }
 
-    func testUnrecognizedStateFailsOpen() {
-        // Deny-list discipline: courier/UNKNOWN states are ambiguous
-        // without a confirmed open anchor — they must NOT hide a store.
-        let json = #"{"storeAvailablityStatus":{"state":"NO_COURIERS_NEARBY"},"orderForLaterInfo":{"nextOpenTime":null}}"#
+    func testAvailableStateIsReady() {
+        // The open anchor, captured live 2026-07-14 (小品雅廚 mid-service):
+        // state AVAILABLE with a NULL nextOpenTime — the schedule field is
+        // useless as an open signal, the state alone affirms readiness.
+        let json = #"{"storeAvailablityStatus":{"state":"AVAILABLE"},"orderForLaterInfo":{"nextOpenTime":null}}"#
         XCTAssertFalse(UberEatsChecker.parseClosedInfo(fromStoreJSON: json).closed)
+    }
+
+    func testAmbiguousStatesAreNotReady() {
+        // Allow-list discipline (product call 2026-07-14): anything that
+        // doesn't affirm readiness is skipped. TOO_FAR_TO_DELIVER and
+        // UNKNOWN were both captured on stores that could not take an
+        // order (UNKNOWN on a store INSIDE its open window — the exact
+        // card the old deny-list shipped at lunch).
+        for state in ["NO_COURIERS_NEARBY", "TOO_FAR_TO_DELIVER", "UNKNOWN", "SOMETHING_NEW"] {
+            let json = #"{"storeAvailablityStatus":{"state":"\#(state)"},"orderForLaterInfo":{"nextOpenTime":null}}"#
+            XCTAssertTrue(UberEatsChecker.parseClosedInfo(fromStoreJSON: json).closed,
+                          "\(state) must not earn a card")
+        }
+    }
+
+    func testMissingStateFieldIsNotReady() {
+        // Format drift fails CLOSED now: a payload without the state field
+        // cannot affirm readiness — the tab goes visibly quiet instead of
+        // showing unverified stores (re-capture via the curl probe in
+        // docs/MAINTENANCE.md).
+        let json = #"{"data":{"title":"X","orderForLaterInfo":{"nextOpenTime":null}}}"#
+        XCTAssertTrue(UberEatsChecker.parseClosedInfo(fromStoreJSON: json).closed)
+    }
+
+    func testAvailableStateWithFutureReopenIsNotReady() {
+        // Contradictory payload: the schedule says "opens later" while the
+        // state says AVAILABLE — two disagreeing signals are not "known
+        // ready", and the future moment still feeds the reopen stamp.
+        let json = #"{"storeAvailablityStatus":{"state":"AVAILABLE"},"orderForLaterInfo":{"nextOpenTime":"2030-01-01T03:00:00.000Z"}}"#
+        let info = UberEatsChecker.parseClosedInfo(fromStoreJSON: json)
+        XCTAssertTrue(info.closed)
+        XCTAssertNotNil(info.reopens)
     }
 
     func testCachedMerchantPauseExpiresAfterTTL() {
