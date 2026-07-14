@@ -201,38 +201,44 @@ link. Format canaries live in its fixture tests.
 
 ### "Uber Eats suggested a store that's closed right now"
 
-The open-now filter reads getStoreV1's `orderForLaterInfo.nextOpenTime`:
-a FUTURE value = closed now (accepts scheduled orders only — Uber's
-"closed right now" page); open stores report their most recent opening
-time (past). **`isOpen`, `isOrderable`, and `isAvailable` are NOT
-open-now flags** — all were `true` for verifiably closed AND
-merchant-paused stores (checked live 2026-07-10 and 2026-07-11).
+The open-now filter is an ALLOW-list (product call 2026-07-14 — only
+stores KNOWN to be ready get a card; it replaced a deny-list that let
+ambiguous states through): `storeAvailablityStatus.state` (Uber's own
+"Availablity" typo — the parser tolerates both spellings) must be
+`AVAILABLE`, the one open state captured live from an orderable store
+mid-service. A FUTURE `orderForLaterInfo.nextOpenTime` overrides even
+that (verified 2026-07-10: future = closed now, accepts scheduled orders
+only); an open store's nextOpenTime may be a PAST value or NULL (both
+observed live), so the schedule field is never an open signal on its own
+— it only feeds the reopen stamp. **`isOpen`, `isOrderable`, and
+`isAvailable` are NOT open-now flags** — all were `true` for verifiably
+closed AND merchant-paused stores (checked live 2026-07-10/11).
 
-The schedule signal alone MISSES merchant pauses ("the store indicated
-they aren't available at the moment" — a paused shop reports
-`nextOpenTime: null`; one shipped through that way). The second signal is
-`storeAvailablityStatus.state` (Uber's own "Availablity" typo — the
-parser tolerates both spellings): observed vocabulary as of 2026-07-11 —
-`NOT_ACCEPTING_ORDERS` (merchant paused), `STORE_CLOSED` (outside
-schedule), `NO_COURIERS_NEARBY` and `UNKNOWN` (ambiguous: entangled with
-delivery context we could not reproduce off-device; no confirmed
-open-state value captured yet). `UberEatsChecker.notOrderableStates` is
-a DENY-list of the two unambiguous ones; anything else fails open and
-DEBUG builds log `storeAvailablityStatus '…' not in the deny-list` —
-grep device consoles for that line to collect the missing vocabulary
-before extending the list.
+Observed not-ready vocabulary (2026-07-11 and 2026-07-14 captures):
+`NOT_ACCEPTING_ORDERS` (merchant paused mid-shift, nextOpenTime null —
+one shipped through the old schedule-only check), `STORE_CLOSED`
+(outside schedule, nextOpenTime set), `TOO_FAR_TO_DELIVER` and
+`NO_COURIERS_NEARBY` (delivery-context), `UNKNOWN` (captured on a store
+INSIDE its open window that wasn't taking orders — the exact card the
+old deny-list shipped at lunch 2026-07-14). A state in neither
+vocabulary set — and a payload with NO state field — is skipped too;
+DEBUG builds log `storeAvailablityStatus '…' in neither vocabulary set`
+— grep device consoles for that line. The accepted drift risk: if Uber
+renames AVAILABLE, the tab goes visibly QUIET (no false cards) —
+re-capture the vocabulary with the curl probe below and extend
+`UberEatsChecker.orderableStates`.
 
 **Both signals require the request to carry the user's location.**
 Verified live 2026-07-14 against a store inside its closed window: with
 the `uev2.loc` cookie, getStoreV1 said `STORE_CLOSED` + a real
 `nextOpenTime`; without it, the SAME store at the SAME moment said
-`TOO_FAR_TO_DELIVER` (not in the deny-list) with `nextOpenTime: null` —
-no closed signal survives, the check fails open, and a closed store
-reaches the card. The cookie is session-scoped, so "a search ran earlier
-and set it" is not durable across launches; `fetchStoreBody` sets it on
-every call. Don't clean that up. Note the vocabulary implication:
-`TOO_FAR_TO_DELIVER` alongside a REAL location means "can't deliver to
-you" — still deliberately fail-open (not deny-listed) as of 2026-07-14.
+`TOO_FAR_TO_DELIVER` (a non-ready state) with `nextOpenTime: null` —
+under the old deny-list that failed open and a closed store reached the
+card. The cookie is session-scoped, so "a search ran earlier and set it"
+is not durable across launches; `fetchStoreBody` sets it on every call.
+Don't clean that up — note the failure direction FLIPPED with the
+allow-list: a location-less payload now reads as not-ready, so a missing
+cookie would make genuinely OPEN stores vanish instead.
 
 (That probe also showed the register's old "Uber 403s bare CLI clients"
 assumption has drifted: `getStoreV1` answered plain `curl` with a mobile
@@ -248,9 +254,12 @@ suggestion re-verifies live, so the order button can't land on a store
 that closed minutes after an earlier check. Don't "optimize" that call
 away; it is the product's freshness guarantee. The check retries once on
 a cold transport (launch auto-roll makes it the app's first WebView call)
-and only then fails open, logging
-`open-check unavailable for known store '…' — failing open` — grep the
-device console for that line when a closed store slips through.
+and only then SKIPS the store — nothing cached or persisted, the next
+roll re-checks live — logging
+`open-check unavailable for known store '…' — skipping (cannot affirm
+ready)` — grep the device console for that line when stores seem to
+vanish (a persistent bot wall now quiets the tab instead of showing
+unverifiable cards).
 
 ### "Uber Eats tab says no results, but refreshing finds one"
 
@@ -274,6 +283,14 @@ two in a new area map it out (loading card takes over after 1 s; each
 press is bounded and resumes the queue; leaving the tab cancels the scan),
 later refreshes are near-instant, and a refresh only ever ends in a
 suggestion, "nothing reachable", or an honest "refresh to keep looking".
+
+Since the 2026-07-14 only-known-ready flip there is one more legitimate
+cause of a quiet tab: stores the open check could not AFFIRM (bot wall,
+transport failure, unrecognized state vocabulary) are skipped by design
+instead of shown. Nothing is persisted for them and unknowns expire from
+the session cache in 10 min, so the tab recovers as soon as checks
+succeed again — grep the device console for `cannot affirm ready` /
+`in neither vocabulary set` before suspecting the engine.
 
 ### "Suggestions are slow / ETAs missing"
 
@@ -306,7 +323,7 @@ encoded. When a feature degrades with no code change — check here first.
 | Google place pages | `og:image`/`og:description` meta present | `PlaceInfoFetcher` | photos vanish for non-Michelin places |
 | guide.michelin.com | mobile Safari UA passes bot filter; locale editions share slugs; `<title>` = "Name – City …" | `MichelinNameLocalizer`, `PlaceInfoFetcher` | no local names / no Michelin photos |
 | michelin-my-maps (GitHub raw CSV) | column names (Name/Award/Latitude/…); >100 rows | `MichelinDataSource` | dataset stales silently (falls back to cache) |
-| ubereats.com same-origin APIs | `getSearchSuggestionsV1` (storeUuid+title+geo per store object) and `getStoreV1` callable from a bot-cleared WKWebView page | `UberEatsChecker` + `WebPageFetcher` | order button degrades to search; open checks fail open |
+| ubereats.com same-origin APIs | `getSearchSuggestionsV1` (storeUuid+title+geo per store object) and `getStoreV1` callable from a bot-cleared WKWebView page | `UberEatsChecker` + `WebPageFetcher` | unverifiable stores are skipped (only-known-ready) — a persistent bot wall quiets the tab; nothing persisted, 10-min recheck |
 | getStoreV1 availability signals | `storeAvailablityStatus.state` vocabulary (NOT_ACCEPTING_ORDERS / STORE_CLOSED — note Uber's "Availablity" typo) and `orderForLaterInfo.nextOpenTime` semantics; `isOpen`/`isOrderable`/`isAvailable` stay useless; **signals only present when the request carries the `uev2.loc` cookie** — location-less responses mask closure as TOO_FAR_TO_DELIVER + null nextOpenTime | `UberEatsChecker.parseClosedInfo` + `notOrderableStates`; cookie set in `fetchStoreBody` | closed/paused stores get suggested again, or (if states are renamed) never skipped |
 | Uber Eats store pages | store links/JSON-LD geo for candidates without feed geo | `UberEatsChecker.parseStorePage` | geo verification falls back to strict name-only |
 | MKDirections | throttled but free | `SuggestionEngine` | ETAs slow/missing if abused |

@@ -132,15 +132,16 @@ independent Tonight and Uber Eats switches), with two differences:
 The card keeps the photo→Google-Maps behavior (reviews/info) and adds a
 green **Order on Uber Eats** button that deep-links into the Uber Eats app,
 directly on the verified store page ready to order
-(`/store-browse-uuid/<uuid>?diningMode=DELIVERY`). Stores that exist but
-are **closed right now** (Uber's "accepts orders during open hours") are
-skipped, not suggested — detected via getStoreV1's
-`orderForLaterInfo.nextOpenTime` AND the `storeAvailablityStatus.state`
-deny-list — the state catches merchant pauses ("the store indicated they
-aren't available"), whose `nextOpenTime` is null (see the MAINTENANCE
-playbook; `isOpen`/`isOrderable`/`isAvailable` are lies). If verification was inconclusive (offline, bot wall), the
-button falls back to an Uber Eats search for the name — the tab degrades,
-it never goes empty.
+(`/store-browse-uuid/<uuid>?diningMode=DELIVERY`). Only stores getStoreV1
+**affirms as ready** are suggested (`storeAvailablityStatus.state ==
+AVAILABLE`, an allow-list — product call 2026-07-14; see the MAINTENANCE
+playbook; `isOpen`/`isOrderable`/`isAvailable` are lies): closed,
+merchant-paused, courier-starved/too-far, and unverifiable (offline, bot
+wall) stores are all skipped — the tab prefers fewer cards over an order
+button that lands on a page you can't order from. A future
+`orderForLaterInfo.nextOpenTime` feeds the persisted reopen stamp so
+known-closed stores skip for free until then; unverifiable ones are
+never persisted and re-check within 10 minutes.
 
 **First launch** (any tab): a four-page onboarding sheet with animated
 vignettes — what the app does (tap the photo → the exact Maps place

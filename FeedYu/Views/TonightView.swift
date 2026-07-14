@@ -325,9 +325,13 @@ struct TonightView: View {
                 store?.setUberEatsNotFound(id: restaurant.id)
                 return false
             case .unknown:
-                // Stays in: better a search-link button than an empty tab
-                // when Uber's bot wall blocks the check.
-                return true
+                // Skipped: only stores KNOWN to be ready get a card
+                // (product call 2026-07-14 — this used to stay in with a
+                // search-link fallback, and unverifiable stores reached
+                // the card). Nothing is persisted: unknown says nothing
+                // about the restaurant, and the checker's 10-min session
+                // TTL lets a cleared bot wall re-verify soon.
+                return false
             }
         } : nil
     }

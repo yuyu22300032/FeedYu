@@ -276,18 +276,21 @@ Michelin fields, never clear anything, never touch `isHidden`.
   gave no time): relaunches skip known-closed stores for free via
   quickReject until the stamp passes, then the live check decides again
   (suppress-only — an afternoon of closed restaurants used to cost one
-  live check each, on every launch). Closed-now itself is judged by TWO
-  signals (see the MAINTENANCE playbook): the `storeAvailablityStatus`
-  state deny-list — which catches merchant pauses whose `nextOpenTime` is
-  null — and the future-`nextOpenTime` schedule rule. The check
+  live check each, on every launch). Ready-now is judged by an ALLOW-list
+  (product call 2026-07-14, replacing a deny-list that shipped an
+  unorderable card — see the MAINTENANCE playbook):
+  `storeAvailablityStatus.state` must be `AVAILABLE`, not contradicted by
+  a future `nextOpenTime`; merchant pauses, schedule closures,
+  courier/too-far states, and format drift are all "not ready". The check
   retries once on transport failure (the Uber tab auto-rolls at launch,
-  making this the app's FIRST WebView call — cold calls throw; single-shot
-  it failed open and the initial card could be a closed store), then fails
-  open with a debugLog. The transport is injectable
+  making this the app's FIRST WebView call — cold calls throw), then
+  SKIPS the store without caching or persisting anything — the next roll
+  re-checks live. The transport is injectable
   (`UberEatsChecker.runJS`) so these contracts are unit-tested — see
   docs/REQUIREMENTS.md "Uber Eats". A verified
   notFound persists with a week's cooldown (skipped free via quickReject);
-  `unknown` (bot wall) is never persisted. (v1 name-only URLs were wiped
+  `unknown` (bot wall / transport) is never persisted and expires from
+  the session cache after 10 min. (v1 name-only URLs were wiped
   once via the `uberEatsURLsResetV2` flag.)
 - No repeats until the in-range pool is exhausted, then reshuffle (avoiding
   an immediate repeat of the current card).
@@ -502,4 +505,15 @@ tests pass with an updated *synthetic* fixture.
     search pipeline, so every cold launch's known-store checks ran blind
     until some search happened to run first — a 22:00-opening steakhouse
     reached the lunch card that way (2026-07-14). `fetchStoreBody` now
-    sets the cookie on every call; keep it.
+    sets the cookie on every call; keep it — and note the failure
+    direction flipped with the only-known-ready allow-list: a missing
+    cookie would now hide genuinely OPEN stores instead.
+17. **Seeding UserDefaults after `@StateObject` construction is one
+    launch stale.** `AppSettings` reads its prefs in `init`, which runs
+    when SwiftUI first evaluates the App's `@StateObject`s — BEFORE any
+    `.task`. `UITestSeed.applyIfRequested()` used to run inside
+    `bootstrap()`'s `.task`, so every UI-test launch read the PREVIOUS
+    launch's seeded budget (a fresh simulator read none at all), and
+    `testBudgetChangeWithNoCardRollsOne` passed or failed on launch
+    history. Seed hooks that feed `@StateObject`-init reads belong in
+    `FeedYuApp.init()`.
