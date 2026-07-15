@@ -167,7 +167,12 @@ One-time setup (browser/GUI, can't be scripted):
 Per release:
 
 4. Bump `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` in `project.yml`,
-   `xcodegen generate`, run the test suite.
+   `xcodegen generate`, run the test suite. Both Info.plists reference
+   `$(MARKETING_VERSION)` / `$(CURRENT_PROJECT_VERSION)`, so the yml bump
+   is the whole change — they used to hardcode `1.0`/`1`, which silently
+   overrode the build settings: the first v1.1 archive came out
+   stamped 1.0 (1). **Verify the archive's Info.plist says the new
+   version before tagging.**
 5. Xcode: destination "Any iOS Device" → Product → **Archive** →
    Distribute App → App Store Connect (creates the Distribution cert on
    first run).
