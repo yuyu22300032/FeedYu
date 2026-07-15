@@ -253,7 +253,14 @@ pick that no longer fits is silently replaced. Cheap when caches are
 fresh (ETA cache 10 min; Uber closed-until-reopen verdicts cached until
 the store reopens) — except a known Uber store's OPEN state, which is
 re-verified live on purpose: the order button is a promise (see
-[Uber Eats integration](#uber-eats)).
+[Uber Eats integration](#uber-eats)). "Stable" has one limit on the Uber
+tab: a card whose last affirmation is older than the 10-min open-state
+TTL — an app resumed the next morning — re-verifies *behind the loading
+card* instead of staying tappable, because the verdict on screen may
+predate the store's whole closed night (shipped 2026-07-15); the same
+card returns once re-affirmed, otherwise a replacement rolls, and a card
+rejected by the re-check never resurfaces even when the replacement scan
+pauses at its check budget.
 
 ## Lazy loading & caching
 

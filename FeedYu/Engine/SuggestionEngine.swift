@@ -22,6 +22,18 @@ final class SuggestionEngine: ObservableObject {
     @Published private(set) var isSearching = false
     @Published private(set) var statusMessage: String?
 
+    /// When `current` last passed the full acceptance gauntlet (budget +
+    /// availability). Consulted only when an `availabilityCheck` exists:
+    /// its verdicts age (stores close overnight while the app sits
+    /// suspended with the card still up), so a revalidation against an
+    /// old affirmation must not leave the card interactive while it
+    /// re-verifies.
+    private(set) var currentAffirmedAt: Date?
+    /// How long an affirmation keeps revalidation silent — the Uber tab
+    /// wires this to `UberEatsChecker.openStateTTL`; tests shrink it to
+    /// force the stale path.
+    var affirmationTTL: TimeInterval = 600
+
     /// Injectable for tests. Default uses MKDirections.calculateETA with
     /// departure = now (traffic-aware for driving), no API key needed.
     var etaProvider: (CLLocationCoordinate2D, CLLocationCoordinate2D, TravelMode) async throws -> TimeInterval = SuggestionEngine.mapKitETA
@@ -60,6 +72,7 @@ final class SuggestionEngine: ObservableObject {
 
     func reset() {
         current = nil
+        currentAffirmedAt = nil
         statusMessage = nil
         sessionOrigin = nil
         sessionBudget = nil
@@ -72,6 +85,14 @@ final class SuggestionEngine: ObservableObject {
     /// the in-range pool is exhausted, then reshuffles.
     func refreshSuggestion(candidates: [Restaurant], origin: CLLocation, budget: TravelBudget) async {
         guard !isSearching else { return }
+        await performRefresh(candidates: candidates, origin: origin, budget: budget)
+    }
+
+    /// Guard-free core of `refreshSuggestion`: `revalidateCurrent`
+    /// escalates here while it already holds `isSearching` for a
+    /// stale-affirmation re-verification — the public guard would turn
+    /// that escalation into a silent no-op and keep the rejected card.
+    private func performRefresh(candidates: [Restaurant], origin: CLLocation, budget: TravelBudget) async {
         isSearching = true
         statusMessage = nil
         defer { isSearching = false }
@@ -175,20 +196,49 @@ final class SuggestionEngine: ObservableObject {
     /// Cheap when caches are fresh; call on tab appearance and on
     /// foreground return. A still-valid drive/walk pick gets its traffic
     /// minutes refreshed in place.
+    ///
+    /// Two exceptions to "silently", both born 2026-07-15 (an app
+    /// suspended overnight resumed with last night's card interactive —
+    /// its Order button opened a store that had closed hours earlier,
+    /// while the live re-check was still in flight):
+    /// - With an `availabilityCheck` present, a card whose affirmation is
+    ///   older than `affirmationTTL` re-verifies as a REAL search:
+    ///   `isSearching` raises, so the view's loading takeover pulls the
+    ///   card instead of leaving a live button on last night's verdict.
+    ///   Fresh affirmations keep the silent path — casual tab switches
+    ///   never blink the card.
+    /// - A card the checks REJECT (persisted closed stamp, live verdict)
+    ///   is cleared before the replacement scan starts: a scan that
+    ///   pauses at the check budget without accepting anyone (a morning
+    ///   where the whole neighborhood is closed) must not resurface a
+    ///   card that is KNOWN to be unorderable.
     func revalidateCurrent(candidates: [Restaurant], origin: CLLocation, budget: TravelBudget) async {
         guard let suggestion = current, !isSearching,
               let coordinate = suggestion.restaurant.coordinate else { return }
+
+        // Stale-affirmation hold. Every other search entry point (button,
+        // auto-suggest, revalidation) guards on isSearching, so while the
+        // hold is up a raised flag can only be OURS — the post-await
+        // "user rolled meanwhile" guards below tolerate exactly that.
+        let affirmationExpired = availabilityCheck != nil &&
+            Date().timeIntervalSince(currentAffirmedAt ?? .distantPast) >= affirmationTTL
+        if affirmationExpired { isSearching = true }
+        // Escalations re-manage the flag inside performRefresh; this
+        // releases the hold on the keep-the-card and bail-out paths (a
+        // second `false` after an escalation is harmless).
+        defer { if affirmationExpired { isSearching = false } }
 
         // Filters are constraints too: if the current pick fell out of the
         // candidate set (Michelin price/award filters, list toggles), it
         // no longer qualifies regardless of travel budget.
         guard candidates.contains(where: { $0.id == suggestion.restaurant.id }) else {
-            await refreshSuggestion(candidates: candidates, origin: origin, budget: budget)
+            await performRefresh(candidates: candidates, origin: origin, budget: budget)
             return
         }
 
         if let quickReject, quickReject(suggestion.restaurant) {
-            await refreshSuggestion(candidates: candidates, origin: origin, budget: budget)
+            current = nil // known-unorderable — must not outlive its rejection
+            await performRefresh(candidates: candidates, origin: origin, budget: budget)
             return
         }
 
@@ -196,26 +246,28 @@ final class SuggestionEngine: ObservableObject {
             guard let eta = try? await cachedETA(id: suggestion.restaurant.id, from: origin,
                                                  to: coordinate, mode: budget.mode) else { return }
             // The user may have rolled while we awaited — never fight them.
-            guard current?.id == suggestion.id, !isSearching else { return }
+            guard current?.id == suggestion.id, !isSearching || affirmationExpired else { return }
             if eta > budget.maxTravelSeconds {
-                await refreshSuggestion(candidates: candidates, origin: origin, budget: budget)
+                await performRefresh(candidates: candidates, origin: origin, budget: budget)
                 return
             }
             if let availabilityCheck, await !availabilityCheck(suggestion.restaurant) {
-                guard current?.id == suggestion.id, !isSearching else { return }
-                await refreshSuggestion(candidates: candidates, origin: origin, budget: budget)
+                guard current?.id == suggestion.id, !isSearching || affirmationExpired else { return }
+                current = nil // rejected by a LIVE verdict — never resurface
+                await performRefresh(candidates: candidates, origin: origin, budget: budget)
                 return
             }
             guard current?.id == suggestion.id else { return }
             accept(suggestion.restaurant, etaSeconds: eta, origin: origin, mode: budget.mode)
         } else {
             if (suggestion.restaurant.distance(from: origin) ?? .infinity) > budget.radiusMeters {
-                await refreshSuggestion(candidates: candidates, origin: origin, budget: budget)
+                await performRefresh(candidates: candidates, origin: origin, budget: budget)
                 return
             }
             if let availabilityCheck, await !availabilityCheck(suggestion.restaurant) {
-                guard current?.id == suggestion.id, !isSearching else { return }
-                await refreshSuggestion(candidates: candidates, origin: origin, budget: budget)
+                guard current?.id == suggestion.id, !isSearching || affirmationExpired else { return }
+                current = nil // rejected by a LIVE verdict — never resurface
+                await performRefresh(candidates: candidates, origin: origin, budget: budget)
                 return
             }
             guard current?.id == suggestion.id else { return }
@@ -255,6 +307,7 @@ final class SuggestionEngine: ObservableObject {
 
     private func accept(_ candidate: Restaurant, etaSeconds: TimeInterval?, origin: CLLocation, mode: TravelMode) {
         shownIDs.insert(candidate.id)
+        currentAffirmedAt = Date()
         let km = (candidate.distance(from: origin) ?? 0) / 1000
         current = Suggestion(restaurant: candidate,
                              etaMinutes: etaSeconds.map { Int(($0 / 60).rounded()) },

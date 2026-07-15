@@ -261,6 +261,24 @@ ready)` — grep the device console for that line when stores seem to
 vanish (a persistent bot wall now quiets the tab instead of showing
 unverifiable cards).
 
+**If the closed store appeared right after FOREGROUNDING the app** (not
+after a roll), suspect the resume path, not the verdict: the card on
+screen predates its re-check. An app suspended overnight resumes with
+last session's `engine.current` still up — Order button live — while
+`revalidateCurrent` re-verifies it, and that first re-check is at its
+slowest exactly then (the idle WebView tore down after 180 s; expect
+seconds). Shipped 2026-07-15: a card affirmed AVAILABLE at 23:00 opened
+a store at 07:45 that had been closed since 01:00 — every verdict fix
+was in place and the live probe agreed the store was closed; only the
+timing was wrong. The guard (ARCHITECTURE gotcha #18): acceptance stamps
+`SuggestionEngine.currentAffirmedAt`; a revalidation starting past
+`affirmationTTL` (= `openStateTTL`, 10 min) raises `isSearching` so the
+loading takeover pulls the card until the live verdict lands, and a card
+the checks REJECT is cleared before the replacement scan so a paused
+25-check batch can't resurface it. If this regresses, check those two
+mechanisms first — enforcing tests are listed in REQUIREMENTS.md
+("A resumed card must re-earn its button").
+
 ### "Uber Eats tab says no results, but refreshing finds one"
 
 Historical bug, fixed with these mechanisms — don't regress them:
