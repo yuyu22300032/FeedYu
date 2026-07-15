@@ -234,7 +234,13 @@ struct TonightView: View {
     /// against the travel budget in current traffic and (Uber) open hours
     /// — stores open while you browse Michelin and decide not to go out.
     /// Cheap when caches are fresh; the card survives whenever it still
-    /// fits, so suggestions stay stable across casual tab switches.
+    /// fits, so suggestions stay stable across casual tab switches — but
+    /// an Uber card whose affirmation predates the open-state TTL
+    /// re-verifies behind the loading takeover (engine raises isSearching)
+    /// instead of staying tappable: an overnight-suspended app resumes
+    /// with last night's card, and its slow first re-check (torn-down
+    /// WebView) once left a closed store's Order button live for the
+    /// seconds the user needed to tap it (2026-07-15).
     /// Constraint changed: revalidate the current card, or — when there is
     /// no card to revalidate — roll a fresh one right away.
     private func revalidateOrRoll() {
@@ -297,6 +303,12 @@ struct TonightView: View {
         engine.quickReject = uberEatsMode ? {
             UberEatsChecker.isInNotFoundCooldown($0) || UberEatsChecker.isClosedSuppressed($0)
         } : nil
+        // A card's "verified orderable" ages out exactly when a
+        // search-pipeline verdict would: past this, a revalidation runs as
+        // a real search (loading takeover) instead of leaving the Order
+        // button live on an old verdict — an overnight-suspended app
+        // resumes with LAST NIGHT'S card otherwise (shipped 2026-07-15).
+        engine.affirmationTTL = UberEatsChecker.openStateTTL
         engine.availabilityCheck = uberEatsMode ? { [weak store] restaurant in
             let result = await UberEatsChecker.shared.availability(for: restaurant, near: origin)
             switch result {

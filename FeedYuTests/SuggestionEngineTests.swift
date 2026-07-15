@@ -389,6 +389,107 @@ final class SuggestionEngineTests: XCTestCase {
                           "closed store replaced on revalidation")
     }
 
+    func testFreshAffirmationRevalidatesSilently() async {
+        // Casual tab switches must not blink the card: a card affirmed
+        // moments ago re-verifies without raising isSearching.
+        let engine = SuggestionEngine()
+        engine.etaProvider = { _, _, _ in XCTFail("distance mode"); return 0 }
+        var searchingDuringCheck: [Bool] = []
+        engine.availabilityCheck = { [weak engine] _ in
+            searchingDuringCheck.append(engine?.isSearching ?? false)
+            return true
+        }
+        let only = place("Only", latOffset: 0.001)
+        await engine.refreshSuggestion(candidates: [only], origin: origin,
+                                       budget: TravelBudget(mode: .distance, value: 500))
+        XCTAssertEqual(searchingDuringCheck, [true], "the roll path is a search")
+
+        await engine.revalidateCurrent(candidates: [only], origin: origin,
+                                       budget: TravelBudget(mode: .distance, value: 500))
+        XCTAssertEqual(searchingDuringCheck, [true, false],
+                       "a fresh affirmation re-verifies without the loading takeover")
+        XCTAssertEqual(engine.current?.restaurant.name, "Only")
+    }
+
+    func testStaleAffirmationRevalidatesBehindTheLoadingState() async {
+        // The 2026-07-15 regression: an app suspended overnight resumed
+        // with last night's card interactive while its slow re-check ran,
+        // and the Order button opened a closed store. A stale affirmation
+        // must run the revalidation as a REAL search — isSearching up, so
+        // the view's loading takeover pulls the card.
+        let engine = SuggestionEngine()
+        engine.etaProvider = { _, _, _ in XCTFail("distance mode"); return 0 }
+        var searchingDuringCheck: [Bool] = []
+        engine.availabilityCheck = { [weak engine] _ in
+            searchingDuringCheck.append(engine?.isSearching ?? false)
+            return true
+        }
+        let only = place("Only", latOffset: 0.001)
+        await engine.refreshSuggestion(candidates: [only], origin: origin,
+                                       budget: TravelBudget(mode: .distance, value: 500))
+        guard let affirmedOnRoll = engine.currentAffirmedAt else { return XCTFail("no stamp") }
+
+        engine.affirmationTTL = 0 // every verdict is instantly "last night's"
+        await engine.revalidateCurrent(candidates: [only], origin: origin,
+                                       budget: TravelBudget(mode: .distance, value: 500))
+        XCTAssertEqual(searchingDuringCheck, [true, true],
+                       "a stale affirmation re-verifies as a real search")
+        XCTAssertFalse(engine.isSearching, "hold released once the verdict lands")
+        XCTAssertEqual(engine.current?.restaurant.name, "Only", "re-affirmed card survives")
+        XCTAssertNotEqual(engine.currentAffirmedAt, affirmedOnRoll, "affirmation restamped")
+    }
+
+    func testStaleRevalidationStillEscalatesIntoReplacement() async {
+        // The stale hold raises isSearching BEFORE any escalation into a
+        // full refresh — that refresh must not be blocked by its own
+        // re-entry guard, or the closed card silently survives.
+        let engine = SuggestionEngine()
+        engine.etaProvider = { _, _, _ in XCTFail("distance mode"); return 0 }
+        var orderable: Set<String> = ["A", "B"]
+        engine.availabilityCheck = { orderable.contains($0.name) }
+        let a = place("A", latOffset: 0.001)
+        let b = place("B", latOffset: 0.002)
+        await engine.refreshSuggestion(candidates: [a, b], origin: origin,
+                                       budget: TravelBudget(mode: .distance, value: 500))
+        guard let first = engine.current?.restaurant else { return XCTFail("no pick") }
+
+        orderable.remove(first.name) // closed overnight
+        engine.affirmationTTL = 0
+        await engine.revalidateCurrent(candidates: [a, b], origin: origin,
+                                       budget: TravelBudget(mode: .distance, value: 500))
+        XCTAssertNotNil(engine.current, "replacement rolled")
+        XCTAssertNotEqual(engine.current?.restaurant.name, first.name,
+                          "stale closed card replaced, not kept")
+        XCTAssertFalse(engine.isSearching)
+    }
+
+    func testRejectedCardNeverSurvivesAPausedReplacementScan() async {
+        // Side door of the same 2026-07-15 bug: the replacement scan can
+        // pause at the check budget without accepting anyone (a morning
+        // where the whole neighborhood is closed) — the card whose LIVE
+        // verdict just came back "closed" must not resurface behind the
+        // "refresh to keep looking" message.
+        let engine = SuggestionEngine()
+        engine.etaProvider = { _, _, _ in XCTFail("distance mode"); return 0 }
+        let candidates = (0..<6).map { place("R\($0)", latOffset: Double($0) * 0.0001) }
+
+        // Seed a current card by permitting exactly one acceptance (the
+        // default check budget comfortably covers the 6-candidate scan).
+        engine.availabilityCheck = { $0.name == "R0" }
+        await engine.refreshSuggestion(candidates: candidates, origin: origin,
+                                       budget: TravelBudget(mode: .distance, value: 500))
+        XCTAssertEqual(engine.current?.restaurant.name, "R0")
+
+        engine.availabilityCheck = { _ in false } // R0 closed too, like the rest
+        engine.maxETAChecksPerRefresh = 2 // force the replacement scan to pause
+        engine.affirmationTTL = 0
+        await engine.revalidateCurrent(candidates: candidates, origin: origin,
+                                       budget: TravelBudget(mode: .distance, value: 500))
+        XCTAssertNil(engine.current, "known-closed card gone even though the scan paused")
+        XCTAssertNotNil(engine.statusMessage, "the pause still invites a refresh")
+        XCTAssertFalse(engine.isSearching)
+    }
+
     func testModeSwitchInvalidatesSessionAndETACache() async {
         let engine = SuggestionEngine()
         var etaCalls = 0

@@ -260,9 +260,9 @@ Michelin fields, never clear anything, never touch `isHidden`.
   `Restaurant.uberEatsURL`; the card's order button re-reads the store row
   at tap time (the Suggestion snapshot predates verification — this bug
   shipped once). Real results but nothing verified → drop candidate;
-  API/JS failure (one retry) → PERMISSIVE unknown (kept; button falls back
-  to a search universal link — iOS hands ubereats.com URLs to the
-  installed app without any web request). Checks count against the
+  API/JS failure (one retry) → unknown, SKIPPED (allow-list flip
+  2026-07-14 — unverifiable stores no longer get a card; never persisted,
+  10-min session cache). Checks count against the
   per-refresh budget (25 on this tab); verdicts session-cached by
   restaurant id — NOT by name: same-named chain branches must not share a
   verdict, or one branch's verified store URL gets persisted onto the
@@ -276,7 +276,15 @@ Michelin fields, never clear anything, never touch `isHidden`.
   gave no time): relaunches skip known-closed stores for free via
   quickReject until the stamp passes, then the live check decides again
   (suppress-only — an afternoon of closed restaurants used to cost one
-  live check each, on every launch). Ready-now is judged by an ALLOW-list
+  live check each, on every launch). Live-per-shown has a timing edge
+  (gotcha #18): the CARD can outlive its verdict across an overnight
+  suspension, so every acceptance stamps `currentAffirmedAt`, and a
+  revalidation that starts against an affirmation older than
+  `affirmationTTL` (wired to `openStateTTL`) runs as a REAL search —
+  `isSearching` raises, the loading takeover pulls the card, and the
+  Order button can't promise last night's verdict; a card the checks
+  reject is cleared before the replacement scan so a paused batch can't
+  resurface it. Ready-now is judged by an ALLOW-list
   (product call 2026-07-14, replacing a deny-list that shipped an
   unorderable card — see the MAINTENANCE playbook):
   `storeAvailablityStatus.state` must be `AVAILABLE`, not contradicted by
@@ -517,3 +525,18 @@ tests pass with an updated *synthetic* fixture.
     `testBudgetChangeWithNoCardRollsOne` passed or failed on launch
     history. Seed hooks that feed `@StateObject`-init reads belong in
     `FeedYuApp.init()`.
+18. **A shown card can outlive its verdict — verify-then-show has a
+    resume hole.** The engine's `current` survives an overnight app
+    suspension, so a foreground return renders last session's Uber card
+    instantly, Order button live, while `revalidateCurrent` re-checks it
+    WITHOUT raising `isSearching` — and that first re-check is at its
+    slowest exactly then (the idle WebView tore down after 180 s; the
+    reload takes seconds). The 2026-07-14 verdict fixes (cookie,
+    allow-list) couldn't catch it: they govern what the check RETURNS,
+    not WHEN it gates the UI, and the roll path's verify-before-accept
+    never runs for a card that is already up. A fried-chicken card
+    affirmed at 23:00 opened a closed store at 07:45 (2026-07-15). Now
+    `currentAffirmedAt` ages every acceptance and a stale revalidation
+    runs as a real search (loading takeover); a rejected card is also
+    cleared before the replacement scan, or a paused 25-check batch
+    would resurface it.
